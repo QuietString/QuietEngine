@@ -21,4 +21,6 @@ void Demo::RunDemo()
     // Call function by name
     qmeta::Variant ret = qmeta::CallByName(&P, *TI, "AddHealth", { qmeta::Variant(25) });
     int new_health = ret.as<int>();
+
+    printf("New Health: %d\n", new_health);
 }

@@ -8,5 +8,42 @@
 using namespace qmeta;
 // Unit: Game
 
+#include "Classes/Player.h"
+
+static inline Variant _qmeta_invoke_Player_AddHealth(void* obj, const Variant* args, std::size_t) {
+    Player* self = static_cast<Player*>(obj);
+    int a0 = args[0].as<int>();
+    auto _ret = self->AddHealth(a0);
+    return Variant(_ret);
+}
+
+static inline Variant _qmeta_invoke_Player_SetWalkSpeed(void* obj, const Variant* args, std::size_t) {
+    Player* self = static_cast<Player*>(obj);
+    float a0 = args[0].as<float>();
+    self->SetWalkSpeed(a0);
+    return Variant();
+}
+
 inline void QHT_Register_Game(Registry& R) {
+    TypeInfo& T_Player = R.add_type("Player", sizeof(Player));
+    T_Player.properties.push_back(MetaProperty{"Health", "int", offsetof(Player, Health), MetaMap{} });
+    T_Player.properties.push_back(MetaProperty{"WalkSpeed", "float", offsetof(Player, WalkSpeed), MetaMap{} });
+    {
+        MetaFunction F;
+        F.name = "AddHealth";
+        F.return_type = "int";
+        F.invoker = &_qmeta_invoke_Player_AddHealth;
+        F.params = std::vector<MetaParam>{ MetaParam{"Delta", "int"} };
+        F.meta = MetaMap{};
+        T_Player.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "SetWalkSpeed";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_Player_SetWalkSpeed;
+        F.params = std::vector<MetaParam>{ MetaParam{"Speed", "float"} };
+        F.meta = MetaMap{};
+        T_Player.functions.push_back(std::move(F));
+    }
 }
