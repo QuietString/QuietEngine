@@ -41,7 +41,7 @@
     <!-- QHT variables -->
     <PropertyGroup>
         <!-- Scan Game module headers -->
-        <QhtSrc>$(ProjectDir)Source\Public;$(ProjectDir)Source\Private</QhtSrc>
+        <QhtSrc>$(ProjectDir)Source</QhtSrc>
         <!-- Output generated header -->
         <QhtOut>$(ProjectDir)Intermediate\Include\QHT\Game.qht.gen.hpp</QhtOut>
     </PropertyGroup>
@@ -60,7 +60,7 @@
             <ConformanceMode>true</ConformanceMode>
             <LanguageStandard>stdcpp20</LanguageStandard>
             <AdditionalIncludeDirectories>
-                $(ProjectDir)Source\Public;
+                $(ProjectDir)Source;
                 $(ProjectDir)Intermediate\Include\QHT;
                 $(SolutionDir)Engine\Source\Public;
                 %(AdditionalIncludeDirectories)
@@ -154,7 +154,7 @@
           <PreprocessorDefinitions>_DEBUG;_CONSOLE;_UNICODE;UNICODE;</PreprocessorDefinitions>
           <SDLCheck>true</SDLCheck>
           <AdditionalIncludeDirectories>
-                C:\Users\quietstring\workspace\QuietEngine\Game\Source\Public;
+                C:\Users\quietstring\workspace\QuietEngine\Game\Source;
                 C:\Users\quietstring\workspace\QuietEngine\Game\Intermediate\Include\QHT;
                 C:\Users\quietstring\workspace\QuietEngine\Engine\Source\Public;
                 
@@ -236,7 +236,7 @@
           <PreprocessorDefinitions>_DEBUG;_CONSOLE;_UNICODE;UNICODE;</PreprocessorDefinitions>
           <SDLCheck>true</SDLCheck>
           <AdditionalIncludeDirectories>
-                C:\Users\quietstring\workspace\QuietEngine\Game\Source\Public;
+                C:\Users\quietstring\workspace\QuietEngine\Game\Source;
                 C:\Users\quietstring\workspace\QuietEngine\Game\Intermediate\Include\QHT;
                 C:\Users\quietstring\workspace\QuietEngine\Engine\Source\Public;
                 
@@ -319,7 +319,7 @@
           <PreprocessorDefinitions>_DEBUG;_CONSOLE;_UNICODE;UNICODE;</PreprocessorDefinitions>
           <SDLCheck>true</SDLCheck>
           <AdditionalIncludeDirectories>
-                C:\Users\quietstring\workspace\QuietEngine\Game\Source\Public;
+                C:\Users\quietstring\workspace\QuietEngine\Game\Source;
                 C:\Users\quietstring\workspace\QuietEngine\Game\Intermediate\Include\QHT;
                 C:\Users\quietstring\workspace\QuietEngine\Engine\Source\Public;
                 
@@ -332,7 +332,7 @@
         <ClInclude Include="Intermediate\Include\QHT\Game.qht.gen.hpp" />
         <ClInclude Include="Source\Classes\Player.h" />
         <ClInclude Include="Source\Demo.h" />
-        <ClInclude Include="Source\Public\**\*.h" />
+        <ClInclude Include="Source\**\*.h" />
     </ItemGroup>
 
     <!-- Link against Engine project -->

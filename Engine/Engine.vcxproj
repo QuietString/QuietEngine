@@ -40,7 +40,7 @@
 
     <!-- QHT variables -->
     <PropertyGroup>
-        <QhtSrc>$(ProjectDir)Source\Public;$(ProjectDir)Source\Private</QhtSrc>
+        <QhtSrc>$(ProjectDir)Source</QhtSrc>
         <QhtOut>$(ProjectDir)Intermediate\Include\QHT\Engine.qht.gen.hpp</QhtOut>
     </PropertyGroup>
 

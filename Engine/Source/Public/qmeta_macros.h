@@ -8,7 +8,7 @@
 #define QREFLECT() /* marker */
 
 // Put this right before a field declaration. Example:
-//   QPROPERTY(EditAnywhere, Category="Stats", ClampMin=0, ClampMax=100)
+//   QPROPERTY()
 //   int Health = 100;
 #define QPROPERTY(...) /* marker */
 
@@ -17,4 +17,4 @@
 //   int AddHealth(int Delta) const;
 #define QFUNCTION(...) /* marker */
 
-#endif // QMETA_MACROS_H
+#endif

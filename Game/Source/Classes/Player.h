@@ -5,14 +5,12 @@
 class Player
 {
 public:
-    QPROPERTY(EditAnywhere, Category="Stats", ClampMin=0, ClampMax=100)
+    QPROPERTY()
     int Health = 100;
-
-
-    QPROPERTY(EditAnywhere, Category="Stats")
+    
+    QPROPERTY()
     float WalkSpeed = 600.0f;
-
-
+    
     QFUNCTION()
     int AddHealth(int Delta);
 
