@@ -1,5 +1,5 @@
 ﻿#!/usr/bin/env python3
-# QHeaderTool (QHT): per-module header generator for QPROPERTY/QFUNCTION markers.
+# QuietHeaderTool (QHT): per-module header generator for QPROPERTY/QFUNCTION markers.
 # Emits a single header per module with inline invokers and a QHT_Register_<Unit>(Registry&).
 
 import argparse, re

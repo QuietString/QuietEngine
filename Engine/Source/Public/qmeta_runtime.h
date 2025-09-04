@@ -153,7 +153,4 @@ inline Variant CallByName(void* obj, const TypeInfo& ti, std::string_view func, 
     throw std::runtime_error("qmeta: function not found");
 }
 
-// Will be emitted by the generator:
-void RegisterAllGeneratedTypes();
-
-} // namespace qmeta
+}

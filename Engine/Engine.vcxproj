@@ -75,19 +75,16 @@
     </ItemDefinitionGroup>
 
     <ItemGroup>
-        <ClCompile Include="QuietEngine.cpp" />
+        <ClCompile Include="Engine.cpp" />
         <ClCompile Include="Source\Private\EngineModule.cpp" />
         <ClCompile Include="Source\Private\QHT_Bridge_Engine.cpp" />
     </ItemGroup>
 
     <ItemGroup>
+        <ClInclude Include="Intermediate\Include\QHT\Engine.qht.gen.hpp" />
         <ClInclude Include="Source\Public\qmeta_macros.h" />
         <ClInclude Include="Source\Public\qmeta_runtime.h" />
         <ClInclude Include="Source\Public\Module.h" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="Intermediate\Include\QHT\" />
     </ItemGroup>
 
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

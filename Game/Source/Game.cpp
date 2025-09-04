@@ -1,5 +1,8 @@
 ﻿#include <Module.h>
 
+#include "qmeta_runtime.h"
+#include "Demo.h"
+
 int main(int argc, char** argv) {
     qmod::ModuleManager& M = qmod::ModuleManager::Get();
 
@@ -10,7 +13,9 @@ int main(int argc, char** argv) {
     if (const char* primary = M.PrimaryModule()) {
         (void)M.EnsureLoaded(primary);
     }
-
+    
+    Demo::RunDemo();
+    
     // TODO: minimal engine loop placeholder
     // while (running) { tick(); }
 
