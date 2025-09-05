@@ -1,16 +1,37 @@
 ﻿#include "Runtime.h"
 #include "GarbageCollector.h"
+#include <algorithm>
 #include <sstream>
 #include <vector>
 #include <iostream>
-#include <cctype>
 #include <iomanip>
-
+#include <queue>
 #include "qmeta_runtime.h"
+#include <condition_variable>
+
+#if defined(_WIN32)
+// Optional: improve sleep granularity to ~1ms (system-wide).
+// Link: winmm.lib
+#define QRUNTIME_USE_WINMM 0
+#if QRUNTIME_USE_WINMM
+    #include <mmsystem.h>
+    #pragma comment(lib, "winmm.lib")
+#endif
+#endif
 
 namespace
 {
-    // Simple tokenizer: split by spaces, keep quoted strings.
+    using Clock = std::chrono::steady_clock;
+
+    std::atomic<bool> G_Running { false };
+
+    std::mutex G_CmdMutex;
+    std::queue<std::string> G_CmdQueue;
+
+    std::thread G_InputThread;
+    std::atomic<bool> G_InputRun { false };
+
+    // Simple tokenizer that honors quoted tokens.
     std::vector<std::string> Tokenize(const std::string& s)
     {
         std::vector<std::string> out;
@@ -22,6 +43,20 @@ namespace
         }
         return out;
     }
+
+#if defined(_WIN32) && QRUNTIME_USE_WINMM
+    struct TimerResolutionScope
+    {
+        TimerResolutionScope()
+        {
+            timeBeginPeriod(1);
+        }
+        ~TimerResolutionScope()
+        {
+            timeEndPeriod(1);
+        }
+    };
+#endif
 }
 
 void qruntime::Tick(double DeltaSeconds)
@@ -32,6 +67,113 @@ void qruntime::Tick(double DeltaSeconds)
 void qruntime::SetGcInterval(double Seconds)
 {
     QGC::GcManager::Get().SetAutoInterval(Seconds);
+}
+
+void qruntime::StartConsoleInput()
+{
+    if (G_InputRun.load()) return;
+    G_InputRun.store(true);
+
+    G_InputThread = std::thread([]()
+    {
+        std::string line;
+        while (G_InputRun.load())
+        {
+            if (!std::getline(std::cin, line))
+            {
+                // EOF or stream closed
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                continue;
+            }
+            if (!line.empty())
+            {
+                std::lock_guard<std::mutex> lock(G_CmdMutex);
+                G_CmdQueue.push(line);
+            }
+        }
+    });
+}
+
+void qruntime::StopConsoleInput()
+{
+    if (!G_InputRun.load()) return;
+    G_InputRun.store(false);
+    if (G_InputThread.joinable())
+    {
+        G_InputThread.join();
+    }
+}
+
+void qruntime::ProcessPendingCommands()
+{
+    for (;;)
+    {
+        std::string line;
+        {
+            std::lock_guard<std::mutex> lock(G_CmdMutex);
+            if (G_CmdQueue.empty()) break;
+            line = std::move(G_CmdQueue.front());
+            G_CmdQueue.pop();
+        }
+        ExecuteCommand(line);
+    }
+}
+
+void qruntime::RequestQuit()
+{
+    G_Running.store(false);
+}
+
+bool qruntime::IsRunning()
+{
+    return G_Running.load();
+}
+
+void qruntime::RunMainLoop(std::chrono::milliseconds Step, int MaxCatchUpSteps)
+{
+#if defined(_WIN32) && QRUNTIME_USE_WINMM
+    TimerResolutionScope Res;
+#endif
+
+    G_Running.store(true);
+
+    using namespace std::chrono;
+    const double StepSec = duration<double>(Step).count();
+    Clock::time_point Next = Clock::now();
+    double AccumulatedLate = 0.0;
+
+    while (IsRunning())
+    {
+        // Pace to next tick boundary.
+        Next += Step;
+        {
+            const auto Now = Clock::now();
+            if (Now < Next)
+            {
+                std::this_thread::sleep_until(Next);
+            }
+            else
+            {
+                // We are late; accumulate how much we are behind.
+                AccumulatedLate += duration<double>(Now - Next).count();
+                Next = Now;
+            }
+        }
+
+        // Always process one step.
+        ProcessPendingCommands();
+        Tick(StepSec);
+
+        // Catch up if we fell behind, up to MaxCatchUpSteps.
+        int Catchups = 0;
+        while (AccumulatedLate >= StepSec && Catchups < MaxCatchUpSteps && IsRunning())
+        {
+            ProcessPendingCommands();
+            Tick(StepSec);
+            AccumulatedLate -= StepSec;
+            ++Catchups;
+        }
+    }
 }
 
 bool qruntime::ExecuteCommand(const std::string& Line)

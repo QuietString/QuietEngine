@@ -1,4 +1,5 @@
-﻿#include <Module.h>
+﻿#include <iostream>
+#include <Module.h>
 
 #include "qmeta_runtime.h"
 #include "Demo.h"
@@ -8,6 +9,8 @@
 
 int main(int argc, char** argv)
 {
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
     
     qmod::ModuleManager& M = qmod::ModuleManager::Get();
     M.StartupAll();
@@ -18,17 +21,16 @@ int main(int argc, char** argv)
         (void)M.EnsureLoaded(Primary);
     }
 
+    // Optional: console input
+    qruntime::StartConsoleInput();
+    
     // Example: create a root Player and play with console
     auto* P = QGC::GcManager::Get().NewObject<Player>("Hero");
     QGC::GcManager::Get().AddRoot(P);
-    
-    for (int i = 0; i < 30; ++i)
-    {
-        qruntime::Tick(0.1); // 100ms
-    }
-    
-    // TODO: minimal engine loop placeholder
-    // while (running) { tick(); }
+
+    qruntime::RunMainLoop(std::chrono::milliseconds(16), 5);
+
+    qruntime::StopConsoleInput();
     
     M.ShutdownAll();
     return 0;

@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <chrono>
 #include <string>
 
 namespace qruntime
@@ -11,4 +12,18 @@ namespace qruntime
 
     // Optional: set default GC interval in seconds (0 disables auto).
     void SetGcInterval(double Seconds);
+
+    // Start/stop background console input thread (reads lines, enqueues to process on the main thread).
+    void StartConsoleInput();
+    void StopConsoleInput();
+
+    // Pull and execute any pending console commands.
+    void ProcessPendingCommands();
+
+    // Request/Query quit (set by 'quit' command or externally).
+    void RequestQuit();
+    bool IsRunning();
+
+    // Run a fixed-step loop (e.g., 16ms). Returns when quit requested.
+    void RunMainLoop(std::chrono::milliseconds Step, int MaxCatchUpSteps = 5);
 }
