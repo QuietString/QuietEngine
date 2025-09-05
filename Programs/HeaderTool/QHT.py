@@ -184,6 +184,8 @@ def emit_header(classes, out_path: Path, unit: str, bases):
     for ci in classes:
         cname = ci.name
         lines.append(f"    TypeInfo& T_{cname} = R.add_type(\"{cname}\", sizeof({cname}));\n")
+        lines.append(f'    T_{cname}.meta = MetaMap{{ std::make_pair(std::string("Module"), std::string("{unit}")) }};\n')
+
         for p in ci.properties:
             meta_items = ", ".join([f"std::make_pair(std::string(\"{k}\"), std::string(\"{v}\"))" for k,v in p.meta])
             meta_code = f"MetaMap{{ {meta_items} }}" if meta_items else "MetaMap{}"

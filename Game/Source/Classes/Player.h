@@ -13,8 +13,7 @@ public:
     
     QFUNCTION()
     int AddHealth(int Delta);
-
-
+    
     QFUNCTION()
     void SetWalkSpeed(float Speed);
 };

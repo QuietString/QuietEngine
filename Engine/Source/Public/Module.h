@@ -7,7 +7,8 @@
 
 namespace qmod {
 
-struct IModule {
+struct IModule
+{
     virtual ~IModule() = default;
     virtual const char* GetName() const = 0;
     virtual void StartupModule() {}
@@ -23,19 +24,19 @@ public:
 
     using Factory = std::function<std::unique_ptr<IModule>()>;
 
-    void RegisterFactory(const char* name, Factory f, bool isPrimary = false) {
-        factories_[name] = std::move(f);
-        if (isPrimary) primary_ = name;
+    void RegisterFactory(const char* Name, Factory f, bool bIsPrimary = false) {
+        factories_[Name] = std::move(f);
+        if (bIsPrimary) primary_ = Name;
     }
 
-    IModule* EnsureLoaded(const char* name) {
-        auto it = loaded_.find(name);
-        if (it != loaded_.end()) return it->second.get();
-        auto fit = factories_.find(name);
+    IModule* EnsureLoaded(const char* Name) {
+        auto It = loaded_.find(Name);
+        if (It != loaded_.end()) return It->second.get();
+        auto fit = factories_.find(Name);
         if (fit == factories_.end()) return nullptr;
         auto mod = fit->second();
         IModule* raw = mod.get();
-        loaded_[name] = std::move(mod);
+        loaded_[Name] = std::move(mod);
         raw->StartupModule();
         return raw;
     }

@@ -104,6 +104,7 @@ struct TypeInfo {
     std::size_t size = 0;
     std::vector<MetaProperty> properties;
     std::vector<MetaFunction> functions;
+    MetaMap meta;
 };
 
 class Registry {
@@ -133,21 +134,21 @@ inline Registry& GetRegistry() {
 }
 
 // Utility: get property address by name
-inline void* GetPropertyPtr(void* obj, const TypeInfo& ti, std::string_view prop_name) {
-    for (auto& p : ti.properties) {
-        if (p.name == prop_name) {
-            return static_cast<void*>(static_cast<unsigned char*>(obj) + p.offset);
+inline void* GetPropertyPtr(void* Obj, const TypeInfo& Ti, std::string_view PropName) {
+    for (auto& p : Ti.properties) {
+        if (p.name == PropName) {
+            return static_cast<void*>(static_cast<unsigned char*>(Obj) + p.offset);
         }
     }
     return nullptr;
 }
 
-// Utility: call function by name
-inline Variant CallByName(void* obj, const TypeInfo& ti, std::string_view func, const std::vector<Variant>& args) {
-    for (auto& f : ti.functions) {
-        if (f.name == func) {
-            if (!f.invoker) throw std::runtime_error("qmeta: null invoker");
-            return f.invoker(obj, args.data(), args.size());
+// Utility: call a function by name
+inline Variant CallByName(void* Obj, const TypeInfo& Ti, const std::string_view func, const std::vector<Variant>& Args) {
+    for (auto& Func : Ti.functions) {
+        if (Func.name == func) {
+            if (!Func.invoker) throw std::runtime_error("qmeta: null invoker");
+            return Func.invoker(Obj, Args.data(), Args.size());
         }
     }
     throw std::runtime_error("qmeta: function not found");

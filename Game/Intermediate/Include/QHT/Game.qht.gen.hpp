@@ -26,6 +26,7 @@ static inline Variant _qmeta_invoke_Player_SetWalkSpeed(void* obj, const Variant
 
 inline void QHT_Register_Game(Registry& R) {
     TypeInfo& T_Player = R.add_type("Player", sizeof(Player));
+    T_Player.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
     T_Player.properties.push_back(MetaProperty{"Health", "int", offsetof(Player, Health), MetaMap{} });
     T_Player.properties.push_back(MetaProperty{"WalkSpeed", "float", offsetof(Player, WalkSpeed), MetaMap{} });
     {

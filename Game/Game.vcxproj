@@ -330,7 +330,6 @@
 
     <ItemGroup>
         <ClInclude Include="Intermediate\Include\QHT\Game.qht.gen.hpp" />
-        <ClInclude Include="Source\Classes\Player.h" />
         <ClInclude Include="Source\**\*.h" />
     </ItemGroup>
 
