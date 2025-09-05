@@ -5,7 +5,7 @@
 import argparse, re
 from pathlib import Path
 
-CLASS_RE = re.compile(r"\b(class|struct)\s+(?P<name>[A-Za-z_]\w*)\s*(?:[:][^{]+)?\{", re.M)
+CLASS_RE = re.compile(r"\b(class|struct)\s+(?P<name>[A-Za-z_]\w*)\s*(?:\:(?P<bases>[^{]+))?\{", re.M)
 COMMENT_SL = re.compile(r"//.*?$", re.M)
 COMMENT_ML = re.compile(r"/\*.*?\*/", re.S)
 PROP_RE = re.compile(r"QPROPERTY\s*(?:\((?P<meta>[^)]*)\))?\s*(?P<decl>[^;{]+);", re.M)
@@ -44,13 +44,17 @@ class Function:
         self.meta = meta_items
 
 class ClassInfo:
-    def __init__(self, name, src_path=None):
+    def __init__(self, name, src_path=None, bases=""):
         self.name = name
         self.src_path = src_path
+        self.bases = bases or ""
         self.properties = []
         self.functions = []
     def has_any(self):
         return bool(self.properties or self.functions)
+    def is_qobject(self):
+        b = self.bases.replace("public", " ").replace("protected", " ").replace("private", " ")
+        return "QObject" in b or "::QObject" in b
 
 def split_params(params_str: str):
     params_str = params_str.strip()
@@ -78,6 +82,7 @@ def find_classes(src: str):
         if not m:
             break
         name = m.group('name')
+        bases = m.group('bases') or ""
         start = m.end()
         brace = 1
         i = start
@@ -88,15 +93,15 @@ def find_classes(src: str):
                 brace -= 1
             i += 1
         body = src[start:i-1]
-        yield name, body
+        yield name, bases, body
         pos = i
 
 def scan_file(path: Path):
     raw = path.read_text(encoding='utf-8', errors='ignore')
     src = strip_comments(raw)
     classes = []
-    for cname, body in find_classes(src):
-        ci = ClassInfo(cname, src_path=path)
+    for cname, bases, body in find_classes(src):
+        ci = ClassInfo(cname, src_path=path, bases=bases)
         for pm in PROP_RE.finditer(body):
             meta_s = pm.group('meta')
             decl = pm.group('decl').strip()
@@ -114,7 +119,7 @@ def scan_file(path: Path):
             fname = fm.group('name')
             params = split_params(fm.group('params'))
             ci.functions.append(Function(ret, fname, params, parse_meta_list(meta_s)))
-        if ci.has_any():
+        if ci.has_any() and ci.is_qobject():
             classes.append(ci)
     return classes
 
@@ -185,7 +190,6 @@ def emit_header(classes, out_path: Path, unit: str, bases):
         cname = ci.name
         lines.append(f"    TypeInfo& T_{cname} = R.add_type(\"{cname}\", sizeof({cname}));\n")
         lines.append(f'    T_{cname}.meta = MetaMap{{ std::make_pair(std::string("Module"), std::string("{unit}")) }};\n')
-
         for p in ci.properties:
             meta_items = ", ".join([f"std::make_pair(std::string(\"{k}\"), std::string(\"{v}\"))" for k,v in p.meta])
             meta_code = f"MetaMap{{ {meta_items} }}" if meta_items else "MetaMap{}"

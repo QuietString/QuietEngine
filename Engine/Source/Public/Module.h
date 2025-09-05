@@ -15,6 +15,7 @@ struct IModule
     virtual void ShutdownModule() {}
 };
 
+// A singleton class
 class ModuleManager {
 public:
     static ModuleManager& Get() {
@@ -24,7 +25,8 @@ public:
 
     using Factory = std::function<std::unique_ptr<IModule>()>;
 
-    void RegisterFactory(const char* Name, Factory f, bool bIsPrimary = false) {
+    void RegisterFactory(const char* Name, Factory f, bool bIsPrimary = false)
+    {
         factories_[Name] = std::move(f);
         if (bIsPrimary) primary_ = Name;
     }
@@ -91,3 +93,8 @@ private:
             } \
         } g_##ModuleClass##_PrimaryAutoReg; \
     }
+
+// Force-link a module by touching its anchor function.
+#define Q_FORCE_LINK_MODULE(ModuleTag)                               \
+extern "C" void Q_Mod_##ModuleTag##_Anchor();                    \
+static int S_Force_Link_##ModuleTag = (Q_Mod_##ModuleTag##_Anchor(), 0)

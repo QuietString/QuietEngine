@@ -18,3 +18,8 @@ public:
 };
 
 Q_IMPLEMENT_MODULE(FEngineModule, "Engine")
+
+// Forces this translation unit to be linked so the static auto-registrar runs.
+extern "C" void Q_Mod_Engine_Anchor()
+{
+}

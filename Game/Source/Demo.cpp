@@ -3,6 +3,7 @@
 #include <filesystem>
 
 #include "Asset.h"
+#include "Controller.h"
 #include "qmeta_runtime.h"
 #include "Classes/Player.h"
 
@@ -58,11 +59,24 @@ void Demo::RunSaveLoad()
     // Set property by name
     void* Ptr = qmeta::GetPropertyPtr(&P, *TI, "Health");
     if (Ptr) *static_cast<int*>(Ptr) = 150;
-
-
+    
     // Call function by name
     qmeta::Variant Ret = qmeta::CallByName(&P, *TI, "AddHealth", { qmeta::Variant(25) });
     int New_Health = Ret.as<int>();
+    
+    const qmeta::TypeInfo* ControllerInfo = R.find("Controller");
+    if (!ControllerInfo) return;
 
-    printf("New Health: %d\n", New_Health);
+    Controller C{};
+    printf("Original ID: %d\n", C.ControllerID);
+
+    // Decide the default dir from module meta (Game/Contents or Engine/Contents)
+    std::filesystem::path Dir2 = qasset::DefaultAssetDirFor(*ControllerInfo);
+    
+    // Save as Game/Contents/PlayerSample.qasset (relative to working dir)
+    qasset::SaveOrThrow(&C, *ControllerInfo, Dir2, "ControllerSample.qasset");
+    // Load into another instance
+    Controller Loaded2{};
+    qasset::LoadOrThrow(&Loaded2, *ControllerInfo, Dir2 / "ControllerSample.qasset");
+    printf("Loaded ID: %d\n", Loaded2.ControllerID);
 }

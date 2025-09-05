@@ -8,6 +8,26 @@
 using namespace qmeta;
 // Unit: Engine
 
+#include "Public/Controller.h"
+
+static inline Variant _qmeta_invoke_Controller_SetControllerID(void* obj, const Variant* args, std::size_t) {
+    Controller* self = static_cast<Controller*>(obj);
+    int a0 = args[0].as<int>();
+    self->SetControllerID(a0);
+    return Variant();
+}
 
 inline void QHT_Register_Engine(Registry& R) {
+    TypeInfo& T_Controller = R.add_type("Controller", sizeof(Controller));
+    T_Controller.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
+    T_Controller.properties.push_back(MetaProperty{"ControllerID", "int", offsetof(Controller, ControllerID), MetaMap{} });
+    {
+        MetaFunction F;
+        F.name = "SetControllerID";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_Controller_SetControllerID;
+        F.params = std::vector<MetaParam>{ MetaParam{"ID", "int"} };
+        F.meta = MetaMap{};
+        T_Controller.functions.push_back(std::move(F));
+    }
 }

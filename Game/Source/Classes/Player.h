@@ -1,8 +1,9 @@
 ﻿#pragma once
+#include "Object.h"
 #include "qmeta_macros.h"
 
 
-class Player
+class Player : public QObject
 {
 public:
     QPROPERTY()

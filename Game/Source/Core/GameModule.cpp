@@ -1,6 +1,8 @@
 ﻿#include <Module.h>
 #include <qmeta_runtime.h>
 
+Q_FORCE_LINK_MODULE(Engine);
+
 void RegisterGameReflections(qmeta::Registry&);
 
 class FGameModule final : public qmod::IModule {
