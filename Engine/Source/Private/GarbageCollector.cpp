@@ -3,7 +3,7 @@
 #include <sstream>
 #include <algorithm>
 
-#include "CoreObjects/Public/RootObject.h"
+#include "CoreObjects/Public/World.h"
 
 using qmeta::Registry;
 using qmeta::TypeInfo;
@@ -28,6 +28,11 @@ namespace QGC
         if (!Name.empty())
         {
             ByName_[Name] = Obj;
+            std::cout << "[GC] Registered " << Name << " : " << Ti.name << std::endl;
+        }
+        else
+        {
+            std::cout << "[GC] Warning: unnamed object " << Obj << std::endl; 
         }
     }
 
@@ -45,10 +50,11 @@ namespace QGC
         throw std::runtime_error("NewByTypeName: factory not implemented for type " + TypeName);
     }
 
-    void GcManager::Initialize()
+    void GcManager::Initialize(float InTickInterval)
     {
-        auto* P = NewObject<QRootObject>("RootObject");
+        auto* P = NewObject<QWorld>("Root");
         AddRoot(P);
+        SetAutoInterval(InTickInterval);
     }
 
     void GcManager::AddRoot(QObject* Obj)

@@ -8,7 +8,7 @@
 using namespace qmeta;
 // Unit: Engine
 
-#include "CoreObjects/Public/RootObject.h"
+#include "CoreObjects/Public/World.h"
 #include "Public/Controller.h"
 
 static inline Variant _qmeta_invoke_Controller_SetControllerID(void* obj, const Variant* args, std::size_t) {
@@ -31,7 +31,7 @@ inline void QHT_Register_Engine(Registry& R) {
         F.meta = MetaMap{};
         T_Controller.functions.push_back(std::move(F));
     }
-    TypeInfo& T_QRootObject = R.add_type("QRootObject", sizeof(QRootObject));
-    T_QRootObject.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
-    T_QRootObject.properties.push_back(MetaProperty{"Objects", "std::vector<QObject*>", offsetof(QRootObject, Objects), MetaMap{} });
+    TypeInfo& T_QWorld = R.add_type("QWorld", sizeof(QWorld));
+    T_QWorld.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
+    T_QWorld.properties.push_back(MetaProperty{"Objects", "std::vector<QObject*>", offsetof(QWorld, Objects), MetaMap{} });
 }

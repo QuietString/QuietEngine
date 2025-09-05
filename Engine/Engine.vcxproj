@@ -167,11 +167,12 @@
 
     <ItemGroup>
         <ClInclude Include="Intermediate\Include\QHT\Engine.qht.gen.hpp" />
-        <ClInclude Include="Source\CoreObjects\Public\RootObject.h" />
+        <ClInclude Include="Source\CoreObjects\Public\World.h" />
         <ClInclude Include="Source\Public\Asset.h" />
         <ClInclude Include="Source\Public\Controller.h" />
         <ClInclude Include="Source\Public\GarbageCollector.h" />
         <ClInclude Include="Source\Public\Object.h" />
+        <ClInclude Include="Source\Public\ObjectBase.h" />
         <ClInclude Include="Source\Public\qmeta_macros.h" />
         <ClInclude Include="Source\Public\qmeta_runtime.h" />
         <ClInclude Include="Source\Public\Module.h" />

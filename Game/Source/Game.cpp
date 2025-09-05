@@ -14,15 +14,15 @@ int main(int argc, char** argv)
     qmod::ModuleManager& M = qmod::ModuleManager::Get();
     M.StartupAll();
     
-    QGC::GcManager::Get().SetAutoInterval(15.f);
-    QGC::GcManager::Get().Initialize();
+    QGC::GcManager::Get().Initialize(0);
 
     std::cout << "Type 'help' for commands." << std::endl;
     qruntime::StartConsoleInput();
 
+    Demo::RunGCTest();
+    
     qruntime::RunMainLoop(std::chrono::milliseconds(16), 5);
     
-    //Demo::RunGCTest();
     qruntime::StopConsoleInput();
     
     M.ShutdownAll();

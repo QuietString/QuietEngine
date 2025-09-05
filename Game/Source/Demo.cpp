@@ -89,17 +89,12 @@ void Demo::RunGCTest()
     using namespace QGC;
 
     auto& GC = GcManager::Get();
-    qruntime::SetGcInterval(0.0); // disable auto for test
 
     // Create a simple chain: A -> B -> C
     auto* A = GC.NewObject<Player>("A");
     auto* B = GC.NewObject<Player>("B");
     auto* C = GC.NewObject<Player>("C");
 
-    GC.Link("A", "Friend", "B"); // assuming you add QPROPERTY(Player* Friend) to Player
-    GC.Link("B", "Friend", "C");
-
-    //GC.Collect(); // nothing freed
-    GC.Unlink("A", "Friend");
-    //GC.Collect(); // B and C should be collected
+    A->Friend = B;
+    B->Friend = C;
 }

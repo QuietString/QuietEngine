@@ -4,10 +4,13 @@
 #include "Object.h"
 #include "qmeta_macros.h"
 
-class QRootObject : public QObject
+// Globally accessible singleton root object
+class QWorld : public QObject
 {
 public:
 
+    static QWorld& Get() { static QWorld W; return W;}
+    
     QPROPERTY()
     std::vector<QObject*> Objects;
 };
