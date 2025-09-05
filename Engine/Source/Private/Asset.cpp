@@ -76,7 +76,7 @@ struct Header {
     uint16_t reserved = 0;
 };
 
-} // namespace
+}
 
 namespace qasset {
 
@@ -91,9 +91,7 @@ std::filesystem::path DefaultAssetDirFor(const qmeta::TypeInfo& Ti)
 
 // Writes: Header, TypeName, PropertyCount, then per-property blocks (name, tcode, payload),
 // then FunctionCount and function metadata (name, return, paramCount, each param(name,type)).
-bool Save(const void* Obj, const qmeta::TypeInfo& Ti,
-          const std::filesystem::path& OutPath,
-          const std::string& FileNameIfDir)
+bool Save(const void* Obj, const qmeta::TypeInfo& Ti, const std::filesystem::path& OutPath, const std::string& FileNameIfDir)
 {
     std::filesystem::path Path = OutPath;
     if (Path.has_extension()) {

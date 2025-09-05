@@ -41,11 +41,28 @@ void Demo::RunSaveLoad()
 
     // Decide the default dir from module meta (Game/Contents or Engine/Contents)
     std::filesystem::path Dir = qasset::DefaultAssetDirFor(*TI);
-
+    
     // Save as Game/Contents/PlayerSample.qasset (relative to working dir)
     qasset::SaveOrThrow(&P, *TI, Dir, "PlayerSample.qasset");
 
     // Load into another instance
     Player Loaded{};
     qasset::LoadOrThrow(&Loaded, *TI, Dir / "PlayerSample.qasset");
+
+    if (!TI)
+    {
+        printf("No Player Info");
+        return;
+    }
+
+    // Set property by name
+    void* Ptr = qmeta::GetPropertyPtr(&P, *TI, "Health");
+    if (Ptr) *static_cast<int*>(Ptr) = 150;
+
+
+    // Call function by name
+    qmeta::Variant Ret = qmeta::CallByName(&P, *TI, "AddHealth", { qmeta::Variant(25) });
+    int New_Health = Ret.as<int>();
+
+    printf("New Health: %d\n", New_Health);
 }
