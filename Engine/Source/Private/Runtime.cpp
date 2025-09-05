@@ -206,7 +206,7 @@ bool qruntime::ExecuteCommand(const std::string& Line)
                 "  tick <seconds>\n"
                 "  ls\n"
                 "  props <Name>\n"
-                "  funcs <Name>\n";
+                "  funcs <Name>" << std::endl;
             return true;
         }
         else if (cmd == "tick" && tokens.size() >= 2)
@@ -295,7 +295,7 @@ bool qruntime::ExecuteCommand(const std::string& Line)
     }
     catch (const std::exception& e)
     {
-        std::cerr << "[CommandError] " << e.what() << "\n";
+        std::cerr << "[CommandError] " << e.what() << std::endl;
         return true;
     }
 

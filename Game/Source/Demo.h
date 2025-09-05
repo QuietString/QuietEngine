@@ -7,6 +7,4 @@ namespace Demo
     void RunSaveLoad();
 
     void RunGCTest();
-
-    void RunREPL();
 }

@@ -35,6 +35,8 @@ namespace QGC
         // Create by type name (for console)
         QObject* NewByTypeName(const std::string& TypeName, const std::string& Name);
 
+        void Initialize();
+        
         // Roots
         void AddRoot(QObject* Obj);
         void RemoveRoot(QObject* Obj);
@@ -64,7 +66,7 @@ namespace QGC
 
         // Access stored TypeInfo for an object
         const qmeta::TypeInfo* GetTypeInfo(const QObject* Obj) const;
-
+    
     private:
         struct Node
         {
@@ -82,8 +84,10 @@ namespace QGC
     private:
         std::unordered_map<QObject*, Node> Objects_;
         std::unordered_map<std::string, QObject*> ByName_;
-        std::vector<QObject*> Roots_;
-        double Accum_ = 0.0;
-        double Interval_ = 2.0;
+        std::vector<QObject*> Roots;
+        double Accumulated = 0.0;
+        
+        // Auto collect time interval in seconds. Disabled when less than or equal to zero.
+        double Interval = 2.0;
     };
 }

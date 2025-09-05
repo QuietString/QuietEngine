@@ -5,7 +5,6 @@
 #include "Demo.h"
 #include "GarbageCollector.h"
 #include "Runtime.h"
-#include "Classes/Player.h"
 
 int main(int argc, char** argv)
 {
@@ -14,22 +13,16 @@ int main(int argc, char** argv)
     
     qmod::ModuleManager& M = qmod::ModuleManager::Get();
     M.StartupAll();
-
-    // Optionally ensure the primary game module is active
-    if (const char* Primary = M.PrimaryModule())
-    {
-        (void)M.EnsureLoaded(Primary);
-    }
-
-    // Optional: console input
-    qruntime::StartConsoleInput();
     
-    // Example: create a root Player and play with console
-    auto* P = QGC::GcManager::Get().NewObject<Player>("Hero");
-    QGC::GcManager::Get().AddRoot(P);
+    QGC::GcManager::Get().SetAutoInterval(15.f);
+    QGC::GcManager::Get().Initialize();
+
+    std::cout << "Type 'help' for commands." << std::endl;
+    qruntime::StartConsoleInput();
 
     qruntime::RunMainLoop(std::chrono::milliseconds(16), 5);
-
+    
+    //Demo::RunGCTest();
     qruntime::StopConsoleInput();
     
     M.ShutdownAll();

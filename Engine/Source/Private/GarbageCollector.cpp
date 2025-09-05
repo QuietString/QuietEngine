@@ -3,6 +3,8 @@
 #include <sstream>
 #include <algorithm>
 
+#include "CoreObjects/Public/RootObject.h"
+
 using qmeta::Registry;
 using qmeta::TypeInfo;
 using qmeta::MetaProperty;
@@ -43,33 +45,39 @@ namespace QGC
         throw std::runtime_error("NewByTypeName: factory not implemented for type " + TypeName);
     }
 
+    void GcManager::Initialize()
+    {
+        auto* P = NewObject<QRootObject>("RootObject");
+        AddRoot(P);
+    }
+
     void GcManager::AddRoot(QObject* Obj)
     {
         if (!Obj) return;
-        if (std::find(Roots_.begin(), Roots_.end(), Obj) == Roots_.end())
+        if (std::find(Roots.begin(), Roots.end(), Obj) == Roots.end())
         {
-            Roots_.push_back(Obj);
+            Roots.push_back(Obj);
         }
     }
 
     void GcManager::RemoveRoot(QObject* Obj)
     {
-        Roots_.erase(std::remove(Roots_.begin(), Roots_.end(), Obj), Roots_.end());
+        Roots.erase(std::remove(Roots.begin(), Roots.end(), Obj), Roots.end());
     }
 
     void GcManager::Tick(double DeltaSeconds)
     {
-        Accum_ += DeltaSeconds;
-        if (Interval_ > 0.0 && Accum_ >= Interval_)
+        Accumulated += DeltaSeconds;
+        if (Interval > 0.0 && Accumulated >= Interval)
         {
             Collect();
-            Accum_ = 0.0;
+            Accumulated = 0.0;
         }
     }
 
     void GcManager::SetAutoInterval(double Seconds)
     {
-        Interval_ = Seconds;
+        Interval = Seconds;
     }
 
     static inline unsigned char* BytePtr(void* p)
@@ -148,7 +156,7 @@ namespace QGC
         }
 
         // 2) Mark from roots
-        for (QObject* R : Roots_)
+        for (QObject* R : Roots)
         {
             Mark(R);
         }
@@ -204,7 +212,7 @@ namespace QGC
             }
         }
 
-        std::cout << "[GC] Collected " << Dead.size() << " objects, alive=" << Objects_.size() << "\n";
+        std::cout << "[GC] Collected " << Dead.size() << " objects, alive=" << Objects_.size() << std::endl;
     }
 
     void GcManager::ListObjects() const
@@ -213,7 +221,7 @@ namespace QGC
         for (auto& kv : Objects_)
         {
             const Node& N = kv.second;
-            std::cout << " - " << (N.Name.empty() ? "(unnamed)" : N.Name) << " : " << N.Ti->name << "\n";
+            std::cout << " - " << (N.Name.empty() ? "(unnamed)" : N.Name) << " : " << N.Ti->name << std::endl;
         }
     }
 
@@ -226,7 +234,7 @@ namespace QGC
         std::cout << "[Props] " << Name << " : " << Ti.name << "\n";
         for (auto& p : Ti.properties)
         {
-            std::cout << " - " << p.type << " " << p.name << " (offset " << p.offset << ")\n";
+            std::cout << " - " << p.type << " " << p.name << " (offset " << p.offset << ")" << std::endl;
         }
     }
 
@@ -362,7 +370,7 @@ namespace QGC
         auto dir = qasset::DefaultAssetDirFor(*it->second.Ti);
         const std::string fn = FileNameIfAny.empty() ? (it->second.Ti->name + ".quasset") : FileNameIfAny;
         qasset::SaveOrThrow(Obj, *it->second.Ti, dir, fn);
-        std::cout << "[Save] " << Name << " -> " << (dir / fn).string() << "\n";
+        std::cout << "[Save] " << Name << " -> " << (dir / fn).string() << std::endl;
         return true;
     }
 
@@ -377,7 +385,7 @@ namespace QGC
         auto dir = qasset::DefaultAssetDirFor(*it->second.Ti);
         const std::string fn = FileNameIfAny.empty() ? (it->second.Ti->name + ".quasset") : FileNameIfAny;
         qasset::LoadOrThrow(Obj, *it->second.Ti, dir / fn);
-        std::cout << "[Load] " << Name << " <- " << (dir / fn).string() << "\n";
+        std::cout << "[Load] " << Name << " <- " << (dir / fn).string() << std::endl;
         return true;
     }
 }
