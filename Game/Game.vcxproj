@@ -323,7 +323,6 @@
                 C:\Users\quietstring\workspace\QuietEngine\Game\Source;
                 C:\Users\quietstring\workspace\QuietEngine\Game\Intermediate\Include\QHT;
                 C:\Users\quietstring\workspace\QuietEngine\Engine\Source\Public;
-                
             </AdditionalIncludeDirectories>
           <LinkCompiled>true</LinkCompiled>
         </ClCompile>

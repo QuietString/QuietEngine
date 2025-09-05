@@ -29,6 +29,7 @@ inline void QHT_Register_Game(Registry& R) {
     T_Player.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
     T_Player.properties.push_back(MetaProperty{"Health", "int", offsetof(Player, Health), MetaMap{} });
     T_Player.properties.push_back(MetaProperty{"WalkSpeed", "float", offsetof(Player, WalkSpeed), MetaMap{} });
+    T_Player.properties.push_back(MetaProperty{"Friend", "Player*", offsetof(Player, Friend), MetaMap{} });
     {
         MetaFunction F;
         F.name = "AddHealth";

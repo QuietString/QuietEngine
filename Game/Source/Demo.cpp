@@ -1,10 +1,13 @@
 #include "Demo.h"
 
 #include <filesystem>
+#include <iostream>
 
 #include "Asset.h"
 #include "Controller.h"
+#include "GarbageCollector.h"
 #include "qmeta_runtime.h"
+#include "Runtime.h"
 #include "Classes/Player.h"
 
 void Demo::RunDemo()
@@ -79,4 +82,41 @@ void Demo::RunSaveLoad()
     Controller Loaded2{};
     qasset::LoadOrThrow(&Loaded2, *ControllerInfo, Dir2 / "ControllerSample.qasset");
     printf("Loaded ID: %d\n", Loaded2.ControllerID);
+}
+
+void Demo::RunGCTest()
+{
+    using namespace QGC;
+
+    auto& GC = GcManager::Get();
+    qruntime::SetGcInterval(0.0); // disable auto for test
+
+    // Create a simple chain: A -> B -> C
+    auto* A = GC.NewObject<Player>("A");
+    auto* B = GC.NewObject<Player>("B");
+    auto* C = GC.NewObject<Player>("C");
+
+    GC.AddRoot(A);               // only A is a root
+    GC.Link("A", "Friend", "B"); // assuming you add QPROPERTY(Player* Friend) to Player
+    GC.Link("B", "Friend", "C");
+
+    GC.Collect(); // nothing freed
+    GC.Unlink("A", "Friend");
+    GC.Collect(); // B and C should be collected
+}
+
+void Demo::RunREPL()
+{
+    std::cout << "Type 'help' for commands. Ctrl+C to exit.\n";
+    std::string line;
+    while (std::getline(std::cin, line))
+    {
+        if (!qruntime::ExecuteCommand(line))
+        {
+            if (!line.empty())
+            {
+                std::cout << "Unknown command. Type 'help'.\n";
+            }
+        }
+    }
 }

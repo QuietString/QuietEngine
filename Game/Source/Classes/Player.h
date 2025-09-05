@@ -11,6 +11,9 @@ public:
     
     QPROPERTY()
     float WalkSpeed = 600.0f;
+
+    QPROPERTY()
+    Player* Friend = nullptr;
     
     QFUNCTION()
     int AddHealth(int Delta);
