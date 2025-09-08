@@ -129,6 +129,11 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             //GC.Load(tokens[1], tokens[2], file);
             return true;
         }
+        else
+        {
+            std::cout << "Unknown command: " << cmd << std::endl;
+            return false;
+        }
     }
     catch (const std::exception& e)
     {

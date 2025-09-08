@@ -52,12 +52,15 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-        <LinkIncremental>true</LinkIncremental>
+        <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
+        <IntDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\obj\</IntDir>
+        <LinkIncremental>false</LinkIncremental>
     </PropertyGroup>
 
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
         <ClCompile>
-            <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+            <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+            <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
             <PrecompiledHeader>NotUsing</PrecompiledHeader>
             <WarningLevel>Level3</WarningLevel>
             <Optimization>Disabled</Optimization>
@@ -75,6 +78,8 @@
         <Link>
             <SubSystem>Console</SubSystem>
             <GenerateDebugInformation>true</GenerateDebugInformation>
+            <ProgramDatabaseFile>$(OutDir)QuietEngine.pdb</ProgramDatabaseFile>
+            <AdditionalOptions>/IGNORE:4075 %(AdditionalOptions)</AdditionalOptions>
         </Link>
         <!-- Run QHT before compiling -->
         <PreBuildEvent>
@@ -85,6 +90,7 @@
 
     <ItemGroup>
         <ClCompile Include="Source\Console\ConsoleManager.cpp" />
+        <ClCompile Include="Source\CoreObjects\Private\World.cpp" />
         <ClCompile Include="Source\Engine.cpp" />
         <ClCompile Include="Source\Private\Asset.cpp" />
         <ClCompile Include="Source\Private\EngineModule.cpp" />
@@ -112,10 +118,6 @@
 
     <ItemGroup>
       <Content Include="..\.gitignore" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Source\CoreObjects\Private\" />
     </ItemGroup>
 
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

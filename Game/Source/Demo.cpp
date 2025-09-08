@@ -104,21 +104,17 @@ void Demo::RunGCTestSimple()
 void Demo::GenerateObjectsForGcTest()
 {
     using namespace QGC;
-
+    
     auto& GC = GcManager::Get();
 
-    QWorld* World = QWorld::Get();
-    
     auto* A = GC.NewObject<QObject_GcTest>();
     auto* B = GC.NewObject<QObject_GcTest>();
-    auto* C = GC.NewObject<QObject_GcTest>();
-    auto* D = GC.NewObject<QObject_GcTest>();
-    auto* E = GC.NewObject<QObject_GcTest>();
+   
+    QWorld* World = static_cast<QWorld*>(GC.GetRoot());
+    if (World)
+    {
+        World->SingleObject2 = A;
+    }
+    A->ChildObject = B;
     
-    World->SingleObject = B;
-    A->ChildObjects.push_back(C);
-    B->ChildObjects.push_back(D);
-    B->ChildObjects.push_back(E);
-
-    World->Objects.push_back(A);
 }

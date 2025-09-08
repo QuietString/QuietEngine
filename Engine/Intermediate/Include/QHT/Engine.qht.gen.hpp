@@ -34,9 +34,9 @@ inline void QHT_Register_Engine(Registry& R) {
     }
     TypeInfo& T_QObject_GcTest = R.add_type("QObject_GcTest", sizeof(QObject_GcTest));
     T_QObject_GcTest.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
-    T_QObject_GcTest.properties.push_back(MetaProperty{"ChildObjects", "std::vector<QObject*>", offsetof(QObject_GcTest, ChildObjects), MetaMap{} });
+    T_QObject_GcTest.properties.push_back(MetaProperty{"ChildObject", "QObject*", offsetof(QObject_GcTest, ChildObject), MetaMap{} });
     TypeInfo& T_QWorld = R.add_type("QWorld", sizeof(QWorld));
     T_QWorld.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
-    T_QWorld.properties.push_back(MetaProperty{"Objects", "std::vector<QObject*>", offsetof(QWorld, Objects), MetaMap{} });
     T_QWorld.properties.push_back(MetaProperty{"SingleObject", "QObject*", offsetof(QWorld, SingleObject), MetaMap{} });
+    T_QWorld.properties.push_back(MetaProperty{"SingleObject2", "QObject*", offsetof(QWorld, SingleObject2), MetaMap{} });
 }

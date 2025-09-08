@@ -8,12 +8,14 @@
 class QWorld : public QObject
 {
 public:
-
-    static QWorld* Get() { static QWorld W; return &W;}
-    
-    QPROPERTY()
-    std::vector<QObject*> Objects;
+    QWorld();
+    ~QWorld() override = default;
 
     QPROPERTY()
     QObject* SingleObject;
+
+    QPROPERTY()
+    QObject* SingleObject2;
 };
+
+QWorld* GetWorld();

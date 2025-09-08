@@ -27,7 +27,7 @@ namespace QGC
             }
             
             T* Obj = new T(std::forward<Args>(args)...);
-
+            
             const uint64_t id = NextGlobalId.fetch_add(1, std::memory_order_relaxed) + 1; // start at 1
             Obj->SetObjectId(id);
             
@@ -48,6 +48,7 @@ namespace QGC
         void Initialize();
         
         // Roots
+        QObject* GetRoot() const { return Roots.empty() ? nullptr : Roots[0]; }
         void AddRoot(QObject* Obj);
         void RemoveRoot(QObject* Obj);
 
@@ -108,5 +109,7 @@ namespace QGC
         double Interval = 2.0;
 
         static inline std::atomic<uint64_t> NextGlobalId {0};
+
+        static unsigned char* BytePtr(void* p) { return static_cast<unsigned char*>(p); }
     };
 }

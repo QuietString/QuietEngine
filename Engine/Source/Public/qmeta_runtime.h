@@ -79,8 +79,13 @@ using MetaMap = std::unordered_map<std::string, std::string>;
 struct MetaProperty {
     std::string name;
     std::string type;
-    std::size_t offset = 0;
+    std::size_t offset; // legacy; can be 0 when using the visitor
     MetaMap     meta;
+
+    // New: visit embedded QObject* references in this property.
+    // The callback receives a reference to the pointer so GC can read/write it.
+    //using VisitQObjectPtrsFn = void(*)(void* obj, void(*cb)(QObject*&));
+    //VisitQObjectPtrsFn visit_qobject_ptrs = nullptr;
 };
 
 struct MetaParam {

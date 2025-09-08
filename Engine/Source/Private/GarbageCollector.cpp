@@ -3,6 +3,7 @@
 #include <sstream>
 #include <algorithm>
 
+#include "Object_GcTest.h"
 #include "CoreObjects/Public/World.h"
 
 using qmeta::Registry;
@@ -105,7 +106,7 @@ namespace QGC
         unsigned char* Base = BytePtr(Obj);
         for (const MetaProperty& P : Ti.properties)
         {
-            if (!IsQObjectPointerType(P.type)) continue;
+            if (!IsPointerProperty(P.type)) continue;
 
             QObject** Slot = reinterpret_cast<QObject**>(Base + P.offset);
             if (Slot && *Slot)

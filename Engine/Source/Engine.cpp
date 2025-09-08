@@ -5,7 +5,9 @@
 
 #include "GarbageCollector.h"
 #include "Module.h"
+#include "Object_GcTest.h"
 #include "Runtime.h"
+#include "CoreObjects/Public/World.h"
 
 // Force-link the Game static library so its auto-registrar runs
 Q_FORCE_LINK_MODULE(Game);
@@ -34,6 +36,17 @@ int main(int argc, char* argv[])
     GC.Initialize();
     GC.SetAutoInterval(0);
 
+    auto* A = GC.NewObject<QObject_GcTest>();
+    auto* B = GC.NewObject<QObject_GcTest>();
+    auto* C = GC.NewObject<QObject_GcTest>();
+    QWorld* World = static_cast<QWorld*>(GC.GetRoot());
+    if (World)
+    {
+        World->SingleObject = A;
+    }
+    A->ChildObject = B;
+    B->ChildObject = C;
+    
     // BeginPlay() all modules.
     M.BeginPlayAll();
     
