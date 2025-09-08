@@ -35,13 +35,11 @@ public:
     {
         std::cout << "Game begin play" << std::endl;
 
-        //Demo::GenerateObjectsForGcTest()
-        Demo::RunGCTestSimple();
+        Demo::GenerateObjectsForGcTest();
     }
     
     virtual void Tick(double DeltaSeconds) override
     {
-        std::cout << "Game tick" << std::endl;
     }
 };
 

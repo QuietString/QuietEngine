@@ -7,6 +7,6 @@
 class QObject_GcTest : public QObject
 {
 public:
-    //QPROPERTY()
-    //std::vector<QObject*> ChildObjects;
+    QPROPERTY()
+    std::vector<QObject*> ChildObjects;
 };

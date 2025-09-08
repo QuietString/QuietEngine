@@ -26,7 +26,8 @@ namespace QGC
         N.Id = Id;
         Objects.emplace(Obj, N);
 
-        ById_[Id] = Obj;
+        ById[Id] = Obj;
+        NameToObjectMap[Name] = Obj;
     }
 
     QObject* GcManager::NewByTypeName(const std::string& TypeName, const std::string& Name)
@@ -204,10 +205,10 @@ namespace QGC
             if (It != Objects.end())
             {
                 const uint64_t ID = It->second.Id;
-                auto IterId = ById_.find(ID);
-                if (IterId != ById_.end() && IterId->second == D)
+                auto IterId = ById.find(ID);
+                if (IterId != ById.end() && IterId->second == D)
                 {
-                    ById_.erase(IterId);
+                    ById.erase(IterId);
                 }
    
                 delete It->second.Ptr;
@@ -225,14 +226,57 @@ namespace QGC
         {
             const Node& N = kv.second;
             const std::string& Nm = kv.first->GetDebugName();
-            std::cout << " - Name=" << (Nm.empty() ? "(unamed)" : Nm) << " Type=" << N.Ti->name << std::endl;
+            std::cout << " - Name=" << (Nm.empty() ? "(Unnamed)" : Nm) << " Type=" << N.Ti->name << std::endl;
         }
     }
-    
+
+    void GcManager::ListPropertiesByDebugName(const std::string& Name) const
+    {
+        QObject* Obj = FindByDebugName(Name);
+        if (!Obj)
+        {
+            std::cout << "Not found: " << Name << "\n"; return;
+        }
+        
+        auto It = Objects.find(Obj);
+        const TypeInfo& Ti = *It->second.Ti;
+        
+        std::cout << "[Properties] " << Name << " : " << Ti.name << "\n";
+        for (auto& p : Ti.properties)
+        {
+            std::cout << " - " << p.type << " " << p.name << " (offset " << p.offset << ")" << std::endl;
+        }
+    }
+
+    void GcManager::ListFunctionsByDebugName(const std::string& Name) const
+    {
+        QObject* Obj = FindByDebugName(Name);
+        if (!Obj) { std::cout << "Not found: " << Name << "\n"; return; }
+        auto It = Objects.find(Obj);
+        const TypeInfo& Ti = *It->second.Ti;
+        std::cout << "[Functions] " << Name << " : " << Ti.name << "\n";
+        for (auto& MemberFunc : Ti.functions)
+        {
+            std::cout << " - " << MemberFunc.return_type << " " << MemberFunc.name << "(";
+            for (size_t i = 0; i < MemberFunc.params.size(); ++i)
+            {
+                if (i) std::cout << ", ";
+                std::cout << MemberFunc.params[i].type << " " << MemberFunc.params[i].name;
+            }
+            std::cout << ")\n";
+        }
+    }
+
     QObject* GcManager::FindById(uint64_t Id) const
     {
-        auto It = ById_.find(Id);
-        return (It == ById_.end()) ? nullptr : It->second;  
+        auto It = ById.find(Id);
+        return (It == ById.end()) ? nullptr : It->second;  
+    }
+
+    QObject* GcManager::FindByDebugName(const std::string& DebugName) const
+    {
+        auto It = NameToObjectMap.find(DebugName);
+        return (It == NameToObjectMap.end()) ? nullptr : It->second; 
     }
 
     const TypeInfo* GcManager::GetTypeInfo(const QObject* Obj) const

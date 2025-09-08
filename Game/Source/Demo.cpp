@@ -14,7 +14,7 @@
 
 void Demo::RunDemo()
 {
-    Player P;
+    QPlayer P;
     const qmeta::TypeInfo* TI = qmeta::GetRegistry().find("Player");
 
     if (!TI)
@@ -41,7 +41,7 @@ void Demo::RunSaveLoad()
     const qmeta::TypeInfo* TI = R.find("Player");
     if (!TI) return;
     
-    Player P{};
+    QPlayer P{};
     P.Health = 150;
     P.SetWalkSpeed(720.0f);
     
@@ -52,7 +52,7 @@ void Demo::RunSaveLoad()
     qasset::SaveOrThrow(&P, *TI, Dir, "PlayerSample.qasset");
     
     // Load into another instance
-    Player Loaded{};
+    QPlayer Loaded{};
     qasset::LoadOrThrow(&Loaded, *TI, Dir / "PlayerSample.qasset");
     
     if (!TI)
@@ -93,9 +93,9 @@ void Demo::RunGCTestSimple()
     auto& GC = GcManager::Get();
     
     // Create a simple chain: A -> B -> C
-    auto* A = GC.NewObject<Player>();
-    auto* B = GC.NewObject<Player>();
-    auto* C = GC.NewObject<Player>();
+    auto* A = GC.NewObject<QPlayer>();
+    auto* B = GC.NewObject<QPlayer>();
+    auto* C = GC.NewObject<QPlayer>();
     
     A->Friend = B;
     B->Friend = C;
@@ -106,15 +106,19 @@ void Demo::GenerateObjectsForGcTest()
     using namespace QGC;
 
     auto& GC = GcManager::Get();
+
+    QWorld* World = QWorld::Get();
     
-    // auto* A = GC.NewObject<QObject_GcTest>();
-    // auto* B = GC.NewObject<QObject_GcTest>();
-    // auto* C = GC.NewObject<QObject_GcTest>();
-    // auto* D = GC.NewObject<QObject_GcTest>();
-    // auto* E = GC.NewObject<QObject_GcTest>();
-    //
-    // A->ChildObjects.push_back(B);
-    // A->ChildObjects.push_back(C);
-    // B->ChildObjects.push_back(D);
-    // B->ChildObjects.push_back(E);
+    auto* A = GC.NewObject<QObject_GcTest>();
+    auto* B = GC.NewObject<QObject_GcTest>();
+    auto* C = GC.NewObject<QObject_GcTest>();
+    auto* D = GC.NewObject<QObject_GcTest>();
+    auto* E = GC.NewObject<QObject_GcTest>();
+    
+    World->SingleObject = B;
+    A->ChildObjects.push_back(C);
+    B->ChildObjects.push_back(D);
+    B->ChildObjects.push_back(E);
+
+    World->Objects.push_back(A);
 }

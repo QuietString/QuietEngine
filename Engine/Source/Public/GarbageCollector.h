@@ -58,7 +58,9 @@ namespace QGC
 
         // Debug utilities
         void ListObjects() const;
- 
+        void ListPropertiesByDebugName(const std::string& Name) const;
+        void ListFunctionsByDebugName(const std::string& Name) const;
+        
         // Fast ID-based helpers
         bool Link(uint64_t OwnerId, const std::string& Property, uint64_t TargetId);
         bool Unlink(uint64_t OwnerId, const std::string& Property);
@@ -71,6 +73,7 @@ namespace QGC
         
         // Lookup
         QObject* FindById(uint64_t Id) const;
+        QObject* FindByDebugName(const std::string& DebugName) const;
         
         // Access stored TypeInfo for an object
         const qmeta::TypeInfo* GetTypeInfo(const QObject* Obj) const;
@@ -95,7 +98,8 @@ namespace QGC
         
     private:
         std::unordered_map<QObject*, Node> Objects;
-        std::unordered_map<uint64_t, QObject*>    ById_;
+        std::unordered_map<uint64_t, QObject*> ById;
+        std::unordered_map<std::string, QObject*> NameToObjectMap;
         
         std::vector<QObject*> Roots;
         double Accumulated = 0.0;

@@ -3,7 +3,7 @@
 #include "qmeta_macros.h"
 
 
-class Player : public QObject
+class QPlayer : public QObject
 {
 public:
     QPROPERTY()
@@ -13,7 +13,7 @@ public:
     float WalkSpeed = 600.0f;
     
     QPROPERTY()
-    Player* Friend = nullptr;
+    QPlayer* Friend = nullptr;
     
     QFUNCTION()
     int AddHealth(int Delta);

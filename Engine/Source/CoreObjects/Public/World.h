@@ -9,8 +9,11 @@ class QWorld : public QObject
 {
 public:
 
-    static QWorld& Get() { static QWorld W; return W;}
+    static QWorld* Get() { static QWorld W; return &W;}
     
     QPROPERTY()
     std::vector<QObject*> Objects;
+
+    QPROPERTY()
+    QObject* SingleObject;
 };

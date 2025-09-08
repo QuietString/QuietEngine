@@ -53,6 +53,7 @@
 
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
         <ClCompile>
+            <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
             <PrecompiledHeader>NotUsing</PrecompiledHeader>
             <WarningLevel>Level3</WarningLevel>
             <Optimization>Disabled</Optimization>
@@ -145,7 +146,6 @@
           <UseFullPaths>true</UseFullPaths>
           <WarningLevel>Level3</WarningLevel>
           <XMLDocumentationFileName>x64\Debug\</XMLDocumentationFileName>
-          <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
           <IntelJCCErratum>false</IntelJCCErratum>
           <BuildStlModules>false</BuildStlModules>
           <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
@@ -154,12 +154,6 @@
           <DisableAnalyzeExternal>false</DisableAnalyzeExternal>
           <PreprocessorDefinitions>_DEBUG;_CONSOLE;_UNICODE;UNICODE;</PreprocessorDefinitions>
           <SDLCheck>true</SDLCheck>
-          <AdditionalIncludeDirectories>
-                C:\Users\quietstring\workspace\QuietEngine\Game\Source;
-                C:\Users\quietstring\workspace\QuietEngine\Game\Intermediate\Include\QHT;
-                C:\Users\quietstring\workspace\QuietEngine\Engine\Source\Public;
-                
-            </AdditionalIncludeDirectories>
           <LinkCompiled>true</LinkCompiled>
         </ClCompile>
         <ClCompile Include="Source\Core\QHT_Bridge_Game.cpp">
@@ -227,7 +221,6 @@
           <UseFullPaths>true</UseFullPaths>
           <WarningLevel>Level3</WarningLevel>
           <XMLDocumentationFileName>x64\Debug\</XMLDocumentationFileName>
-          <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
           <IntelJCCErratum>false</IntelJCCErratum>
           <BuildStlModules>false</BuildStlModules>
           <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
@@ -236,12 +229,6 @@
           <DisableAnalyzeExternal>false</DisableAnalyzeExternal>
           <PreprocessorDefinitions>_DEBUG;_CONSOLE;_UNICODE;UNICODE;</PreprocessorDefinitions>
           <SDLCheck>true</SDLCheck>
-          <AdditionalIncludeDirectories>
-                C:\Users\quietstring\workspace\QuietEngine\Game\Source;
-                C:\Users\quietstring\workspace\QuietEngine\Game\Intermediate\Include\QHT;
-                C:\Users\quietstring\workspace\QuietEngine\Engine\Source\Public;
-                
-            </AdditionalIncludeDirectories>
           <LinkCompiled>true</LinkCompiled>
         </ClCompile>
         <ClCompile Include="Source\Demo.cpp" />
