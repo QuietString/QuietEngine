@@ -6,8 +6,10 @@
 #include "Asset.h"
 #include "Controller.h"
 #include "GarbageCollector.h"
+#include "Object_GcTest.h"
 #include "qmeta_runtime.h"
 #include "Runtime.h"
+#include "../../Engine/Source/CoreObjects/Public/World.h"
 #include "Classes/Player.h"
 
 void Demo::RunDemo()
@@ -38,27 +40,27 @@ void Demo::RunSaveLoad()
     qmeta::Registry& R = qmeta::GetRegistry();
     const qmeta::TypeInfo* TI = R.find("Player");
     if (!TI) return;
-
+    
     Player P{};
     P.Health = 150;
     P.SetWalkSpeed(720.0f);
-
+    
     // Decide the default dir from module meta (Game/Contents or Engine/Contents)
     std::filesystem::path Dir = qasset::DefaultAssetDirFor(*TI);
     
     // Save as Game/Contents/PlayerSample.qasset (relative to working dir)
     qasset::SaveOrThrow(&P, *TI, Dir, "PlayerSample.qasset");
-
+    
     // Load into another instance
     Player Loaded{};
     qasset::LoadOrThrow(&Loaded, *TI, Dir / "PlayerSample.qasset");
-
+    
     if (!TI)
     {
         printf("No Player Info");
         return;
     }
-
+    
     // Set property by name
     void* Ptr = qmeta::GetPropertyPtr(&P, *TI, "Health");
     if (Ptr) *static_cast<int*>(Ptr) = 150;
@@ -69,10 +71,10 @@ void Demo::RunSaveLoad()
     
     const qmeta::TypeInfo* ControllerInfo = R.find("Controller");
     if (!ControllerInfo) return;
-
+    
     Controller C{};
     printf("Original ID: %d\n", C.ControllerID);
-
+    
     // Decide the default dir from module meta (Game/Contents or Engine/Contents)
     std::filesystem::path Dir2 = qasset::DefaultAssetDirFor(*ControllerInfo);
     
@@ -84,17 +86,35 @@ void Demo::RunSaveLoad()
     printf("Loaded ID: %d\n", Loaded2.ControllerID);
 }
 
-void Demo::RunGCTest()
+void Demo::RunGCTestSimple()
+{
+    using namespace QGC;
+    
+    auto& GC = GcManager::Get();
+    
+    // Create a simple chain: A -> B -> C
+    auto* A = GC.NewObject<Player>();
+    auto* B = GC.NewObject<Player>();
+    auto* C = GC.NewObject<Player>();
+    
+    A->Friend = B;
+    B->Friend = C;
+}
+
+void Demo::GenerateObjectsForGcTest()
 {
     using namespace QGC;
 
     auto& GC = GcManager::Get();
-
-    // Create a simple chain: A -> B -> C
-    auto* A = GC.NewObject<Player>("A");
-    auto* B = GC.NewObject<Player>("B");
-    auto* C = GC.NewObject<Player>("C");
-
-    A->Friend = B;
-    B->Friend = C;
+    
+    // auto* A = GC.NewObject<QObject_GcTest>();
+    // auto* B = GC.NewObject<QObject_GcTest>();
+    // auto* C = GC.NewObject<QObject_GcTest>();
+    // auto* D = GC.NewObject<QObject_GcTest>();
+    // auto* E = GC.NewObject<QObject_GcTest>();
+    //
+    // A->ChildObjects.push_back(B);
+    // A->ChildObjects.push_back(C);
+    // B->ChildObjects.push_back(D);
+    // B->ChildObjects.push_back(E);
 }

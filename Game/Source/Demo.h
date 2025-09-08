@@ -6,5 +6,7 @@ namespace Demo
 
     void RunSaveLoad();
 
-    void RunGCTest();
+    void RunGCTestSimple();
+
+    void GenerateObjectsForGcTest();
 }

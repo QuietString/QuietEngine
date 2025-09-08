@@ -234,69 +234,66 @@ bool qruntime::ExecuteCommand(const std::string& Line)
         }
         else if (cmd == "props" && tokens.size() >= 2)
         {
-            GC.ListProperties(tokens[1]);
+            std::cout << "[props] not implemented for now.\n";
+            //GC.ListPropertiesByName(tokens[1]);
             return true;
         }
         else if (cmd == "funcs" && tokens.size() >= 2)
         {
-            GC.ListFunctions(tokens[1]);
+            std::cout << "[func] not implemented for now.\n";
+            //GC.ListFunctionsByName(tokens[1]);
             return true;
         }
         else if (cmd == "new" && tokens.size() >= 3)
         {
-            GC.NewByTypeName(tokens[1], tokens[2]);
-            return true;
-        }
-        else if (cmd == "link" && tokens.size() >= 4)
-        {
-            GC.Link(tokens[1], tokens[2], tokens[3]);
-            return true;
-        }
-        else if (cmd == "unlink" && tokens.size() >= 3)
-        {
-            GC.Unlink(tokens[1], tokens[2]);
+            std::cout << "[new] not implemented for now.\n";
             return true;
         }
         else if (cmd == "set" && tokens.size() >= 4)
         {
-            GC.SetPropertyFromString(tokens[1], tokens[2], tokens[3]);
+            std::cout << "[set] not implemented for now.\n";
+            //GC.SetPropertyFromString(tokens[1], tokens[2], tokens[3]);
             return true;
         }
         else if (cmd == "call" && tokens.size() >= 3)
         {
-            std::vector<qmeta::Variant> args;
-            for (size_t i = 3; i < tokens.size(); ++i)
-            {
-                const std::string& a = tokens[i];
-                // naive parse: int/float/bool/string
-                if (a == "true" || a == "false")
-                {
-                    args.emplace_back(a == "true");
-                }
-                else if (a.find('.') != std::string::npos)
-                {
-                    args.emplace_back(std::stod(a));
-                }
-                else
-                {
-                    // try int
-                    try { args.emplace_back(std::stoll(a)); }
-                    catch (...) { args.emplace_back(a); }
-                }
-            }
-            GC.Call(tokens[1], tokens[2], args);
+            std::cout << "[cave] is not implemented for now.\n";
+            // std::vector<qmeta::Variant> args;
+            // for (size_t i = 3; i < tokens.size(); ++i)
+            // {
+            //     const std::string& a = tokens[i];
+            //     // naive parse: int/float/bool/string
+            //     if (a == "true" || a == "false")
+            //     {
+            //         args.emplace_back(a == "true");
+            //     }
+            //     else if (a.find('.') != std::string::npos)
+            //     {
+            //         args.emplace_back(std::stod(a));
+            //     }
+            //     else
+            //     {
+            //         // try int
+            //         try { args.emplace_back(std::stoll(a)); }
+            //         catch (...) { args.emplace_back(a); }
+            //     }
+            // }
+            // GC.Call(tokens[1], tokens[2], args);
             return true;
         }
         else if (cmd == "save" && tokens.size() >= 2)
         {
-            const std::string file = (tokens.size() >= 3 ? tokens[2] : "");
-            GC.Save(tokens[1], file);
+            std::cout << "[save] is not implemented for now.\n";
+
+            //const std::string file = (tokens.size() >= 3 ? tokens[2] : "");
+            //GC.Save(tokens[1], file);
             return true;
         }
         else if (cmd == "load" && tokens.size() >= 3)
         {
-            const std::string file = (tokens.size() >= 4 ? tokens[3] : "");
-            GC.Load(tokens[1], tokens[2], file);
+            std::cout << "[load] is not implemented for now.\n";
+            //const std::string file = (tokens.size() >= 4 ? tokens[3] : "");
+            //GC.Load(tokens[1], tokens[2], file);
             return true;
         }
     }

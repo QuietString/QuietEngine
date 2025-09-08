@@ -18,22 +18,15 @@ namespace QGC
         return G;
     }
 
-    void GcManager::RegisterInternal(QObject* Obj, const TypeInfo& Ti, const std::string& Name)
+    void GcManager::RegisterInternal(QObject* Obj, const TypeInfo& Ti, const std::string& Name, uint64_t Id)
     {
         Node N;
         N.Ptr = Obj;
         N.Ti = &Ti;
-        N.Name = Name;
-        Objects_.emplace(Obj, N);
-        if (!Name.empty())
-        {
-            //ByName_[Name] = Obj;
-            //std::cout << "[GC] Registered " << Name << " : " << Ti.name << std::endl;
-        }
-        else
-        {
-            std::cout << "[GC] Warning: unnamed object " << Obj << std::endl; 
-        }
+        N.Id = Id;
+        Objects.emplace(Obj, N);
+
+        ById_[Id] = Obj;
     }
 
     QObject* GcManager::NewByTypeName(const std::string& TypeName, const std::string& Name)
@@ -52,8 +45,8 @@ namespace QGC
 
     void GcManager::Initialize()
     {
-        auto* P = NewObject<QWorld>("Root");
-        AddRoot(P);
+        auto* InitialRoot = NewObject<QWorld>();
+        AddRoot(InitialRoot);
     }
 
     void GcManager::AddRoot(QObject* Obj)
@@ -116,14 +109,19 @@ namespace QGC
             QObject** Slot = reinterpret_cast<QObject**>(Base + P.offset);
             if (Slot && *Slot)
             {
-                // Only follow if the child is tracked by the GC
-                auto It = Objects_.find(*Slot);
-                if (It != Objects_.end())
+                // Only follow if the GC tracks the child
+                auto It = Objects.find(*Slot);
+                if (It != Objects.end())
                 {
                     OutChildren.push_back(*Slot);
                 }
             }
         }
+    }
+
+    bool GcManager::IsPointerProperty(const std::string& TypeStr)
+    {
+        return TypeStr.find('*') != std::string::npos;
     }
 
     void GcManager::Mark(QObject* Root)
@@ -136,9 +134,9 @@ namespace QGC
             QObject* Cur = Stack.back();
             Stack.pop_back();
 
-            auto it = Objects_.find(Cur);
-            if (it == Objects_.end()) continue;
-            Node& N = it->second;
+            auto It = Objects.find(Cur);
+            if (It == Objects.end()) continue;
+            Node& N = It->second;
             if (N.Marked) continue;
 
             N.Marked = true;
@@ -155,7 +153,7 @@ namespace QGC
     void GcManager::Collect()
     {
         // 1) Clear marks
-        for (auto& Pair : Objects_)
+        for (auto& Pair : Objects)
         {
             Pair.second.Marked = false;
         }
@@ -166,10 +164,11 @@ namespace QGC
             Mark(R);
         }
 
-        // 3) Build list of dead objects
+        // 3) Build a list of dead objects
         std::vector<QObject*> Dead;
-        Dead.reserve(Objects_.size());
-        for (auto& Pair : Objects_)
+        Dead.reserve(Objects.size());
+        
+        for (auto& Pair : Objects)
         {
             if (!Pair.second.Marked)
             {
@@ -178,7 +177,7 @@ namespace QGC
         }
 
         // 4) Null-out references to dead objects in survivors to avoid dangling pointers
-        for (auto& Pair : Objects_)
+        for (auto& Pair : Objects)
         {
             if (!Pair.second.Marked) continue;
             QObject* Owner = Pair.first;
@@ -190,7 +189,7 @@ namespace QGC
                 QObject** Slot = reinterpret_cast<QObject**>(Base + P.offset);
                 if (Slot && *Slot)
                 {
-                    if (Objects_.count(*Slot) && !Objects_.at(*Slot).Marked)
+                    if (Objects.count(*Slot) && !Objects.at(*Slot).Marked)
                     {
                         *Slot = nullptr;
                     }
@@ -201,132 +200,100 @@ namespace QGC
         // 5) Delete dead and remove from maps
         for (QObject* D : Dead)
         {
-            auto It = Objects_.find(D);
-            if (It != Objects_.end())
+            auto It = Objects.find(D);
+            if (It != Objects.end())
             {
-                if (!It->second.Name.empty())
+                const uint64_t ID = It->second.Id;
+                auto IterId = ById_.find(ID);
+                if (IterId != ById_.end() && IterId->second == D)
                 {
-                    auto itn = ByName_.find(It->second.Name);
-                    if (itn != ByName_.end() && itn->second == D)
-                    {
-                        ByName_.erase(itn);
-                    }
+                    ById_.erase(IterId);
                 }
+   
                 delete It->second.Ptr;
-                Objects_.erase(It);
+                Objects.erase(It);
             }
         }
 
-        std::cout << "[GC] Collected " << Dead.size() << " objects, alive=" << Objects_.size() << std::endl;
+        std::cout << "[GC] Collected " << Dead.size() << " objects, alive=" << Objects.size() << std::endl;
     }
 
     void GcManager::ListObjects() const
     {
         std::cout << "[Objects]\n";
-        for (auto& kv : Objects_)
+        for (auto& kv : Objects)
         {
             const Node& N = kv.second;
-            std::cout << " - " << (N.Name.empty() ? "(unnamed)" : N.Name) << " : " << N.Ti->name << std::endl;
+            const std::string& Nm = kv.first->GetDebugName();
+            std::cout << " - Name=" << (Nm.empty() ? "(unamed)" : Nm) << " Type=" << N.Ti->name << std::endl;
         }
     }
-
-    void GcManager::ListProperties(const std::string& Name) const
+    
+    QObject* GcManager::FindById(uint64_t Id) const
     {
-        QObject* Obj = FindByName(Name);
-        if (!Obj) { std::cout << "Not found: " << Name << "\n"; return; }
-        auto it = Objects_.find(Obj);
-        const TypeInfo& Ti = *it->second.Ti;
-        std::cout << "[Props] " << Name << " : " << Ti.name << "\n";
-        for (auto& p : Ti.properties)
-        {
-            std::cout << " - " << p.type << " " << p.name << " (offset " << p.offset << ")" << std::endl;
-        }
-    }
-
-    void GcManager::ListFunctions(const std::string& Name) const
-    {
-        QObject* Obj = FindByName(Name);
-        if (!Obj) { std::cout << "Not found: " << Name << "\n"; return; }
-        auto it = Objects_.find(Obj);
-        const TypeInfo& Ti = *it->second.Ti;
-        std::cout << "[Funcs] " << Name << " : " << Ti.name << "\n";
-        for (auto& f : Ti.functions)
-        {
-            std::cout << " - " << f.return_type << " " << f.name << "(";
-            for (size_t i = 0; i < f.params.size(); ++i)
-            {
-                if (i) std::cout << ", ";
-                std::cout << f.params[i].type << " " << f.params[i].name;
-            }
-            std::cout << ")\n";
-        }
-    }
-
-    QObject* GcManager::FindByName(const std::string& Name) const
-    {
-        auto it = ByName_.find(Name);
-        return it == ByName_.end() ? nullptr : it->second;
+        auto It = ById_.find(Id);
+        return (It == ById_.end()) ? nullptr : It->second;  
     }
 
     const TypeInfo* GcManager::GetTypeInfo(const QObject* Obj) const
     {
-        auto It = Objects_.find(const_cast<QObject*>(Obj));
-        return It == Objects_.end() ? nullptr : It->second.Ti;
+        auto It = Objects.find(const_cast<QObject*>(Obj));
+        return It == Objects.end() ? nullptr : It->second.Ti;
     }
 
-    bool GcManager::Link(const std::string& OwnerName, const std::string& Property, const std::string& TargetName)
+    bool GcManager::Link(uint64_t OwnerId, const std::string& Property, uint64_t TargetId)
     {
-        QObject* Owner = FindByName(OwnerName);
-        QObject* Target = FindByName(TargetName);
+        QObject* Owner = FindById(OwnerId);
+        QObject* Target = FindById(TargetId);
         if (!Owner || !Target) return false;
-        auto ito = Objects_.find(Owner);
-        if (ito == Objects_.end()) return false;
+
+        auto ito = Objects.find(Owner);
         unsigned char* Base = BytePtr(Owner);
         for (auto& p : ito->second.Ti->properties)
         {
-            if (p.name == Property && IsQObjectPointerType(p.type))
+            if (p.name == Property && IsPointerProperty(p.type))
             {
-                auto* slot = reinterpret_cast<QObject**>(Base + p.offset);
-                *slot = Target;
-                std::cout << "[Link] " << OwnerName << "." << Property << " -> " << TargetName << "\n";
+                auto* Slot = reinterpret_cast<QObject**>(Base + p.offset);
+                *Slot = Target;
+                std::cout << "[Link] id=" << OwnerId << "." << Property << " -> id=" << TargetId << "\n";
                 return true;
             }
         }
         return false;
     }
 
-    bool GcManager::Unlink(const std::string& OwnerName, const std::string& Property)
+    bool GcManager::Unlink(uint64_t OwnerId, const std::string& Property)
     {
-        QObject* Owner = FindByName(OwnerName);
+        QObject* Owner = FindById(OwnerId);
         if (!Owner) return false;
-        auto ito = Objects_.find(Owner);
-        if (ito == Objects_.end()) return false;
+
+        auto ito = Objects.find(Owner);
         unsigned char* Base = BytePtr(Owner);
         for (auto& p : ito->second.Ti->properties)
         {
-            if (p.name == Property && IsQObjectPointerType(p.type))
+            if (p.name == Property && IsPointerProperty(p.type))
             {
-                auto* slot = reinterpret_cast<QObject**>(Base + p.offset);
-                *slot = nullptr;
-                std::cout << "[Unlink] " << OwnerName << "." << Property << " -> null\n";
+                auto* Slot = reinterpret_cast<QObject**>(Base + p.offset);
+                *Slot = nullptr;
+                std::cout << "[Unlink] Id=" << OwnerId << "." << Property << " -> null\n";
                 return true;
             }
         }
         return false;
     }
 
-    bool GcManager::SetPropertyFromString(const std::string& Name, const std::string& Property, const std::string& Value)
+    bool GcManager::SetPropertyFromStringById(uint64_t Id, const std::string& Property, const std::string& Value)
     {
-        QObject* Obj = FindByName(Name);
+        QObject* Obj = FindById(Id);
         if (!Obj) return false;
-        auto It = Objects_.find(Obj);
-        if (It == Objects_.end()) return false;
+        auto It = Objects.find(Obj);
+        if (It == Objects.end()) return false;
         unsigned char* Base = BytePtr(Obj);
 
         for (auto& p : It->second.Ti->properties)
         {
             if (p.name != Property) continue;
-            // very small set: int/float/bool/string
+
             if (p.type == "int" || p.type == "int32_t")
             {
                 *reinterpret_cast<int*>(Base + p.offset) = std::stoi(Value);
@@ -356,41 +323,40 @@ namespace QGC
         return false;
     }
 
-    qmeta::Variant GcManager::Call(const std::string& Name, const std::string& Function, const std::vector<qmeta::Variant>& Args)
+    qmeta::Variant GcManager::CallById(uint64_t Id, const std::string& Function, const std::vector<qmeta::Variant>& Args)
     {
-        QObject* Obj = FindByName(Name);
-        if (!Obj) throw std::runtime_error("Object not found: " + Name);
-        auto it = Objects_.find(Obj);
-        if (it == Objects_.end()) throw std::runtime_error("Not GC-managed: " + Name);
-        return qmeta::CallByName(Obj, *it->second.Ti, Function, Args);
+        QObject* Obj = FindById(Id);
+        if (!Obj) throw std::runtime_error("Object not found by Id");
+        auto It = Objects.find(Obj);
+        if (It == Objects.end()) throw std::runtime_error("Not GC-managed");
+        return qmeta::CallByName(Obj, *It->second.Ti, Function, Args);
     }
 
-    bool GcManager::Save(const std::string& Name, const std::string& FileNameIfAny)
+    bool GcManager::Save(uint64_t Id, const std::string& FileNameIfAny)
     {
-        QObject* Obj = FindByName(Name);
+        QObject* Obj = FindById(Id);
         if (!Obj) return false;
-        auto it = Objects_.find(Obj);
-        if (it == Objects_.end()) return false;
+        auto It = Objects.find(Obj);
+        if (It == Objects.end()) return false;
 
-        auto dir = qasset::DefaultAssetDirFor(*it->second.Ti);
-        const std::string fn = FileNameIfAny.empty() ? (it->second.Ti->name + ".quasset") : FileNameIfAny;
-        qasset::SaveOrThrow(Obj, *it->second.Ti, dir, fn);
-        std::cout << "[Save] " << Name << " -> " << (dir / fn).string() << std::endl;
+        auto Dir = qasset::DefaultAssetDirFor(*It->second.Ti);
+        const std::string Fn = FileNameIfAny.empty() ? (It->second.Ti->name + ".qasset") : FileNameIfAny;
+        qasset::SaveOrThrow(Obj, *It->second.Ti, Dir, Fn);
+        std::cout << "[Save] Id=" << Id << " -> " << (Dir / Fn).string() << "\n";
         return true;
     }
 
-    bool GcManager::Load(const std::string& TypeName, const std::string& Name, const std::string& FileNameIfAny)
+    bool GcManager::Load(uint64_t Id, const std::string& FileNameIfAny)
     {
-        QObject* Obj = FindByName(Name);
+        QObject* Obj = FindById(Id);
         if (!Obj) return false;
-        auto it = Objects_.find(Obj);
-        if (it == Objects_.end()) return false;
-        if (it->second.Ti->name != TypeName) return false;
+        auto It = Objects.find(Obj);
+        if (It == Objects.end()) return false;
 
-        auto dir = qasset::DefaultAssetDirFor(*it->second.Ti);
-        const std::string fn = FileNameIfAny.empty() ? (it->second.Ti->name + ".quasset") : FileNameIfAny;
-        qasset::LoadOrThrow(Obj, *it->second.Ti, dir / fn);
-        std::cout << "[Load] " << Name << " <- " << (dir / fn).string() << std::endl;
+        auto Dir = qasset::DefaultAssetDirFor(*It->second.Ti);
+        const std::string Fn = FileNameIfAny.empty() ? (It->second.Ti->name + ".qasset") : FileNameIfAny;
+        qasset::LoadOrThrow(Obj, *It->second.Ti, Dir / Fn);
+        std::cout << "[Load] Id=" << Id << " <- " << (Dir / Fn).string() << "\n";
         return true;
     }
 }

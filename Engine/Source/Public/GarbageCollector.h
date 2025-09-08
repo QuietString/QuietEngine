@@ -7,7 +7,6 @@
 #include "Object.h"
 #include "qmeta_runtime.h"
 #include "Asset.h"
-#include "Object.h"
 #include "TypeName.h"
 
 namespace QGC
@@ -18,7 +17,7 @@ namespace QGC
         static GcManager& Get();
 
         template <class T, class... Args>
-        T* NewObject(const std::string& Name, Args&&... args)
+        T* NewObject(Args&&... args)
         {
             static_assert(std::is_base_of_v<QObject, T>, "T must derive QObject");
             const qmeta::TypeInfo* Ti = qmeta::GetRegistry().find(qtype::TypeName<T>());
@@ -26,9 +25,20 @@ namespace QGC
             {
                 throw std::runtime_error(std::string("TypeInfo not found for ") + std::string(qtype::TypeName<T>()));
             }
+            
             T* Obj = new T(std::forward<Args>(args)...);
-            Obj->SetDebugName(Name);
-            RegisterInternal(Obj, *Ti, Name);
+
+            const uint64_t id = NextGlobalId.fetch_add(1, std::memory_order_relaxed) + 1; // start at 1
+            Obj->SetObjectId(id);
+            
+            // Auto debug-name: ClassName_ID
+            std::string AutoName;
+            AutoName.reserve(Ti->name.size() + 20);
+            AutoName.append(Ti->name).push_back('_');
+            AutoName.append(std::to_string(id));
+            Obj->SetDebugName(AutoName);
+            
+            RegisterInternal(Obj, *Ti, AutoName, id);
             return Obj;
         }
 
@@ -48,22 +58,20 @@ namespace QGC
 
         // Debug utilities
         void ListObjects() const;
-        void ListProperties(const std::string& Name) const;
-        void ListFunctions(const std::string& Name) const;
-
-        // High-level helpers used by console
-        bool Link(const std::string& OwnerName, const std::string& Property, const std::string& TargetName);
-        bool Unlink(const std::string& OwnerName, const std::string& Property);
-        bool SetPropertyFromString(const std::string& Name, const std::string& Property, const std::string& Value);
-        qmeta::Variant Call(const std::string& Name, const std::string& Function, const std::vector<qmeta::Variant>& Args);
+ 
+        // Fast ID-based helpers
+        bool Link(uint64_t OwnerId, const std::string& Property, uint64_t TargetId);
+        bool Unlink(uint64_t OwnerId, const std::string& Property);
+        bool SetPropertyFromStringById(uint64_t Id, const std::string& Property, const std::string& Value);
+        qmeta::Variant CallById(uint64_t Id, const std::string& Function, const std::vector<qmeta::Variant>& Args);
 
         // Asset IO
-        bool Save(const std::string& Name, const std::string& FileNameIfAny);
-        bool Load(const std::string& TypeName, const std::string& Name, const std::string& FileNameIfAny);
-
+        bool Save(uint64_t Id, const std::string& FileNameIfAny);
+        bool Load(uint64_t Id, const std::string& FileNameIfAny);
+        
         // Lookup
-        QObject* FindByName(const std::string& Name) const;
-
+        QObject* FindById(uint64_t Id) const;
+        
         // Access stored TypeInfo for an object
         const qmeta::TypeInfo* GetTypeInfo(const QObject* Obj) const;
     
@@ -72,22 +80,29 @@ namespace QGC
         {
             QObject* Ptr = nullptr;
             const qmeta::TypeInfo* Ti = nullptr;
-            std::string Name;
+            uint64_t Id = 0;
             bool Marked = false;
         };
 
-        void RegisterInternal(QObject* Obj, const qmeta::TypeInfo& Ti, const std::string& Name);
-        void Mark(QObject* Root);
-        void TraversePointers(QObject* Obj, const qmeta::TypeInfo& Ti, std::vector<QObject*>& OutChildren) const;
-        static bool IsQObjectPointerType(const std::string& Type);
+        void RegisterInternal(QObject* Obj, const qmeta::TypeInfo& Ti, const std::string& Name, uint64_t Id);
 
+        // Marks all objects from a root to kill by BFS 
+        void Mark(QObject* Root);
+        
+        void TraversePointers(QObject* Obj, const qmeta::TypeInfo& Ti, std::vector<QObject*>& OutChildren) const;
+        static bool IsPointerProperty(const std::string& TypeStr);
+        static bool IsQObjectPointerType(const std::string& Type);
+        
     private:
-        std::unordered_map<QObject*, Node> Objects_;
-        std::unordered_map<std::string, QObject*> ByName_;
+        std::unordered_map<QObject*, Node> Objects;
+        std::unordered_map<uint64_t, QObject*>    ById_;
+        
         std::vector<QObject*> Roots;
         double Accumulated = 0.0;
         
         // Auto collect time interval in seconds. Disabled when less than or equal to zero.
         double Interval = 2.0;
+
+        static inline std::atomic<uint64_t> NextGlobalId {0};
     };
 }
