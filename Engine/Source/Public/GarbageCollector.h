@@ -35,7 +35,7 @@ namespace QGC
         // Create by type name (for console)
         QObject* NewByTypeName(const std::string& TypeName, const std::string& Name);
 
-        void Initialize(float InTickInterval);
+        void Initialize();
         
         // Roots
         void AddRoot(QObject* Obj);

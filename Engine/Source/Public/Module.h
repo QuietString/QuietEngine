@@ -7,14 +7,22 @@
 
 namespace qmod {
 
-struct IModule
-{
-    virtual ~IModule() = default;
-    virtual const char* GetName() const = 0;
-    virtual void StartupModule() {}
-    virtual void ShutdownModule() {}
-};
+    struct IModule
+    {
+        virtual ~IModule() = default;
+        virtual const char* GetName() const = 0;
+        virtual void StartupModule() {}
+        virtual void ShutdownModule() {}
+    };
 
+    // Optional tick hook that game module can implement
+    struct ITickableModule
+    {
+        virtual ~ITickableModule() = default;
+        virtual void Tick(double DeltaSeconds) {}
+    };
+
+    
 // A singleton class
 class ModuleManager {
 public:
@@ -27,42 +35,51 @@ public:
 
     void RegisterFactory(const char* Name, Factory f, bool bIsPrimary = false)
     {
-        factories_[Name] = std::move(f);
-        if (bIsPrimary) primary_ = Name;
+        Factories_[Name] = std::move(f);
+        if (bIsPrimary) Primary_ = Name;
     }
 
     IModule* EnsureLoaded(const char* Name) {
-        auto It = loaded_.find(Name);
-        if (It != loaded_.end()) return It->second.get();
-        auto fit = factories_.find(Name);
-        if (fit == factories_.end()) return nullptr;
+        auto It = Loaded_.find(Name);
+        if (It != Loaded_.end()) return It->second.get();
+        auto fit = Factories_.find(Name);
+        if (fit == Factories_.end()) return nullptr;
         auto mod = fit->second();
         IModule* raw = mod.get();
-        loaded_[Name] = std::move(mod);
+        Loaded_[Name] = std::move(mod);
         raw->StartupModule();
         return raw;
     }
 
-    void StartupAll() {
-        for (auto& kv : factories_) EnsureLoaded(kv.first.c_str());
-    }
-
-    void ShutdownAll() {
-        std::vector<std::string> order;
-        order.reserve(loaded_.size());
-        for (auto& kv : loaded_) order.push_back(kv.first);
-        for (auto it = order.rbegin(); it != order.rend(); ++it) {
-            loaded_[*it]->ShutdownModule();
+    void StartupAll()
+    {
+        for (auto& Pair : Factories_)
+        {
+            EnsureLoaded(Pair.first.c_str());
         }
-        loaded_.clear();
     }
 
-    const char* PrimaryModule() const { return primary_.empty() ? nullptr : primary_.c_str(); }
+    void ShutdownAll()
+    {
+        std::vector<std::string> Order;
+        Order.reserve(Loaded_.size());
+        for (auto& Pair : Loaded_)
+        {
+            Order.push_back(Pair.first);
+        }
+        for (auto It = Order.rbegin(); It != Order.rend(); ++It)
+        {
+            Loaded_[*It]->ShutdownModule();
+        }
+        Loaded_.clear();
+    }
+
+    const char* PrimaryModule() const { return Primary_.empty() ? nullptr : Primary_.c_str(); }
 
 private:
-    std::unordered_map<std::string, Factory> factories_;
-    std::unordered_map<std::string, std::unique_ptr<IModule>> loaded_;
-    std::string primary_;
+    std::unordered_map<std::string, Factory> Factories_;
+    std::unordered_map<std::string, std::unique_ptr<IModule>> Loaded_;
+    std::string Primary_;
 };
 
 }

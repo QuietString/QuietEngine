@@ -50,11 +50,10 @@ namespace QGC
         throw std::runtime_error("NewByTypeName: factory not implemented for type " + TypeName);
     }
 
-    void GcManager::Initialize(float InTickInterval)
+    void GcManager::Initialize()
     {
         auto* P = NewObject<QWorld>("Root");
         AddRoot(P);
-        SetAutoInterval(InTickInterval);
     }
 
     void GcManager::AddRoot(QObject* Obj)

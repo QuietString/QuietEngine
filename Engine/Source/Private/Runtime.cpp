@@ -31,6 +31,8 @@ namespace
     std::thread G_InputThread;
     std::atomic<bool> G_InputRun { false };
 
+    qruntime::TickCallback G_GameTick;
+    
     // Simple tokenizer that honors quoted tokens.
     std::vector<std::string> Tokenize(const std::string& s)
     {
@@ -174,6 +176,11 @@ void qruntime::RunMainLoop(std::chrono::milliseconds Step, int MaxCatchUpSteps)
             ++Catchups;
         }
     }
+}
+
+void qruntime::SetExternalTick(TickCallback Cb)
+{
+    G_GameTick = std::move(Cb);
 }
 
 bool qruntime::ExecuteCommand(const std::string& Line)

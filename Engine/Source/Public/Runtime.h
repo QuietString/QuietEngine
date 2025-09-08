@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <chrono>
+#include <functional>
 #include <string>
 
 namespace qruntime
@@ -26,4 +27,8 @@ namespace qruntime
 
     // Run a fixed-step loop (e.g., 16ms). Returns when quit requested.
     void RunMainLoop(std::chrono::milliseconds Step, int MaxCatchUpSteps = 5);
+
+    // NEW: external per-frame callback (e.g., Game module tick)
+    using TickCallback = std::function<void(double)>;
+    void SetExternalTick(TickCallback Cb);
 }
