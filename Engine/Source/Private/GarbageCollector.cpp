@@ -99,22 +99,54 @@ namespace QGC
         return false;
     }
 
+    // Helpers
+    static inline bool EndsWithStar(const std::string& s)
+    {
+        return !s.empty() && s.back() == '*';
+    }
+
+    bool GcManager::IsRawQObjectPtr(const std::string& type)
+    {
+        // e.g., "QObject*"
+        return type.find("QObject") != std::string::npos
+            && type.find("std::vector") == std::string::npos
+            && EndsWithStar(type);
+    }
+
+    bool GcManager::IsVectorOfQObjectPtr(const std::string& type)
+    {
+        // e.g., "std::vector<QObject*>"
+        return type.find("std::vector") != std::string::npos
+            && type.find("QObject*") != std::string::npos;
+    }
+
     void GcManager::TraversePointers(QObject* Obj, const TypeInfo& Ti, std::vector<QObject*>& OutChildren) const
     {
         OutChildren.clear();
         unsigned char* Base = BytePtr(Obj);
         for (const MetaProperty& P : Ti.properties)
         {
-            if (!IsPointerProperty(P.type)) continue;
-
-            QObject** Slot = reinterpret_cast<QObject**>(Base + P.offset);
-            if (Slot && *Slot)
+            if (IsRawQObjectPtr(P.type))
             {
-                // Only follow if the GC tracks the child
-                auto It = Objects.find(*Slot);
-                if (It != Objects.end())
+                // Raw QObject*
+                QObject** Slot = reinterpret_cast<QObject**>(Base + P.offset);
+                if (Slot && *Slot)
                 {
-                    OutChildren.push_back(*Slot);
+                    auto It = Objects.find(*Slot);
+                    if (It != Objects.end())
+                        OutChildren.push_back(*Slot);
+                }
+            }
+            else if (IsVectorOfQObjectPtr(P.type))
+            {
+                // std::vector<QObject*>
+                auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Base + P.offset);
+                for (QObject* Child : *Vec)
+                {
+                    if (!Child) continue;
+                    auto It = Objects.find(Child);
+                    if (It != Objects.end())
+                        OutChildren.push_back(Child);
                 }
             }
         }
@@ -181,19 +213,39 @@ namespace QGC
         for (auto& Pair : Objects)
         {
             if (!Pair.second.Marked) continue;
+            
             QObject* Owner = Pair.first;
             unsigned char* Base = BytePtr(Owner);
             const TypeInfo& Ti = *Pair.second.Ti;
+            
             for (const MetaProperty& P : Ti.properties)
             {
-                if (!IsQObjectPointerType(P.type)) continue;
-                QObject** Slot = reinterpret_cast<QObject**>(Base + P.offset);
-                if (Slot && *Slot)
+                if (IsRawQObjectPtr(P.type))
                 {
-                    if (Objects.count(*Slot) && !Objects.at(*Slot).Marked)
+                    QObject** Slot = reinterpret_cast<QObject**>(Base + P.offset);
+                    if (Slot && *Slot)
                     {
-                        *Slot = nullptr;
+                        auto It = Objects.find(*Slot);
+                        if (It != Objects.end() && !It->second.Marked)
+                        {
+                            *Slot = nullptr;
+                        }
                     }
+                }
+                else if (IsVectorOfQObjectPtr(P.type))
+                {
+                    auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Base + P.offset);
+                    for (QObject*& Child : *Vec)
+                    {
+                        if (!Child) continue;
+                        auto It = Objects.find(Child);
+                        if (It != Objects.end() && !It->second.Marked)
+                        {
+                            Child = nullptr; // or erase later if you prefer   
+                        }
+                    }
+                    // Optional: compact the vector
+                    // Vec->erase(std::remove(Vec->begin(), Vec->end(), nullptr), Vec->end());
                 }
             }
         }
@@ -226,7 +278,7 @@ namespace QGC
         {
             const Node& N = kv.second;
             const std::string& Nm = kv.first->GetDebugName();
-            std::cout << " - Name=" << (Nm.empty() ? "(Unnamed)" : Nm) << " Type=" << N.Ti->name << std::endl;
+            std::cout << " - Name=" << (Nm.empty() ? "(Unnamed)" : Nm) << std::endl;
         }
     }
 

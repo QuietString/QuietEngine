@@ -17,7 +17,7 @@ void Demo::RunDemo()
 
     if (!TI)
     {
-        printf("No Player Info");
+        std::cout << "No Player Info\n";
         return;
     }
 
@@ -30,7 +30,7 @@ void Demo::RunDemo()
     qmeta::Variant Ret = qmeta::CallByName(&P, *TI, "AddHealth", { qmeta::Variant(25) });
     int New_Health = Ret.as<int>();
 
-    printf("New Health: %d\n", New_Health);
+    std::cout << "New Health: " << New_Health << "\n";
 }
 
 void Demo::RunSaveLoad()
@@ -107,12 +107,15 @@ void Demo::GenerateObjectsForGcTest()
 
     auto* A = NewObject<QObject_GcTest>();
     auto* B = NewObject<QObject_GcTest>();
-   
+    auto* C = NewObject<QObject_GcTest>();
+    auto* D = NewObject<QObject_GcTest>();
     QWorld* World = static_cast<QWorld*>(GC.GetRoot());
     if (World)
     {
-        World->SingleObject2 = A;
+        World->Objects.push_back(A);
+        World->Objects.push_back(B);
     }
-    A->ChildObject = B;
-    
+
+    A->ChildObject = C;
+    B->ChildObject = D;
 }

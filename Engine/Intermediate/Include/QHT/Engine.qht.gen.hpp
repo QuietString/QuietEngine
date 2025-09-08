@@ -19,4 +19,5 @@ inline void QHT_Register_Engine(Registry& R) {
     T_QWorld.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
     T_QWorld.properties.push_back(MetaProperty{"SingleObject", "QObject*", offsetof(QWorld, SingleObject), MetaMap{} });
     T_QWorld.properties.push_back(MetaProperty{"SingleObject2", "QObject*", offsetof(QWorld, SingleObject2), MetaMap{} });
+    T_QWorld.properties.push_back(MetaProperty{"Objects", "std::vector<QObject*>", offsetof(QWorld, Objects), MetaMap{} });
 }

@@ -69,7 +69,7 @@ namespace QGC
         bool UnlinkByName(const std::string& Name, const std::string& Property);
         bool SetPropertyFromStringById(uint64_t Id, const std::string& Property, const std::string& Value);
         qmeta::Variant CallById(uint64_t Id, const std::string& Function, const std::vector<qmeta::Variant>& Args);
-
+        
         // Asset IO
         bool Save(uint64_t Id, const std::string& FileNameIfAny);
         bool Load(uint64_t Id, const std::string& FileNameIfAny);
@@ -112,6 +112,8 @@ namespace QGC
         // Auto collect time interval in seconds. Disabled when less than or equal to zero.
         double Interval = 2.0;
 
+        static bool IsRawQObjectPtr(const std::string& type);
+        static bool IsVectorOfQObjectPtr(const std::string& type);
         static unsigned char* BytePtr(void* p) { return static_cast<unsigned char*>(p); }
     };
 }

@@ -16,4 +16,7 @@ public:
 
     QPROPERTY()
     QObject* SingleObject2;
+
+    QPROPERTY()
+    std::vector<QObject*> Objects;
 };

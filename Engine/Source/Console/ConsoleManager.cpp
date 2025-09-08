@@ -71,6 +71,17 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             GC.ListPropertiesByDebugName(Tokens[1]);
             return true;
         }
+        else if (Cmd == "read")
+        {
+            if (Tokens.size() < 3)
+            {
+                std::cout << "Usage: read <Name> <Property>\n";
+                return false;
+            }
+
+            std::cout << "[read] not implemented for now.\n";
+            //std::cout << GC.ReadProperty(Tokens[1], Tokens[2]) << std::endl;
+        }
         else if (Cmd == "funcs" && Tokens.size() >= 2)
         {
             std::cout << "[func] not implemented for now.\n";
@@ -112,13 +123,13 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             }
             else
             {
-                std::cout << "Usage: unlink <OwnerName> <Property> [single|all]\n";
+                std::cout << "Usage: unlink <OwnerName> <Property> [single|all]" << std::endl;
                 return false;
             }
         }
         else if (Cmd == "set" && Tokens.size() >= 4)
         {
-            std::cout << "[set] not implemented for now.\n";
+            std::cout << "[set] not implemented for now." << std::endl;
             //GC.SetPropertyFromString(tokens[1], tokens[2], tokens[3]);
             return true;
         }
