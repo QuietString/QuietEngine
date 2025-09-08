@@ -34,6 +34,9 @@ int main(int argc, char* argv[])
     GC.Initialize();
     GC.SetAutoInterval(0);
 
+    // BeginPlay() all modules.
+    M.BeginPlayAll();
+    
     // Bind game tick if the primary implements ITickableModule
     qmod::ITickableModule* Tickable = dynamic_cast<qmod::ITickableModule*>(Primary);
     qruntime::SetExternalTick([Tickable](double Dt)

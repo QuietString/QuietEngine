@@ -12,6 +12,8 @@ namespace qmod {
         virtual ~IModule() = default;
         virtual const char* GetName() const = 0;
         virtual void StartupModule() {}
+        virtual void BeginPlay() {}
+        virtual void EndPlay() {}
         virtual void ShutdownModule() {}
     };
 
@@ -26,11 +28,14 @@ namespace qmod {
 // A singleton class
 class ModuleManager {
 public:
-    static ModuleManager& Get() {
+    static ModuleManager& Get()
+    {
         static ModuleManager M;
         return M;
     }
 
+    const std::unordered_map<std::string, std::unique_ptr<IModule>>& GetLoadedModules() const { return Loaded_; }
+    
     using Factory = std::function<std::unique_ptr<IModule>()>;
 
     void RegisterFactory(const char* Name, Factory f, bool bIsPrimary = false)
@@ -39,7 +44,8 @@ public:
         if (bIsPrimary) Primary_ = Name;
     }
 
-    IModule* EnsureLoaded(const char* Name) {
+    IModule* EnsureLoaded(const char* Name)
+    {
         auto It = Loaded_.find(Name);
         if (It != Loaded_.end()) return It->second.get();
         auto fit = Factories_.find(Name);
@@ -74,6 +80,14 @@ public:
         Loaded_.clear();
     }
 
+    void BeginPlayAll()
+    {
+        for (auto& Pair : Loaded_)
+        {
+            if (Pair.second) Pair.second->BeginPlay();
+        }
+    }
+    
     const char* PrimaryModule() const { return Primary_.empty() ? nullptr : Primary_.c_str(); }
 
 private:

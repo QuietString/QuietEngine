@@ -27,8 +27,8 @@ namespace QGC
         Objects_.emplace(Obj, N);
         if (!Name.empty())
         {
-            ByName_[Name] = Obj;
-            std::cout << "[GC] Registered " << Name << " : " << Ti.name << std::endl;
+            //ByName_[Name] = Obj;
+            //std::cout << "[GC] Registered " << Name << " : " << Ti.name << std::endl;
         }
         else
         {
@@ -117,8 +117,8 @@ namespace QGC
             if (Slot && *Slot)
             {
                 // Only follow if the child is tracked by the GC
-                auto it = Objects_.find(*Slot);
-                if (it != Objects_.end())
+                auto It = Objects_.find(*Slot);
+                if (It != Objects_.end())
                 {
                     OutChildren.push_back(*Slot);
                 }
@@ -155,9 +155,9 @@ namespace QGC
     void GcManager::Collect()
     {
         // 1) Clear marks
-        for (auto& kv : Objects_)
+        for (auto& Pair : Objects_)
         {
-            kv.second.Marked = false;
+            Pair.second.Marked = false;
         }
 
         // 2) Mark from roots
@@ -169,21 +169,21 @@ namespace QGC
         // 3) Build list of dead objects
         std::vector<QObject*> Dead;
         Dead.reserve(Objects_.size());
-        for (auto& kv : Objects_)
+        for (auto& Pair : Objects_)
         {
-            if (!kv.second.Marked)
+            if (!Pair.second.Marked)
             {
-                Dead.push_back(kv.first);
+                Dead.push_back(Pair.first);
             }
         }
 
         // 4) Null-out references to dead objects in survivors to avoid dangling pointers
-        for (auto& kv : Objects_)
+        for (auto& Pair : Objects_)
         {
-            if (!kv.second.Marked) continue;
-            QObject* Owner = kv.first;
+            if (!Pair.second.Marked) continue;
+            QObject* Owner = Pair.first;
             unsigned char* Base = BytePtr(Owner);
-            const TypeInfo& Ti = *kv.second.Ti;
+            const TypeInfo& Ti = *Pair.second.Ti;
             for (const MetaProperty& P : Ti.properties)
             {
                 if (!IsQObjectPointerType(P.type)) continue;
@@ -201,19 +201,19 @@ namespace QGC
         // 5) Delete dead and remove from maps
         for (QObject* D : Dead)
         {
-            auto it = Objects_.find(D);
-            if (it != Objects_.end())
+            auto It = Objects_.find(D);
+            if (It != Objects_.end())
             {
-                if (!it->second.Name.empty())
+                if (!It->second.Name.empty())
                 {
-                    auto itn = ByName_.find(it->second.Name);
+                    auto itn = ByName_.find(It->second.Name);
                     if (itn != ByName_.end() && itn->second == D)
                     {
                         ByName_.erase(itn);
                     }
                 }
-                delete it->second.Ptr;
-                Objects_.erase(it);
+                delete It->second.Ptr;
+                Objects_.erase(It);
             }
         }
 
@@ -270,8 +270,8 @@ namespace QGC
 
     const TypeInfo* GcManager::GetTypeInfo(const QObject* Obj) const
     {
-        auto it = Objects_.find(const_cast<QObject*>(Obj));
-        return it == Objects_.end() ? nullptr : it->second.Ti;
+        auto It = Objects_.find(const_cast<QObject*>(Obj));
+        return It == Objects_.end() ? nullptr : It->second.Ti;
     }
 
     bool GcManager::Link(const std::string& OwnerName, const std::string& Property, const std::string& TargetName)
@@ -319,11 +319,11 @@ namespace QGC
     {
         QObject* Obj = FindByName(Name);
         if (!Obj) return false;
-        auto it = Objects_.find(Obj);
-        if (it == Objects_.end()) return false;
+        auto It = Objects_.find(Obj);
+        if (It == Objects_.end()) return false;
         unsigned char* Base = BytePtr(Obj);
 
-        for (auto& p : it->second.Ti->properties)
+        for (auto& p : It->second.Ti->properties)
         {
             if (p.name != Property) continue;
             // very small set: int/float/bool/string

@@ -3,6 +3,8 @@
 #include <ostream>
 #include <qmeta_runtime.h>
 
+#include "Demo.h"
+
 Q_FORCE_LINK_MODULE(Engine);
 
 void RegisterGameReflections(qmeta::Registry&);
@@ -29,6 +31,13 @@ public:
         // TODO: game shutdown
     }
 
+    virtual void BeginPlay() override
+    {
+        std::cout << "Game begin play" << std::endl;
+
+        Demo::RunGCTest();
+    }
+    
     virtual void Tick(double DeltaSeconds) override
     {
         std::cout << "Game tick" << std::endl;
