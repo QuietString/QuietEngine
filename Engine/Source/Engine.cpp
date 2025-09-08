@@ -3,6 +3,7 @@
 #include <ios>
 #include <iostream>
 
+#include "EngineGlobals.h"
 #include "GarbageCollector.h"
 #include "Module.h"
 #include "Object_GcTest.h"
@@ -31,19 +32,20 @@ int main(int argc, char* argv[])
     {
         Primary = M.EnsureLoaded(Name);
     }
+    
 
     QGC::GcManager& GC = QGC::GcManager::Get();
     GC.Initialize();
     GC.SetAutoInterval(0);
-
-    auto* A = GC.NewObject<QObject_GcTest>();
-    auto* B = GC.NewObject<QObject_GcTest>();
-    auto* C = GC.NewObject<QObject_GcTest>();
-    QWorld* World = static_cast<QWorld*>(GC.GetRoot());
-    if (World)
-    {
-        World->SingleObject = A;
-    }
+    
+    QWorld* World = NewObject<QWorld>();
+    GC.AddRoot(World);
+    
+    auto* A = NewObject<QObject_GcTest>();
+    auto* B = NewObject<QObject_GcTest>();
+    auto* C = NewObject<QObject_GcTest>();
+    
+    World->SingleObject = A;
     A->ChildObject = B;
     B->ChildObject = C;
     
@@ -62,7 +64,6 @@ int main(int argc, char* argv[])
 
     // Start background console input
     qruntime::StartConsoleInput();
-
     
     // Run the main loop (fixed 16ms ~60Hz)
     qruntime::RunMainLoop(std::chrono::milliseconds(16),5);

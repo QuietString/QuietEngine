@@ -16,31 +16,31 @@ namespace QGC
     public:
         static GcManager& Get();
 
-        template <class T, class... Args>
-        T* NewObject(Args&&... args)
-        {
-            static_assert(std::is_base_of_v<QObject, T>, "T must derive QObject");
-            const qmeta::TypeInfo* Ti = qmeta::GetRegistry().find(qtype::TypeName<T>());
-            if (!Ti)
-            {
-                throw std::runtime_error(std::string("TypeInfo not found for ") + std::string(qtype::TypeName<T>()));
-            }
-            
-            T* Obj = new T(std::forward<Args>(args)...);
-            
-            const uint64_t id = NextGlobalId.fetch_add(1, std::memory_order_relaxed) + 1; // start at 1
-            Obj->SetObjectId(id);
-            
-            // Auto debug-name: ClassName_ID
-            std::string AutoName;
-            AutoName.reserve(Ti->name.size() + 20);
-            AutoName.append(Ti->name).push_back('_');
-            AutoName.append(std::to_string(id));
-            Obj->SetDebugName(AutoName);
-            
-            RegisterInternal(Obj, *Ti, AutoName, id);
-            return Obj;
-        }
+        // template <class T, class... Args>
+        // T* NewObject(Args&&... args)
+        // {
+        //     static_assert(std::is_base_of_v<QObject, T>, "T must derive QObject");
+        //     const qmeta::TypeInfo* Ti = qmeta::GetRegistry().find(qtype::TypeName<T>());
+        //     if (!Ti)
+        //     {
+        //         throw std::runtime_error(std::string("TypeInfo not found for ") + std::string(qtype::TypeName<T>()));
+        //     }
+        //     
+        //     T* Obj = new T(std::forward<Args>(args)...);
+        //     
+        //     const uint64_t id = NextGlobalId.fetch_add(1, std::memory_order_relaxed) + 1; // start at 1
+        //     Obj->SetObjectId(id);
+        //     
+        //     // Auto debug-name: ClassName_ID
+        //     std::string AutoName;
+        //     AutoName.reserve(Ti->name.size() + 20);
+        //     AutoName.append(Ti->name).push_back('_');
+        //     AutoName.append(std::to_string(id));
+        //     Obj->SetDebugName(AutoName);
+        //     
+        //     RegisterInternal(Obj, *Ti, AutoName, id);
+        //     return Obj;
+        // }
 
         // Create by type name (for console)
         QObject* NewByTypeName(const std::string& TypeName, const std::string& Name);
@@ -62,9 +62,11 @@ namespace QGC
         void ListPropertiesByDebugName(const std::string& Name) const;
         void ListFunctionsByDebugName(const std::string& Name) const;
         
-        // Fast ID-based helpers
         bool Link(uint64_t OwnerId, const std::string& Property, uint64_t TargetId);
         bool Unlink(uint64_t OwnerId, const std::string& Property);
+        bool UnlinkAllProperties(uint64_t OwnerId);
+        bool UnlinkAllByName(const std::string& Name);
+        bool UnlinkByName(const std::string& Name, const std::string& Property);
         bool SetPropertyFromStringById(uint64_t Id, const std::string& Property, const std::string& Value);
         qmeta::Variant CallById(uint64_t Id, const std::string& Function, const std::vector<qmeta::Variant>& Args);
 
@@ -78,7 +80,10 @@ namespace QGC
         
         // Access stored TypeInfo for an object
         const qmeta::TypeInfo* GetTypeInfo(const QObject* Obj) const;
-    
+
+    public:
+        void RegisterInternal(QObject* Obj, const qmeta::TypeInfo& Ti, const std::string& Name, uint64_t Id);
+
     private:
         struct Node
         {
@@ -88,7 +93,6 @@ namespace QGC
             bool Marked = false;
         };
 
-        void RegisterInternal(QObject* Obj, const qmeta::TypeInfo& Ti, const std::string& Name, uint64_t Id);
 
         // Marks all objects from a root to kill by BFS 
         void Mark(QObject* Root);
@@ -107,8 +111,6 @@ namespace QGC
         
         // Auto collect time interval in seconds. Disabled when less than or equal to zero.
         double Interval = 2.0;
-
-        static inline std::atomic<uint64_t> NextGlobalId {0};
 
         static unsigned char* BytePtr(void* p) { return static_cast<unsigned char*>(p); }
     };

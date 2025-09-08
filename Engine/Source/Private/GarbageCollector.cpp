@@ -47,8 +47,7 @@ namespace QGC
 
     void GcManager::Initialize()
     {
-        auto* InitialRoot = NewObject<QWorld>();
-        AddRoot(InitialRoot);
+        
     }
 
     void GcManager::AddRoot(QObject* Obj)
@@ -321,6 +320,66 @@ namespace QGC
                 auto* Slot = reinterpret_cast<QObject**>(Base + p.offset);
                 *Slot = nullptr;
                 std::cout << "[Unlink] Id=" << OwnerId << "." << Property << " -> null\n";
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool GcManager::UnlinkAllProperties(uint64_t OwnerId)
+    {
+        QObject* Owner = FindById(OwnerId);
+        if (!Owner) return false;
+
+        auto ito = Objects.find(Owner);
+        unsigned char* Base = BytePtr(Owner);
+        for (auto& p : ito->second.Ti->properties)
+        {
+            if (IsPointerProperty(p.type))
+            {
+                auto* Slot = reinterpret_cast<QObject**>(Base + p.offset);
+                *Slot = nullptr;
+                std::cout << "[Unlink] Id=" << OwnerId << "." << p.name << " -> null\n";
+            }
+        }
+        
+        return true;
+    }
+
+    bool GcManager::UnlinkAllByName(const std::string& Name)
+    {
+        QObject* Obj = FindByDebugName(Name);
+        if (!Obj) return false;
+
+        auto ObjectIter = Objects.find(Obj);
+        unsigned char* Base = BytePtr(Obj);
+        for (auto& P : ObjectIter->second.Ti->properties)
+        {
+            if (IsPointerProperty(P.type))
+            {
+                auto* Slot = reinterpret_cast<QObject**>(Base + P.offset);
+                *Slot = nullptr;
+                std::cout << "[Unlink] Name=" << Name << "." << P.name << " -> null\n";
+            }
+        }
+
+        return true;
+    }
+
+    bool GcManager::UnlinkByName(const std::string& Name, const std::string& Property)
+    {
+        QObject* Obj = FindByDebugName(Name);
+        if (!Obj) return false;
+
+        auto ito = Objects.find(Obj);
+        unsigned char* Base = BytePtr(Obj);
+        for (auto& P : ito->second.Ti->properties)
+        {
+            if (P.name == Property && IsPointerProperty(P.type))
+            {
+                auto* Slot = reinterpret_cast<QObject**>(Base + P.offset);
+                *Slot = nullptr;
+                std::cout << "[Unlink] Name=" << Name << "." << Property << " -> null\n";
                 return true;
             }
         }

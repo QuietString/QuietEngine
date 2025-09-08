@@ -21,18 +21,18 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
 {
     using namespace QGC;
 
-    auto tokens = Tokenize(Line);
-    if (tokens.empty())
+    auto Tokens = Tokenize(Line);
+    if (Tokens.empty())
     {
         return false;
     }
 
     auto& GC = GcManager::Get();
-    const std::string& cmd = tokens[0];
+    const std::string& Cmd = Tokens[0];
 
     try
     {
-        if (cmd == "help")
+        if (Cmd == "help")
         {
             std::cout <<
                 "Commands:\n"
@@ -50,45 +50,79 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 "  funcs <Name>" << std::endl;
             return true;
         }
-        else if (cmd == "tick" && tokens.size() >= 2)
+        else if (Cmd == "tick" && Tokens.size() >= 2)
         {
-            double Dt = std::stod(tokens[1]);
+            double Dt = std::stod(Tokens[1]);
             qruntime::Tick(Dt);
             return true;
         }
-        else if (cmd == "gc")
+        else if (Cmd == "gc")
         {
             GC.Collect();
             return true;
         }
-        else if (cmd == "ls")
+        else if (Cmd == "ls")
         {
             GC.ListObjects();
             return true;
         }
-        else if (cmd == "props" && tokens.size() >= 2)
+        else if (Cmd == "props" && Tokens.size() >= 2)
         {
-            GC.ListPropertiesByDebugName(tokens[1]);
+            GC.ListPropertiesByDebugName(Tokens[1]);
             return true;
         }
-        else if (cmd == "funcs" && tokens.size() >= 2)
+        else if (Cmd == "funcs" && Tokens.size() >= 2)
         {
             std::cout << "[func] not implemented for now.\n";
-            GC.ListFunctionsByDebugName(tokens[1]);
+            GC.ListFunctionsByDebugName(Tokens[1]);
             return true;
         }
-        else if (cmd == "new" && tokens.size() >= 3)
+        else if (Cmd == "new" && Tokens.size() >= 3)
         {
             std::cout << "[new] not implemented for now.\n";
             return true;
         }
-        else if (cmd == "set" && tokens.size() >= 4)
+        else if (Cmd == "unlink")
+        {
+            if (Tokens.size() < 3 || Tokens.size() > 5)
+            {
+                std::cout << "Usage: unlink <OwnerName> <Property> [single|all]\n";
+                return false;
+            }
+            
+            if (Tokens[1] == "single" && Tokens.size() == 4)
+            {
+                bool bResult = GC.UnlinkByName(Tokens[2], Tokens[3]);
+                if (!bResult)
+                {
+                    std::cout << "Failed to unlink " << Tokens[1] << "." << Tokens[2] << std::endl;
+                }
+                
+                return bResult;
+            }
+            else if (Tokens[1] == "all" && Tokens.size() == 3)
+            {
+                bool bResult = GC.UnlinkAllByName(Tokens[2]);
+                if (!bResult)
+                {
+                    std::cout << "Failed to unlink " << Tokens[1] << "." << Tokens[2] << std::endl;
+                }
+
+                return bResult;
+            }
+            else
+            {
+                std::cout << "Usage: unlink <OwnerName> <Property> [single|all]\n";
+                return false;
+            }
+        }
+        else if (Cmd == "set" && Tokens.size() >= 4)
         {
             std::cout << "[set] not implemented for now.\n";
             //GC.SetPropertyFromString(tokens[1], tokens[2], tokens[3]);
             return true;
         }
-        else if (cmd == "call" && tokens.size() >= 3)
+        else if (Cmd == "call" && Tokens.size() >= 3)
         {
             std::cout << "[call] is not implemented for now.\n";
             // std::vector<qmeta::Variant> args;
@@ -114,7 +148,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             // GC.Call(tokens[1], tokens[2], args);
             return true;
         }
-        else if (cmd == "save" && tokens.size() >= 2)
+        else if (Cmd == "save" && Tokens.size() >= 2)
         {
             std::cout << "[save] is not implemented for now.\n";
 
@@ -122,7 +156,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             //GC.Save(tokens[1], file);
             return true;
         }
-        else if (cmd == "load" && tokens.size() >= 3)
+        else if (Cmd == "load" && Tokens.size() >= 3)
         {
             std::cout << "[load] is not implemented for now.\n";
             //const std::string file = (tokens.size() >= 4 ? tokens[3] : "");
@@ -131,7 +165,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
         }
         else
         {
-            std::cout << "Unknown command: " << cmd << std::endl;
+            std::cout << "Unknown command: " << Cmd << std::endl;
             return false;
         }
     }

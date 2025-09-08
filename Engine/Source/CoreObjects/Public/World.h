@@ -17,5 +17,3 @@ public:
     QPROPERTY()
     QObject* SingleObject2;
 };
-
-QWorld* GetWorld();
