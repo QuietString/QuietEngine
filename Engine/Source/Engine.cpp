@@ -66,7 +66,8 @@ int main(int argc, char* argv[])
     qruntime::StartConsoleInput();
     
     // Run the main loop (fixed 16ms ~60Hz)
-    qruntime::RunMainLoop(std::chrono::milliseconds(16),5);
+    std::chrono::milliseconds TimeStep(16);
+    qruntime::RunMainLoop(TimeStep,5);
 
     // Cleanup
     qruntime::StopConsoleInput();

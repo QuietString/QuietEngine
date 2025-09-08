@@ -26,7 +26,7 @@ namespace qruntime
     bool IsRunning();
 
     // Run a fixed-step loop (e.g., 16ms). Returns when quit requested.
-    void RunMainLoop(std::chrono::milliseconds Step, int MaxCatchUpSteps = 5);
+    void RunMainLoop(std::chrono::milliseconds TimeStep, int MaxCatchUpSteps = 5);
 
     // NEW: external per-frame callback (e.g., Game module tick)
     using TickCallback = std::function<void(double)>;

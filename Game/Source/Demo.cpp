@@ -84,31 +84,16 @@ void Demo::RunSaveLoad()
     // printf("Loaded ID: %d\n", Loaded2.ControllerID);
 }
 
-void Demo::RunGCTestSimple()
-{
-    using namespace QGC;
-    
-    auto& GC = GcManager::Get();
-    
-    // Create a simple chain: A -> B -> C
-    auto* A = NewObject<QPlayer>();
-    auto* B = NewObject<QPlayer>();
-    auto* C = NewObject<QPlayer>();
-    
-    A->Friend = B;
-    B->Friend = C;
-}
-
 void Demo::GenerateObjectsForGcTest()
 {
     using namespace QGC;
     
     auto& GC = GcManager::Get();
 
-    auto* A = NewObject<QObject_GcTest>();
-    auto* B = NewObject<QObject_GcTest>();
-    auto* C = NewObject<QObject_GcTest>();
-    auto* D = NewObject<QObject_GcTest>();
+    auto* A = NewObject<QPlayer>();
+    auto* B = NewObject<QPlayer>();
+    auto* C = NewObject<QPlayer>();
+    auto* D = NewObject<QPlayer>();
     QWorld* World = static_cast<QWorld*>(GC.GetRoot());
     if (World)
     {
@@ -116,6 +101,11 @@ void Demo::GenerateObjectsForGcTest()
         World->Objects.push_back(B);
     }
 
-    A->ChildObject = C;
-    B->ChildObject = D;
+    A->Friend = C;
+    A->Health = 45;
+    A->SetWalkSpeed(720.0f);
+    
+    B->Friend = D;
+    B->Health = 30;
+    B->SetWalkSpeed(160.0f);
 }

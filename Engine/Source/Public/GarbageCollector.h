@@ -112,6 +112,7 @@ namespace QGC
         // Auto collect time interval in seconds. Disabled when less than or equal to zero.
         double Interval = 2.0;
 
+    public:
         static bool IsRawQObjectPtr(const std::string& type);
         static bool IsVectorOfQObjectPtr(const std::string& type);
         static unsigned char* BytePtr(void* p) { return static_cast<unsigned char*>(p); }

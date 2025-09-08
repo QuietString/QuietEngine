@@ -5,6 +5,140 @@
 #include "GarbageCollector.h"
 #include "Runtime.h"
 
+// --- helper: stringify a property value by its reflected type ---
+static std::string FormatPropertyValue(QObject* Owner, const qmeta::TypeInfo& Ti, const qmeta::MetaProperty& P)
+{
+    using namespace QGC;
+    using namespace qmeta;
+
+    std::ostringstream OutputStream;
+
+    // Locate property memory by reflection offset
+    void* Addr = GetPropertyPtr(static_cast<void*>(Owner), Ti, P.name);
+    if (!Addr) return "<invalid address>";
+
+    const std::string& T = P.type;
+
+    auto equals_any = [&](const std::initializer_list<const char*> names) -> bool {
+        for (const char* n : names) { if (T == n) return true; }
+        return false;
+    };
+
+    // Primitive integers / floats / bool / string
+    if (equals_any({"int","int32_t"}))                      { OutputStream << *reinterpret_cast<int*>(Addr); return OutputStream.str(); }
+    if (equals_any({"int64_t","long long"}))                { OutputStream << *reinterpret_cast<int64_t*>(Addr); return OutputStream.str(); }
+    if (equals_any({"unsigned","unsigned int","uint32_t"})) { OutputStream << *reinterpret_cast<unsigned*>(Addr); return OutputStream.str(); }
+    if (equals_any({"uint64_t","unsigned long long"}))      { OutputStream << *reinterpret_cast<uint64_t*>(Addr); return OutputStream.str(); }
+    if (equals_any({"float"}))                              { OutputStream << *reinterpret_cast<float*>(Addr); return OutputStream.str(); }
+    if (equals_any({"double"}))                             { OutputStream << *reinterpret_cast<double*>(Addr); return OutputStream.str(); }
+    if (equals_any({"bool"}))                               { OutputStream << (*reinterpret_cast<bool*>(Addr) ? "true" : "false"); return OutputStream.str(); }
+    if (equals_any({"std::string","string"}))               { OutputStream << '"' << *reinterpret_cast<std::string*>(Addr) << '"'; return OutputStream.str(); }
+
+    GcManager& Gc = GcManager::Get();
+    // QObject* -> print DebugName (or null)
+    if (Gc.IsRawQObjectPtr(T))
+    {
+        QObject* PObj = *reinterpret_cast<QObject**>(Addr);
+        if (!PObj) return "null";
+        const std::string& Nm = PObj->GetDebugName();
+        return Nm.empty() ? "(Unnamed)" : Nm;
+    }
+
+    // std::vector<...>
+    if (T.find("std::vector") != std::string::npos)
+    {
+        // std::vector<QObject*>
+        if (GcManager::IsVectorOfQObjectPtr(T))
+        {
+            auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Addr);
+            const size_t Count = Vec->size();
+            const size_t MaxPreview = 8;
+            OutputStream << "size=" << Count << " [QObject*] [";
+            size_t Limit = std::min(Count, MaxPreview);
+            for (size_t i = 0; i < Limit; ++i)
+            {
+                if (i) OutputStream << ", ";
+                QObject* E = (*Vec)[i];
+                if (!E) { OutputStream << "null"; continue; }
+                const std::string& Nm = E->GetDebugName();
+                OutputStream << (Nm.empty() ? "(Unnamed)" : Nm);
+            }
+            if (Count > Limit) OutputStream << ", ...";
+            OutputStream << "]";
+            return OutputStream.str();
+        }
+
+        // Common primitive vectors preview
+        auto preview_prim = [&](auto* VecPtr, const char* tag) -> std::string {
+            const size_t Count = VecPtr->size();
+            const size_t MaxPreview = 8;
+            OutputStream << "size=" << Count << " [" << tag << "] [";
+            size_t Limit = std::min(Count, MaxPreview);
+            for (size_t i = 0; i < Limit; ++i)
+            {
+                if (i) OutputStream << ", ";
+                OutputStream << (*VecPtr)[i];
+            }
+            if (Count > Limit) OutputStream << ", ...";
+            OutputStream << "]";
+            return OutputStream.str();
+        };
+
+        if (T.find("int>") != std::string::npos)               return preview_prim(reinterpret_cast<std::vector<int>*>(Addr), "int");
+        if (T.find("int32_t>") != std::string::npos)           return preview_prim(reinterpret_cast<std::vector<int32_t>*>(Addr), "int32_t");
+        if (T.find("int64_t>") != std::string::npos)           return preview_prim(reinterpret_cast<std::vector<int64_t>*>(Addr), "int64_t");
+        if (T.find("unsigned>") != std::string::npos || T.find("uint32_t>") != std::string::npos)
+                                                               return preview_prim(reinterpret_cast<std::vector<unsigned>*>(Addr), "unsigned");
+        if (T.find("uint64_t>") != std::string::npos)          return preview_prim(reinterpret_cast<std::vector<uint64_t>*>(Addr), "uint64_t");
+        if (T.find("float>") != std::string::npos)             return preview_prim(reinterpret_cast<std::vector<float>*>(Addr), "float");
+        if (T.find("double>") != std::string::npos)            return preview_prim(reinterpret_cast<std::vector<double>*>(Addr), "double");
+
+        if (T.find("bool>") != std::string::npos)
+        {
+            auto* Vec = reinterpret_cast<std::vector<bool>*>(Addr);
+            const size_t Count = Vec->size();
+            const size_t MaxPreview = 8;
+            OutputStream << "size=" << Count << " [bool] [";
+            size_t Limit = std::min(Count, MaxPreview);
+            for (size_t i = 0; i < Limit; ++i)
+            {
+                if (i) OutputStream << ", ";
+                OutputStream << ((*Vec)[i] ? "true" : "false");
+            }
+            if (Count > Limit) OutputStream << ", ...";
+            OutputStream << "]";
+            return OutputStream.str();
+        }
+
+        if (T.find("std::string>") != std::string::npos || T.find("string>") != std::string::npos)
+        {
+            auto* Vec = reinterpret_cast<std::vector<std::string>*>(Addr);
+            const size_t Count = Vec->size();
+            const size_t MaxPreview = 8;
+            OutputStream << "size=" << Count << " [string] [";
+            size_t Limit = std::min(Count, MaxPreview);
+            for (size_t i = 0; i < Limit; ++i)
+            {
+                if (i) OutputStream << ", ";
+                OutputStream << '"' << (*Vec)[i] << '"';
+            }
+            if (Count > Limit) OutputStream << ", ...";
+            OutputStream << "]";
+            return OutputStream.str();
+        }
+
+        // Fallback
+        OutputStream << "<vector preview not supported>";
+        return OutputStream.str();
+    }
+
+    // Unknown type fallback
+    OutputStream << "<unhandled type: " << T << ">";
+    return OutputStream.str();
+}
+
+///////
+
 std::vector<std::string> ConsoleManager::Tokenize(const std::string& s)
 {
     std::vector<std::string> Out;
@@ -79,8 +213,38 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 return false;
             }
 
-            std::cout << "[read] not implemented for now.\n";
-            //std::cout << GC.ReadProperty(Tokens[1], Tokens[2]) << std::endl;
+            const std::string& Name = Tokens[1];
+            const std::string& Prop = Tokens[2];
+
+            QObject* Obj = GC.FindByDebugName(Name);
+            if (!Obj)
+            {
+                std::cout << "Not found: " << Name << "\n";
+                return false;
+            }
+
+            const qmeta::TypeInfo* Ti = GC.GetTypeInfo(Obj);
+            if (!Ti)
+            {
+                std::cout << "No TypeInfo for: " << Name << "\n";
+                return false;
+            }
+
+            // Locate property meta to know its type and offset
+            const qmeta::MetaProperty* MP = nullptr;
+            for (auto& P : Ti->properties)
+            {
+                if (P.name == Prop) { MP = &P; break; }
+            }
+            if (!MP)
+            {
+                std::cout << "Property not found: " << Prop << "\n";
+                return false;
+            }
+
+            std::string ValueStr = FormatPropertyValue(Obj, *Ti, *MP);
+            std::cout << ValueStr << std::endl;
+            return true;
         }
         else if (Cmd == "funcs" && Tokens.size() >= 2)
         {

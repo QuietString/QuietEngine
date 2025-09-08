@@ -120,7 +120,7 @@ bool qruntime::IsRunning()
     return G_Running.load();
 }
 
-void qruntime::RunMainLoop(std::chrono::milliseconds Step, int MaxCatchUpSteps)
+void qruntime::RunMainLoop(std::chrono::milliseconds TimeStep, int MaxCatchUpSteps)
 {
 #if defined(_WIN32) && QRUNTIME_USE_WINMM
     TimerResolutionScope Res;
@@ -129,14 +129,14 @@ void qruntime::RunMainLoop(std::chrono::milliseconds Step, int MaxCatchUpSteps)
     G_Running.store(true);
 
     using namespace std::chrono;
-    const double StepSec = duration<double>(Step).count();
+    const double StepSec = duration<double>(TimeStep).count();
     Clock::time_point Next = Clock::now();
     double AccumulatedLate = 0.0;
 
     while (IsRunning())
     {
         // Pace to next tick boundary.
-        Next += Step;
+        Next += TimeStep;
         {
             const auto Now = Clock::now();
             if (Now < Next)
