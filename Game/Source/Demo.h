@@ -8,5 +8,7 @@ namespace Demo
 
     void RunSaveLoad();
     
-    void GenerateObjectsForGcTest();
+    void GenerateSimpleTest();
+
+    void RunTester();
 }

@@ -9,6 +9,7 @@
 #include "Runtime.h"
 #include "World.h"
 #include "Classes/Player.h"
+#include "Test/GcPerfTest.h"
 
 void Demo::RunDemo()
 {
@@ -84,7 +85,7 @@ void Demo::RunSaveLoad()
     // printf("Loaded ID: %d\n", Loaded2.ControllerID);
 }
 
-void Demo::GenerateObjectsForGcTest()
+void Demo::GenerateSimpleTest()
 {
     using namespace QGC;
     
@@ -102,7 +103,21 @@ void Demo::GenerateObjectsForGcTest()
     A->Friend = C;
     A->Health = 45;
     
-    A->Friends.push_back(B);
-    A->Friends.push_back(C);
-    A->Friends.push_back(D);
+    A->Friend = B;
+    B->Friend = C;
+    C->Friend = D;
+}
+
+void Demo::RunTester()
+{
+    // Create the GC perf tester and make it reachable
+    QGcPerfTest* Tester = NewObject<QGcPerfTest>();
+    QWorld* World = GetWorld();
+    if (World)
+    {
+        World->Objects.push_back(Tester);
+    }
+
+    std::cout << "[GcPerfTest] Ready. Instance name: " << Tester->GetDebugName()
+              << " (use commands: gctest ...  or  call " << Tester->GetDebugName() << " <Func> ...)" << std::endl;
 }
