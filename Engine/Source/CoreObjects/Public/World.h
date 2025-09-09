@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <vector>
 
+#include "GarbageCollector.h"
 #include "Object.h"
 #include "qmeta_macros.h"
 
@@ -18,4 +19,8 @@ public:
 
     QPROPERTY()
     std::vector<QObject*> Objects;
+    
+    static void SetWorldSingleton(QWorld* World);
 };
+
+QWorld* GetWorld();

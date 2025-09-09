@@ -4,6 +4,8 @@
 #include <qmeta_runtime.h>
 
 #include "Demo.h"
+#include "World.h"
+#include "Test/GcPerfTest.h"
 
 Q_FORCE_LINK_MODULE(Engine);
 
@@ -35,7 +37,21 @@ public:
     {
         std::cout << "Game begin play" << std::endl;
 
-        Demo::GenerateObjectsForGcTest();
+        //Demo::GenerateObjectsForGcTest();
+
+        // Create the GC perf tester and make it reachable
+        QGcPerfTest* Tester = NewObject<QGcPerfTest>();
+        QWorld* World = GetWorld();
+        if (World)
+        {
+            World->Objects.push_back(Tester);
+        }
+
+        std::cout << "[GcPerfTest] Ready. Instance name: " << Tester->GetDebugName()
+                  << " (use commands: gctest ...  or  call " << Tester->GetDebugName() << " <Func> ...)" << std::endl;
+
+        // Optional: build a small default graph
+        // Tester->Build(1, 8, 3);
     }
     
     virtual void Tick(double DeltaSeconds) override

@@ -7,8 +7,9 @@
 class QObject_GcTest : public QObject
 {
 public:
-    int DummyMember;
-    
     QPROPERTY()
-    QObject* ChildObject;
+    QObject* ChildObject = nullptr;
+
+    QPROPERTY()
+    std::vector<QObject*> Children;
 };

@@ -13,6 +13,14 @@
 // Force-link the Game static library so its auto-registrar runs
 Q_FORCE_LINK_MODULE(Game);
 
+inline QWorld* CreateWorld()
+{
+    QWorld* World = NewObject<QWorld>();
+    QWorld::SetWorldSingleton(World);
+
+    return World;
+}
+
 int main(int argc, char* argv[])
 {
     // Optional stream tweaks (safe defaults)
@@ -38,7 +46,7 @@ int main(int argc, char* argv[])
     GC.Initialize();
     GC.SetAutoInterval(0);
     
-    QWorld* World = NewObject<QWorld>();
+    QWorld* World = CreateWorld();
     GC.AddRoot(World);
     
     auto* A = NewObject<QObject_GcTest>();

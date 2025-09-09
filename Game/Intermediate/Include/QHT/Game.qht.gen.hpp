@@ -9,6 +9,7 @@ using namespace qmeta;
 // Unit: Game
 
 #include "Classes/Player.h"
+#include "Test/GcPerfTest.h"
 
 static inline Variant _qmeta_invoke_QPlayer_AddHealth(void* obj, const Variant* args, std::size_t) {
     QPlayer* self = static_cast<QPlayer*>(obj);
@@ -22,6 +23,38 @@ static inline Variant _qmeta_invoke_QPlayer_SetWalkSpeed(void* obj, const Varian
     float a0 = args[0].as<float>();
     self->SetWalkSpeed(a0);
     return Variant();
+}
+
+static inline Variant _qmeta_invoke_QGcPerfTest_Build(void* obj, const Variant* args, std::size_t) {
+    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+    int a0 = args[0].as<int>();
+    int a1 = args[1].as<int>();
+    int a2 = args[2].as<int>();
+    int a3 = args[3].as<int>();
+    self->Build(a0, a1, a2, a3);
+    return Variant();
+}
+
+static inline Variant _qmeta_invoke_QGcPerfTest_BreakAtDepth(void* obj, const Variant* args, std::size_t) {
+    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+    int a0 = args[0].as<int>();
+    int a1 = args[1].as<int>();
+    int a2 = args[2].as<int>();
+    auto _ret = self->BreakAtDepth(a0, a1, a2);
+    return Variant(_ret);
+}
+
+static inline Variant _qmeta_invoke_QGcPerfTest_PrintDepthStats(void* obj, const Variant* args, std::size_t) {
+    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+    int a0 = args[0].as<int>();
+    self->PrintDepthStats(a0);
+    return Variant();
+}
+
+static inline Variant _qmeta_invoke_QGcPerfTest_ForceGc(void* obj, const Variant* args, std::size_t) {
+    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+    auto _ret = self->ForceGc();
+    return Variant(_ret);
 }
 
 inline void QHT_Register_Game(Registry& R) {
@@ -48,5 +81,47 @@ inline void QHT_Register_Game(Registry& R) {
         F.params = std::vector<MetaParam>{ MetaParam{"Speed", "float"} };
         F.meta = MetaMap{};
         T_QPlayer.functions.push_back(std::move(F));
+    }
+    TypeInfo& T_QGcPerfTest = R.add_type("QGcPerfTest", sizeof(QGcPerfTest));
+    T_QGcPerfTest.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
+    T_QGcPerfTest.properties.push_back(MetaProperty{"RootCount", "int", offsetof(QGcPerfTest, RootCount), MetaMap{} });
+    T_QGcPerfTest.properties.push_back(MetaProperty{"Depth", "int", offsetof(QGcPerfTest, Depth), MetaMap{} });
+    T_QGcPerfTest.properties.push_back(MetaProperty{"Branching", "int", offsetof(QGcPerfTest, Branching), MetaMap{} });
+    T_QGcPerfTest.properties.push_back(MetaProperty{"Roots", "std::vector<QObject*>", offsetof(QGcPerfTest, Roots), MetaMap{} });
+    {
+        MetaFunction F;
+        F.name = "Build";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcPerfTest_Build;
+        F.params = std::vector<MetaParam>{ MetaParam{"InRootCount", "int"}, MetaParam{"InDepth", "int"}, MetaParam{"InBranching", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcPerfTest.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "BreakAtDepth";
+        F.return_type = "int";
+        F.invoker = &_qmeta_invoke_QGcPerfTest_BreakAtDepth;
+        F.params = std::vector<MetaParam>{ MetaParam{"TargetDepth", "int"}, MetaParam{"Count", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcPerfTest.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "PrintDepthStats";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcPerfTest_PrintDepthStats;
+        F.params = std::vector<MetaParam>{ MetaParam{"TargetDepth", "int"} };
+        F.meta = MetaMap{};
+        T_QGcPerfTest.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "ForceGc";
+        F.return_type = "double";
+        F.invoker = &_qmeta_invoke_QGcPerfTest_ForceGc;
+        F.params = std::vector<MetaParam>{  };
+        F.meta = MetaMap{};
+        T_QGcPerfTest.functions.push_back(std::move(F));
     }
 }

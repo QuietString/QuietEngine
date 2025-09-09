@@ -4,6 +4,7 @@
 
 #include "GarbageCollector.h"
 #include "Runtime.h"
+#include "CoreObjects/Public/World.h"
 
 // --- helper: stringify a property value by its reflected type ---
 static std::string FormatPropertyValue(QObject* Owner, const qmeta::TypeInfo& Ti, const qmeta::MetaProperty& P)
@@ -214,6 +215,107 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
         {
             GC.Collect();
             return true;
+        }
+        else if (Cmd == "gctest")
+        {
+            auto* W = GetWorld();
+            if (!W) { std::cout << "World not found.\n"; return true; }
+
+            auto FindTester = [&]() -> QObject* {
+                const qmeta::TypeInfo* Ti = nullptr;
+                for (QObject* O : W->Objects)
+                {
+                    if (!O) continue;
+                    Ti = GC.GetTypeInfo(O);
+                    if (Ti && Ti->name == "QGcPerfTest")
+                        return O;
+                }
+                if (W->SingleObject)
+                {
+                    Ti = GC.GetTypeInfo(W->SingleObject);
+                    if (Ti && Ti->name == "QGcPerfTest") return W->SingleObject;
+                }
+                if (W->SingleObject2)
+                {
+                    Ti = GC.GetTypeInfo(W->SingleObject2);
+                    if (Ti && Ti->name == "QGcPerfTest") return W->SingleObject2;
+                }
+                return nullptr;
+            };
+
+            QObject* Tester = FindTester();
+            if (!Tester)
+            {
+                std::cout << "QGcPerfTest instance not found. Make sure the Game module created it in BeginPlay().\n";
+                return true;
+            }
+            const uint64_t Tid = Tester->GetObjectId();
+
+            if (Tokens.size() >= 2 && Tokens[1] == "build")
+            {
+                if (Tokens.size() < 5)
+                {
+                    std::cout << "Usage: gctest build <roots> <depth> <branch> [seed]\n";
+                    return true;
+                }
+                int roots = std::stoi(Tokens[2]);
+                int depth = std::stoi(Tokens[3]);
+                int branch = std::stoi(Tokens[4]);
+                int seed = (Tokens.size() >= 6) ? std::stoi(Tokens[5]) : 1337;
+                GC.CallById(Tid, "Build", { qmeta::Variant(roots), qmeta::Variant(depth), qmeta::Variant(branch), qmeta::Variant(seed) });
+                return true;
+            }
+            else if (Tokens.size() >= 2 && Tokens[1] == "break")
+            {
+                if (Tokens.size() < 4)
+                {
+                    std::cout << "Usage: gctest break <depth> <all|count> [seed]\n";
+                    return true;
+                }
+                int depth = std::stoi(Tokens[2]);
+                int count = (Tokens[3] == "all") ? -1 : std::stoi(Tokens[3]);
+                int seed = (Tokens.size() >= 5) ? std::stoi(Tokens[4]) : 42;
+                GC.CallById(Tid, "BreakAtDepth", { qmeta::Variant(depth), qmeta::Variant(count), qmeta::Variant(seed) });
+                return true;
+            }
+            else if (Tokens.size() >= 2 && Tokens[1] == "count")
+            {
+                if (Tokens.size() < 3)
+                {
+                    std::cout << "Usage: gctest count <depth>\n";
+                    return true;
+                }
+                int depth = std::stoi(Tokens[2]);
+                GC.CallById(Tid, "PrintDepthStats", { qmeta::Variant(depth) });
+                return true;
+            }
+            else if (Tokens.size() >= 2 && Tokens[1] == "gc")
+            {
+                GC.CallById(Tid, "ForceGc", {});
+                return true;
+            }
+            else if (Tokens.size() >= 2 && Tokens[1] == "auto")
+            {
+                if (Tokens.size() < 3)
+                {
+                    std::cout << "Usage: gctest auto <seconds>\n";
+                    return true;
+                }
+                double seconds = std::stod(Tokens[2]);
+                GC.SetAutoInterval(seconds);
+                std::cout << "GC auto-interval set to " << seconds << "s (<=0 disables)\n";
+                return true;
+            }
+            else
+            {
+                std::cout << "Usage:\n"
+                             "  gctest build <roots> <depth> <branch> [seed]\n"
+                             "  gctest break <depth> <all|count> [seed]\n"
+                             "  gctest count <depth>\n"
+                             "  gctest gc\n"
+                             "  gctest auto <seconds>\n";
+                return true;
+            }
         }
         else if (Cmd == "ls")
         {

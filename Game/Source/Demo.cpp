@@ -7,7 +7,7 @@
 #include "Object_GcTest.h"
 #include "qmeta_runtime.h"
 #include "Runtime.h"
-#include "../../Engine/Source/CoreObjects/Public/World.h"
+#include "World.h"
 #include "Classes/Player.h"
 
 void Demo::RunDemo()

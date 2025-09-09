@@ -70,6 +70,7 @@
                 $(ProjectDir)Source;
                 $(ProjectDir)Intermediate\Include\QHT;
                 $(SolutionDir)Engine\Source\Public;
+                $(SolutionDir)Engine\Source\CoreObjects\Public;
                 $(SolutionDir)Engine\Intermediate\Include\QHT;
                 %(AdditionalIncludeDirectories)
             </AdditionalIncludeDirectories>
@@ -99,6 +100,7 @@
         <ClCompile Include="Source\Core\GameModule.cpp" />
         <ClCompile Include="Source\Core\QHT_Bridge_Game.cpp" />
         <ClCompile Include="Source\Demo.cpp" />
+        <ClCompile Include="Source\Test\GcPerfTest.cpp" />
     </ItemGroup>
 
     <ItemGroup>
