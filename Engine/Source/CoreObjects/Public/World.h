@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include <vector>
 
-#include "GarbageCollector.h"
 #include "Object.h"
 #include "qmeta_macros.h"
 

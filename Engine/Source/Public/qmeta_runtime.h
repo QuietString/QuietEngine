@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <functional>
 #include <typeindex>
+#include <format>
 #include <type_traits>
 #include <stdexcept>
 
@@ -107,14 +108,17 @@ struct TypeInfo {
     MetaMap meta;
 };
 
-class Registry {
+class Registry
+{
 public:
-    const TypeInfo* find(std::string_view type_name) const {
+    const TypeInfo* find(std::string_view type_name) const
+    {
         auto it = types_.find(std::string(type_name));
         return it == types_.end() ? nullptr : &it->second;
     }
 
-    TypeInfo& add_type(std::string name, std::size_t size) {
+    TypeInfo& add_type(std::string name, std::size_t size)
+    {
         auto [it, inserted] = types_.try_emplace(std::move(name));
         TypeInfo& t = it->second;
         t.name = it->first;
@@ -122,21 +126,28 @@ public:
         return t;
     }
 
-    const std::unordered_map<std::string, TypeInfo>& all() const { return types_; }
+    const std::unordered_map<std::string, TypeInfo>& all() const
+    {
+        return types_;
+    }
 
 private:
     std::unordered_map<std::string, TypeInfo> types_;
 };
 
-inline Registry& GetRegistry() {
+inline Registry& GetRegistry()
+{
     static Registry g;
     return g;
 }
 
 // Utility: get property address by name
-inline void* GetPropertyPtr(void* Obj, const TypeInfo& Ti, std::string_view PropName) {
-    for (auto& p : Ti.properties) {
-        if (p.name == PropName) {
+inline void* GetPropertyPtr(void* Obj, const TypeInfo& Ti, std::string_view PropName)
+{
+    for (auto& p : Ti.properties)
+    {
+        if (p.name == PropName)
+        {
             return static_cast<void*>(static_cast<unsigned char*>(Obj) + p.offset);
         }
     }
@@ -144,14 +155,20 @@ inline void* GetPropertyPtr(void* Obj, const TypeInfo& Ti, std::string_view Prop
 }
 
 // Utility: call a function by name
-inline Variant CallByName(void* Obj, const TypeInfo& Ti, const std::string_view func, const std::vector<Variant>& Args) {
-    for (auto& Func : Ti.functions) {
-        if (Func.name == func) {
+inline Variant CallByName(void* Obj, const TypeInfo& Ti, const std::string_view func, const std::vector<Variant>& Args)
+{
+    for (auto& Func : Ti.functions)
+    {
+        if (Func.name == func)
+        {
             if (!Func.invoker) throw std::runtime_error("qmeta: null invoker");
             return Func.invoker(Obj, Args.data(), Args.size());
         }
     }
-    throw std::runtime_error("qmeta: function not found");
+    
+    std::string Msg = std::format("{}.{} not found", Ti.name, func);
+    
+    throw std::runtime_error(Msg);
 }
 
 }

@@ -23,9 +23,8 @@ inline QWorld* CreateWorld()
 
 int main(int argc, char* argv[])
 {
-    // Optional stream tweaks (safe defaults)
     std::ios::sync_with_stdio(false);
-    std::cin.tie(nullptr);
+    std::cin.tie(&std::cout);
 
     qmod::ModuleManager& M = qmod::ModuleManager::Get();
 
@@ -41,21 +40,12 @@ int main(int argc, char* argv[])
         Primary = M.EnsureLoaded(Name);
     }
     
-
     QGC::GcManager& GC = QGC::GcManager::Get();
     GC.Initialize();
     GC.SetAutoInterval(0);
     
     QWorld* World = CreateWorld();
     GC.AddRoot(World);
-    
-    auto* A = NewObject<QObject_GcTest>();
-    auto* B = NewObject<QObject_GcTest>();
-    auto* C = NewObject<QObject_GcTest>();
-    
-    World->SingleObject = A;
-    A->ChildObject = B;
-    B->ChildObject = C;
     
     // BeginPlay() all modules.
     M.BeginPlayAll();

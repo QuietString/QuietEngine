@@ -14,8 +14,7 @@ using namespace qmeta;
 inline void QHT_Register_Engine(Registry& R) {
     TypeInfo& T_QObject_GcTest = R.add_type("QObject_GcTest", sizeof(QObject_GcTest));
     T_QObject_GcTest.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
-    T_QObject_GcTest.properties.push_back(MetaProperty{"ChildObject", "QObject*", offsetof(QObject_GcTest, ChildObject), MetaMap{} });
-    T_QObject_GcTest.properties.push_back(MetaProperty{"Children", "std::vector<QObject*>", offsetof(QObject_GcTest, Children), MetaMap{} });
+    T_QObject_GcTest.properties.push_back(MetaProperty{"Children", "std::vector<QObject_GcTest*>", offsetof(QObject_GcTest, Children), MetaMap{} });
     TypeInfo& T_QWorld = R.add_type("QWorld", sizeof(QWorld));
     T_QWorld.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
     T_QWorld.properties.push_back(MetaProperty{"SingleObject", "QObject*", offsetof(QWorld, SingleObject), MetaMap{} });

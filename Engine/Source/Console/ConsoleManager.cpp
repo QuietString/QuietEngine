@@ -202,7 +202,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 "  tick <seconds>\n"
                 "  ls\n"
                 "  props <Name>\n"
-                "  funcs <Name>" << std::endl;
+                "  funcs <Name>" << "\n";
             return true;
         }
         else if (Cmd == "tick" && Tokens.size() >= 2)
@@ -213,8 +213,19 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
         }
         else if (Cmd == "gc")
         {
-            GC.Collect();
-            return true;
+            if (Tokens.size() == 1)
+            {
+                GC.Collect();
+                return true;    
+            }
+            else if (Tokens.size() == 4)
+            {
+                if (Tokens[1] == "set" && Tokens[2] == "interval")
+                {
+                    double Interval = std::stod(Tokens[3]);
+                    GC.SetAutoInterval(Interval);
+                }
+            }
         }
         else if (Cmd == "gctest")
         {
@@ -249,7 +260,6 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 std::cout << "QGcPerfTest instance not found. Make sure the Game module created it in BeginPlay().\n";
                 return true;
             }
-            const uint64_t Tid = Tester->GetObjectId();
 
             if (Tokens.size() >= 2 && Tokens[1] == "build")
             {
@@ -258,12 +268,72 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     std::cout << "Usage: gctest build <roots> <depth> <branch> [seed]\n";
                     return true;
                 }
-                int roots = std::stoi(Tokens[2]);
-                int depth = std::stoi(Tokens[3]);
-                int branch = std::stoi(Tokens[4]);
-                int seed = (Tokens.size() >= 6) ? std::stoi(Tokens[5]) : 1337;
-                GC.CallById(Tid, "Build", { qmeta::Variant(roots), qmeta::Variant(depth), qmeta::Variant(branch), qmeta::Variant(seed) });
+                int Roots = std::stoi(Tokens[2]);
+                int Depth = std::stoi(Tokens[3]);
+                int Branch = std::stoi(Tokens[4]);
+                int Seed = (Tokens.size() >= 6) ? std::stoi(Tokens[5]) : 1337;
+                GC.Call(Tester, "Build", { qmeta::Variant(Roots), qmeta::Variant(Depth), qmeta::Variant(Branch), qmeta::Variant(Seed) });
                 return true;
+            }
+            else if (Tokens.size() >= 2 && Tokens[1] == "pattern")
+            {
+                // gctest pattern <chain|grid|random|rings|diamond> ...
+                if (Tokens.size() < 3)
+                {
+                    std::cout << "Usage: gctest pattern <chain|grid|random|rings|diamond> <args...>\n";
+                    return true;
+                }
+                const std::string Mode = Tokens[2];
+
+                if (Mode == "chain")
+                {
+                    if (Tokens.size() < 4) { std::cout << "gctest pattern chain <length> [seed]\n"; return true; }
+                    int length = std::stoi(Tokens[3]);
+                    int seed = (Tokens.size() >= 5) ? std::stoi(Tokens[4]) : 1;
+                    GC.Call(Tester, "PatternChain", { qmeta::Variant(length), qmeta::Variant(seed) });
+                    return true;
+                }
+                else if (Mode == "grid")
+                {
+                    if (Tokens.size() < 5) { std::cout << "gctest pattern grid <w> <h> [seed]\n"; return true; }
+                    int w = std::stoi(Tokens[3]);
+                    int h = std::stoi(Tokens[4]);
+                    int seed = (Tokens.size() >= 6) ? std::stoi(Tokens[5]) : 1;
+                    GC.Call(Tester, "PatternGrid", { qmeta::Variant(w), qmeta::Variant(h), qmeta::Variant(seed) });
+                    return true;
+                }
+                else if (Mode == "random")
+                {
+                    if (Tokens.size() < 5) { std::cout << "gctest pattern random <nodes> <avgOut> [seed]\n"; return true; }
+                    int nodes = std::stoi(Tokens[3]);
+                    int avgOut = std::stoi(Tokens[4]);
+                    int seed = (Tokens.size() >= 6) ? std::stoi(Tokens[5]) : 1337;
+                    GC.Call(Tester, "PatternRandom", { qmeta::Variant(nodes), qmeta::Variant(avgOut), qmeta::Variant(seed) });
+                    return true;
+                }
+                else if (Mode == "rings")
+                {
+                    if (Tokens.size() < 5) { std::cout << "gctest pattern rings <rings> <ringSize> [seed]\n"; return true; }
+                    int rings = std::stoi(Tokens[3]);
+                    int ringSize = std::stoi(Tokens[4]);
+                    int seed = (Tokens.size() >= 6) ? std::stoi(Tokens[5]) : 7;
+                    GC.Call(Tester, "PatternRings", { qmeta::Variant(rings), qmeta::Variant(ringSize), qmeta::Variant(seed) });
+                    return true;
+                }
+                else if (Mode == "diamond")
+                {
+                    if (Tokens.size() < 5) { std::cout << "gctest pattern diamond <layers> <breadth> [seed]\n"; return true; }
+                    int layers = std::stoi(Tokens[3]);
+                    int breadth = std::stoi(Tokens[4]);
+                    int seed = (Tokens.size() >= 6) ? std::stoi(Tokens[5]) : 3;
+                    GC.Call(Tester, "PatternDiamond", { qmeta::Variant(layers), qmeta::Variant(breadth), qmeta::Variant(seed) });
+                    return true;
+                }
+                else
+                {
+                    std::cout << "Unknown pattern.\n";
+                    return true;
+                }
             }
             else if (Tokens.size() >= 2 && Tokens[1] == "break")
             {
@@ -275,47 +345,62 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 int depth = std::stoi(Tokens[2]);
                 int count = (Tokens[3] == "all") ? -1 : std::stoi(Tokens[3]);
                 int seed = (Tokens.size() >= 5) ? std::stoi(Tokens[4]) : 42;
-                GC.CallById(Tid, "BreakAtDepth", { qmeta::Variant(depth), qmeta::Variant(count), qmeta::Variant(seed) });
+                GC.Call(Tester, "BreakAtDepth", { qmeta::Variant(depth), qmeta::Variant(count), qmeta::Variant(seed) });
                 return true;
             }
-            else if (Tokens.size() >= 2 && Tokens[1] == "count")
+            else if (Tokens.size() >= 2 && Tokens[1] == "breakp")
             {
-                if (Tokens.size() < 3)
-                {
-                    std::cout << "Usage: gctest count <depth>\n";
-                    return true;
-                }
-                int depth = std::stoi(Tokens[2]);
-                GC.CallById(Tid, "PrintDepthStats", { qmeta::Variant(depth) });
+                // gctest breakp <percent 0..100> [depth|-1] [seed]
+                if (Tokens.size() < 3) { std::cout << "gctest breakp <percent> [depth|-1] [seed]\n"; return true; }
+                double pct = std::stod(Tokens[2]);
+                int depth = (Tokens.size() >= 4) ? std::stoi(Tokens[3]) : -1;
+                int seed  = (Tokens.size() >= 5) ? std::stoi(Tokens[4]) : 24;
+                GC.Call(Tester, "BreakPercent", { qmeta::Variant(pct), qmeta::Variant(depth), qmeta::Variant(seed) });
                 return true;
             }
-            else if (Tokens.size() >= 2 && Tokens[1] == "gc")
+            else if (Tokens.size() >= 2 && Tokens[1] == "breakedges")
             {
-                GC.CallById(Tid, "ForceGc", {});
+                // gctest breakedges <count> [seed]
+                if (Tokens.size() < 3) { std::cout << "gctest breakedges <count> [seed]\n"; return true; }
+                int count = std::stoi(Tokens[2]);
+                int seed  = (Tokens.size() >= 4) ? std::stoi(Tokens[3]) : 99;
+                GC.Call(Tester, "BreakRandomEdges", { qmeta::Variant(count), qmeta::Variant(seed) });
                 return true;
             }
-            else if (Tokens.size() >= 2 && Tokens[1] == "auto")
+            else if (Tokens.size() >= 2 && Tokens[1] == "detachroots")
             {
-                if (Tokens.size() < 3)
-                {
-                    std::cout << "Usage: gctest auto <seconds>\n";
-                    return true;
-                }
-                double seconds = std::stod(Tokens[2]);
-                GC.SetAutoInterval(seconds);
-                std::cout << "GC auto-interval set to " << seconds << "s (<=0 disables)\n";
+                // gctest detachroots <count|0> [percent]
+                if (Tokens.size() < 3) { std::cout << "gctest detachroots <count> [percent]\n"; return true; }
+                int count = std::stoi(Tokens[2]);
+                double percent = (Tokens.size() >= 4) ? std::stod(Tokens[3]) : 0.0;
+                GC.Call(Tester, "DetachRoots", { qmeta::Variant(count), qmeta::Variant(percent) });
                 return true;
             }
-            else
+            else if (Tokens.size() >= 2 && Tokens[1] == "measure")
             {
-                std::cout << "Usage:\n"
-                             "  gctest build <roots> <depth> <branch> [seed]\n"
-                             "  gctest break <depth> <all|count> [seed]\n"
-                             "  gctest count <depth>\n"
-                             "  gctest gc\n"
-                             "  gctest auto <seconds>\n";
+                // gctest measure <repeats>
+                if (Tokens.size() < 3) { std::cout << "gctest measure <repeats>\n"; return true; }
+                int rep = std::stoi(Tokens[2]);
+                GC.Call(Tester, "MeasureGc", { qmeta::Variant(rep) });
                 return true;
             }
+            else if (Tokens.size() >= 2 && Tokens[1] == "churn")
+            {
+                // gctest churn <steps> <allocPerStep> <breakPct> <gcEveryN> [seed]
+                if (Tokens.size() < 6) { std::cout << "gctest churn <steps> <allocPerStep> <breakPct> <gcEveryN> [seed]\n"; return true; }
+                int steps = std::stoi(Tokens[2]);
+                int allocPerStep = std::stoi(Tokens[3]);
+                double breakPct = std::stod(Tokens[4]);
+                int gcEveryN = std::stoi(Tokens[5]);
+                int seed = (Tokens.size() >= 7) ? std::stoi(Tokens[6]) : 2025;
+                GC.Call(Tester, "Churn", { qmeta::Variant(steps), qmeta::Variant(allocPerStep),
+                                            qmeta::Variant(breakPct), qmeta::Variant(gcEveryN),
+                                            qmeta::Variant(seed) });
+                return true;
+            }
+
+            std::cout << "Invalid cmd: " << Tokens[0] << " " << Tokens[1] << "\n";
+            return false;
         }
         else if (Cmd == "ls")
         {
@@ -341,14 +426,14 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             QObject* Obj = GC.FindByDebugName(Name);
             if (!Obj)
             {
-                std::cout << "Not found: " << Name << std::endl;
+                std::cout << "Not found: " << Name << "\n";
                 return false;
             }
 
             const qmeta::TypeInfo* Ti = GC.GetTypeInfo(Obj);
             if (!Ti)
             {
-                std::cout << "No TypeInfo for: " << Name << std::endl;
+                std::cout << "No TypeInfo for: " << Name << "\n";
                 return false;
             }
 
@@ -360,12 +445,12 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             }
             if (!MP)
             {
-                std::cout << "Property not found: " << Prop << std::endl;
+                std::cout << "Property not found: " << Prop << "\n";
                 return false;
             }
 
             std::string ValueStr = FormatPropertyValue(Obj, *Ti, *MP);
-            std::cout << ValueStr << std::endl;
+            std::cout << ValueStr << "\n";
             return true;
         }
         else if (Cmd == "funcs" && Tokens.size() >= 2)
@@ -392,7 +477,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 bool bResult = GC.UnlinkByName(Tokens[2], Tokens[3]);
                 if (!bResult)
                 {
-                    std::cout << "Failed to unlink " << Tokens[1] << "." << Tokens[2] << std::endl;
+                    std::cout << "Failed to unlink " << Tokens[1] << "." << Tokens[2] << "\n";
                 }
                 
                 return bResult;
@@ -402,14 +487,14 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 bool bResult = GC.UnlinkAllByName(Tokens[2]);
                 if (!bResult)
                 {
-                    std::cout << "Failed to unlink " << Tokens[1] << "." << Tokens[2] << std::endl;
+                    std::cout << "Failed to unlink " << Tokens[1] << "." << Tokens[2] << "\n";
                 }
 
                 return bResult;
             }
             else
             {
-                std::cout << "Usage: unlink <OwnerName> <Property> [single|all]" << std::endl;
+                std::cout << "Usage: unlink <OwnerName> <Property> [single|all]" << "\n";
                 return false;
             }
         }
@@ -418,11 +503,11 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             bool bResult = GC.SetPropertyByName(Tokens[1], Tokens[2], Tokens[3]);
             if (bResult)
             {
-                std::cout << "Set " << Tokens[1] << "." << Tokens[2] << " to " << Tokens[3] << std::endl;
+                std::cout << "Set " << Tokens[1] << "." << Tokens[2] << " to " << Tokens[3] << "\n";
             }
             else
             {
-                std::cout << "Failed to set " << Tokens[1] << "." << Tokens[2] << std::endl;
+                std::cout << "Failed to set " << Tokens[1] << "." << Tokens[2] << "\n";
             }
 
             return bResult;
@@ -471,13 +556,13 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
         }
         else
         {
-            std::cout << "Unknown command: " << Cmd << std::endl;
+            std::cout << "Unknown command: " << Cmd << "\n";
             return false;
         }
     }
     catch (const std::exception& e)
     {
-        std::cerr << "[CommandError] " << e.what() << std::endl;
+        std::cerr << "[CommandError] " << e.what() << "\n";
         return true;
     }
 

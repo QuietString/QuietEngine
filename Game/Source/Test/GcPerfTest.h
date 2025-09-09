@@ -1,54 +1,83 @@
 ﻿#pragma once
+
 #include <vector>
 #include <random>
-#include <string>
-#include <queue>
-#include <unordered_map>
-#include <chrono>
-#include <iostream>
+#include "CoreMinimal.h"
 
-#include "Object.h"
-#include "qmeta_macros.h"
-
-// Forward declare
 class QObject_GcTest;
 
+// GC performance and functionality test harness.
 class QGcPerfTest : public QObject
 {
 public:
-    // Config (reflected for convenience)
+    // Tree config (legacy)
     QPROPERTY()
     int RootCount = 1;
     QPROPERTY()
-    int Depth = 10;            // Depth 0 = roots
+    int Depth = 10;
     QPROPERTY()
-    int Branching = 3;         // Children per node
+    int Branching = 3;
     QPROPERTY()
-    std::vector<QObject*> Roots; // GC roots the test keeps intentionally
+    std::vector<QObject*> Roots;
 
-    // Non-reflected working sets
+    // Working sets (non-reflected)
     std::vector<QObject_GcTest*> AllNodes;
-    std::vector<std::vector<QObject_GcTest*>> Levels;
+    std::vector<std::vector<QObject_GcTest*>> Levels; // BFS layers from Roots
 
-    // Rebuild a fresh forest with given parameters
+    // ---------- Existing tree builder ----------
     QFUNCTION()
     void Build(int InRootCount, int InDepth, int InBranching, int Seed = 1337);
 
-    // Cut links that lead into TargetDepth.
-    // If Count < 0 => cut for ALL parents at depth-1.
-    // Returns number of cut links.
+    // ---------- General graph patterns ----------
+    QFUNCTION() void PatternChain(int Length, int Seed = 1);
+    QFUNCTION() void PatternGrid(int Width, int Height, int Seed = 1);
+    QFUNCTION() void PatternRandom(int Nodes, int AvgOut, int Seed = 1337);
+    QFUNCTION() void PatternRings(int Rings, int RingSize, int Seed = 7);
+    QFUNCTION() void PatternDiamond(int Layers, int Breadth, int Seed = 3);
+
+    // ---------- Mutations / breaks ----------
+    // Break all links of selected parents at depth (existing).
     QFUNCTION()
     int BreakAtDepth(int TargetDepth, int Count /* -1 == ALL */, int Seed = 42);
 
-    // Print node count at depth and per-node direct children stats (min/avg/max)
+    // Remove a percentage of outgoing edges. If depth<0 => all depths.
     QFUNCTION()
-    void PrintDepthStats(int TargetDepth) const;
+    int BreakPercent(double Percent, int Depth /* -1 == all */, int Seed = 24);
 
-    // Force a GC and print elapsed milliseconds (also returned)
+    // Remove N random edges from reachable set.
     QFUNCTION()
-    double ForceGc();
+    int BreakRandomEdges(int EdgeCount, int Seed = 99);
+
+    // Detach some roots (count >=0 => count; count<0 and percentage>0 => by percent).
+    QFUNCTION()
+    int DetachRoots(int Count, double Percentage /* 0..100 */);
+
+    // ---------- Stats / measure ----------
+    QFUNCTION() void PrintDepthStats(int TargetDepth) const;
+    QFUNCTION() void MeasureGc(int Repeats);
+
+    // ---------- Dynamic churn ----------
+    // steps: iteration count
+    // allocPerStep: number of new nodes allocated at each step
+    // breakPct: percentage of edges randomly removed after allocation at each step
+    // gcEveryN: run GC every N steps (<=0 to disable, 1 to run every step)
+    QFUNCTION()
+    void Churn(int Steps, int AllocPerStep, double BreakPct, int GcEveryN, int Seed = 2025);
 
 private:
     void ClearGraph();
     void LinkChild(QObject_GcTest* Parent, QObject_GcTest* Child);
+
+    // Build helpers
+    void RebuildLevelsFromRoots();
+    std::vector<QObject_GcTest*> GetReachable() const;
+
+    // Edge helpers
+    struct EdgeRef { QObject_GcTest* Parent; QObject_GcTest* Child; size_t ChildIndex; };
+    void CollectEdgesReachable(std::vector<EdgeRef>& Out) const;
+    bool RemoveEdge(QObject_GcTest* Parent, QObject_GcTest* Child);
+
+    // Utility
+    QObject_GcTest* MakeNode();
+    QObject_GcTest* PickRandom(const std::vector<QObject_GcTest*>& From, std::mt19937& Rng);
 };

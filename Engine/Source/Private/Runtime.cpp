@@ -107,6 +107,7 @@ void qruntime::ProcessPendingCommands()
             G_CmdQueue.pop();
         }
         ExecuteCommand(line);
+        std::cout.flush();
     }
 }
 

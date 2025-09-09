@@ -35,12 +35,81 @@ static inline Variant _qmeta_invoke_QGcPerfTest_Build(void* obj, const Variant* 
     return Variant();
 }
 
+static inline Variant _qmeta_invoke_QGcPerfTest_PatternChain(void* obj, const Variant* args, std::size_t) {
+    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+    int a0 = args[0].as<int>();
+    int a1 = args[1].as<int>();
+    self->PatternChain(a0, a1);
+    return Variant();
+}
+
+static inline Variant _qmeta_invoke_QGcPerfTest_PatternGrid(void* obj, const Variant* args, std::size_t) {
+    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+    int a0 = args[0].as<int>();
+    int a1 = args[1].as<int>();
+    int a2 = args[2].as<int>();
+    self->PatternGrid(a0, a1, a2);
+    return Variant();
+}
+
+static inline Variant _qmeta_invoke_QGcPerfTest_PatternRandom(void* obj, const Variant* args, std::size_t) {
+    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+    int a0 = args[0].as<int>();
+    int a1 = args[1].as<int>();
+    int a2 = args[2].as<int>();
+    self->PatternRandom(a0, a1, a2);
+    return Variant();
+}
+
+static inline Variant _qmeta_invoke_QGcPerfTest_PatternRings(void* obj, const Variant* args, std::size_t) {
+    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+    int a0 = args[0].as<int>();
+    int a1 = args[1].as<int>();
+    int a2 = args[2].as<int>();
+    self->PatternRings(a0, a1, a2);
+    return Variant();
+}
+
+static inline Variant _qmeta_invoke_QGcPerfTest_PatternDiamond(void* obj, const Variant* args, std::size_t) {
+    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+    int a0 = args[0].as<int>();
+    int a1 = args[1].as<int>();
+    int a2 = args[2].as<int>();
+    self->PatternDiamond(a0, a1, a2);
+    return Variant();
+}
+
 static inline Variant _qmeta_invoke_QGcPerfTest_BreakAtDepth(void* obj, const Variant* args, std::size_t) {
     QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
     int a0 = args[0].as<int>();
     int a1 = args[1].as<int>();
     int a2 = args[2].as<int>();
     auto _ret = self->BreakAtDepth(a0, a1, a2);
+    return Variant(_ret);
+}
+
+static inline Variant _qmeta_invoke_QGcPerfTest_BreakPercent(void* obj, const Variant* args, std::size_t) {
+    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+    double a0 = args[0].as<double>();
+    int a1 = args[1].as<int>();
+    int a2 = args[2].as<int>();
+    auto _ret = self->BreakPercent(a0, a1, a2);
+    return Variant(_ret);
+}
+
+static inline Variant _qmeta_invoke_QGcPerfTest_BreakRandomEdges(void* obj, const Variant* args, std::size_t) {
+    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+    int a0 = args[0].as<int>();
+    int a1 = args[1].as<int>();
+    auto _ret = self->BreakRandomEdges(a0, a1);
+    return Variant(_ret);
+}
+
+static inline Variant _qmeta_invoke_QGcPerfTest_DetachRoots(void* obj, const Variant* args, std::size_t) {
+    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+    int a0 = args[0].as<int>();
+    double a1 = args[1].as<double>();
+    auto _ret = self->DetachRoots(a0, a1);
     return Variant(_ret);
 }
 
@@ -51,10 +120,22 @@ static inline Variant _qmeta_invoke_QGcPerfTest_PrintDepthStats(void* obj, const
     return Variant();
 }
 
-static inline Variant _qmeta_invoke_QGcPerfTest_ForceGc(void* obj, const Variant* args, std::size_t) {
+static inline Variant _qmeta_invoke_QGcPerfTest_MeasureGc(void* obj, const Variant* args, std::size_t) {
     QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
-    auto _ret = self->ForceGc();
-    return Variant(_ret);
+    int a0 = args[0].as<int>();
+    self->MeasureGc(a0);
+    return Variant();
+}
+
+static inline Variant _qmeta_invoke_QGcPerfTest_Churn(void* obj, const Variant* args, std::size_t) {
+    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+    int a0 = args[0].as<int>();
+    int a1 = args[1].as<int>();
+    double a2 = args[2].as<double>();
+    int a3 = args[3].as<int>();
+    int a4 = args[4].as<int>();
+    self->Churn(a0, a1, a2, a3, a4);
+    return Variant();
 }
 
 inline void QHT_Register_Game(Registry& R) {
@@ -99,10 +180,82 @@ inline void QHT_Register_Game(Registry& R) {
     }
     {
         MetaFunction F;
+        F.name = "PatternChain";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcPerfTest_PatternChain;
+        F.params = std::vector<MetaParam>{ MetaParam{"Length", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcPerfTest.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "PatternGrid";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcPerfTest_PatternGrid;
+        F.params = std::vector<MetaParam>{ MetaParam{"Width", "int"}, MetaParam{"Height", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcPerfTest.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "PatternRandom";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcPerfTest_PatternRandom;
+        F.params = std::vector<MetaParam>{ MetaParam{"Nodes", "int"}, MetaParam{"AvgOut", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcPerfTest.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "PatternRings";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcPerfTest_PatternRings;
+        F.params = std::vector<MetaParam>{ MetaParam{"Rings", "int"}, MetaParam{"RingSize", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcPerfTest.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "PatternDiamond";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcPerfTest_PatternDiamond;
+        F.params = std::vector<MetaParam>{ MetaParam{"Layers", "int"}, MetaParam{"Breadth", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcPerfTest.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
         F.name = "BreakAtDepth";
         F.return_type = "int";
         F.invoker = &_qmeta_invoke_QGcPerfTest_BreakAtDepth;
         F.params = std::vector<MetaParam>{ MetaParam{"TargetDepth", "int"}, MetaParam{"Count", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcPerfTest.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "BreakPercent";
+        F.return_type = "int";
+        F.invoker = &_qmeta_invoke_QGcPerfTest_BreakPercent;
+        F.params = std::vector<MetaParam>{ MetaParam{"Percent", "double"}, MetaParam{"Depth", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcPerfTest.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "BreakRandomEdges";
+        F.return_type = "int";
+        F.invoker = &_qmeta_invoke_QGcPerfTest_BreakRandomEdges;
+        F.params = std::vector<MetaParam>{ MetaParam{"EdgeCount", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcPerfTest.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "DetachRoots";
+        F.return_type = "int";
+        F.invoker = &_qmeta_invoke_QGcPerfTest_DetachRoots;
+        F.params = std::vector<MetaParam>{ MetaParam{"Count", "int"}, MetaParam{"Percentage", "double"} };
         F.meta = MetaMap{};
         T_QGcPerfTest.functions.push_back(std::move(F));
     }
@@ -117,10 +270,19 @@ inline void QHT_Register_Game(Registry& R) {
     }
     {
         MetaFunction F;
-        F.name = "ForceGc";
-        F.return_type = "double";
-        F.invoker = &_qmeta_invoke_QGcPerfTest_ForceGc;
-        F.params = std::vector<MetaParam>{  };
+        F.name = "MeasureGc";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcPerfTest_MeasureGc;
+        F.params = std::vector<MetaParam>{ MetaParam{"Repeats", "int"} };
+        F.meta = MetaMap{};
+        T_QGcPerfTest.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "Churn";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcPerfTest_Churn;
+        F.params = std::vector<MetaParam>{ MetaParam{"Steps", "int"}, MetaParam{"AllocPerStep", "int"}, MetaParam{"BreakPct", "double"}, MetaParam{"GcEveryN", "int"}, MetaParam{"Seed", "int"} };
         F.meta = MetaMap{};
         T_QGcPerfTest.functions.push_back(std::move(F));
     }
