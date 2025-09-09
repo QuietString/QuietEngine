@@ -142,11 +142,6 @@ namespace QGC
         }
     }
 
-    bool GcManager::IsPointerProperty(const std::string& TypeStr)
-    {
-        return TypeStr.find('*') != std::string::npos;
-    }
-
     void GcManager::Mark(QObject* Root)
     {
         std::vector<QObject*> Stack;
@@ -337,7 +332,7 @@ namespace QGC
         unsigned char* Base = BytePtr(Owner);
         for (auto& p : ito->second.Ti->properties)
         {
-            if (p.name == Property && IsPointerProperty(p.type))
+            if (p.name == Property && IsRawQObjectPtr(p.type))
             {
                 auto* Slot = reinterpret_cast<QObject**>(Base + p.offset);
                 *Slot = Target;
