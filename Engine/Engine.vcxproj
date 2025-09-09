@@ -90,6 +90,7 @@
         <ClCompile Include="Source\Private\Asset.cpp" />
         <ClCompile Include="Source\Private\EngineModule.cpp" />
         <ClCompile Include="Source\Private\GarbageCollector.cpp" />
+        <ClCompile Include="Source\Private\ObjectBase.cpp" />
         <ClCompile Include="Source\Private\QHT_Bridge_Engine.cpp" />
         <ClCompile Include="Source\Private\Runtime.cpp" />
     </ItemGroup>

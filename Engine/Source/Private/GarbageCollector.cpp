@@ -276,7 +276,22 @@ namespace QGC
         
         std::cout << "[GC] Collected " << Dead.size() << " objects, alive=" << Objects.size() << ". Took " << Ms << " ms." "\n";
         
+        TrimAfterCollect();
+        
         return Ms;
+    }
+
+    void GcManager::TrimAfterCollect()
+    {
+        // 1) shrink unordered_map buckets
+        Objects.rehash(0);
+        Objects.reserve(Objects.size()); // keep load-factor sane without immediate growth
+
+        // 2) trim roots (keep only actual size)
+        Roots.shrink_to_fit();
+
+        // 3) Any other persistent temporary caches should be shrunk here if you add them later.
+        // e.g., Mark/Gray queues kept as members (none at the moment; per-collect locals are destroyed).
     }
 
     void GcManager::ListObjects() const

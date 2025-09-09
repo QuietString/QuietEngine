@@ -55,6 +55,11 @@ namespace QGC
         // GC steps
         void Tick(double DeltaSeconds);
         double Collect();
+
+    private:
+        void TrimAfterCollect();
+
+    public:
         void SetAutoInterval(double Seconds);
 
         // Debug utilities
