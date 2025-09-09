@@ -1,4 +1,6 @@
 ﻿#pragma once
+#include <vector>
+
 #include "Object.h"
 #include "qmeta_macros.h"
 
@@ -14,6 +16,9 @@ public:
     
     QPROPERTY()
     QPlayer* Friend = nullptr;
+
+    QPROPERTY()
+    std::vector<QPlayer*> Friends;
     
     QFUNCTION()
     int AddHealth(int Delta);

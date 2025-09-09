@@ -348,41 +348,80 @@ namespace QGC
         return false;
     }
 
-    bool GcManager::Unlink(uint64_t OwnerId, const std::string& Property)
+    bool GcManager::Unlink(QObject* Object, const std::string& Property)
     {
-        QObject* Owner = FindById(OwnerId);
-        if (!Owner) return false;
-
-        auto ito = Objects.find(Owner);
-        unsigned char* Base = BytePtr(Owner);
-        for (auto& p : ito->second.Ti->properties)
+        if (!Object)
         {
-            if (p.name == Property && IsPointerProperty(p.type))
+            std::cout << "[Unlink] Object is null\n";
+            return false;
+        }
+        
+        auto ObjectIter = Objects.find(Object);
+        unsigned char* Base = BytePtr(Object);
+        
+        for (auto& MetaProp : ObjectIter->second.Ti->properties)
+        {
+            if (MetaProp.name != Property) continue;
+            
+            // Handle raw QObject*
+            if (IsRawQObjectPtr(MetaProp.type))
             {
-                auto* Slot = reinterpret_cast<QObject**>(Base + p.offset);
+                auto* Slot = reinterpret_cast<QObject**>(Base + MetaProp.offset);
                 *Slot = nullptr;
-                std::cout << "[Unlink] Id=" << OwnerId << "." << Property << " -> null\n";
+                std::cout << "[Unlink] Name=" << Object->GetDebugName() << "." << Property << " -> null" << std::endl;
+                return true;
+            }
+
+            // Handle std::vector<QObject*>
+            if (IsVectorOfQObjectPtr(MetaProp.type))
+            {
+                auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Base + MetaProp.offset);
+                // Remove all references held by the vector
+                for (QObject*& E : *Vec) { E = nullptr; }
+                Vec->clear();
+                std::cout << "[Unlink] Name=" << Object->GetDebugName() << "." << Property << " -> cleared vector" << std::endl;
                 return true;
             }
         }
+        
         return false;
     }
 
-    bool GcManager::UnlinkAllProperties(uint64_t OwnerId)
+    bool GcManager::UnlinkById(uint64_t Id, const std::string& Property)
+    {
+        QObject* Obj = FindById(Id);
+        if (!Obj)
+        {
+            std::cout << "[Unlink] Object not found by Id: " << Id << std::endl;
+            return false;
+        }
+
+        return Unlink(Obj, Property);
+    }
+
+    bool GcManager::UnlinkByName(const std::string& Name, const std::string& Property)
+    { 
+        QObject* Obj = FindByDebugName(Name);
+
+        if (!Obj)
+        {
+            std::cout << "[Unlink] Object not found by Name: " << Name << "\n";
+            return false;
+        }
+        
+        return Unlink(Obj, Property);
+    }
+    
+    bool GcManager::UnlinkAllById(uint64_t OwnerId)
     {
         QObject* Owner = FindById(OwnerId);
         if (!Owner) return false;
 
-        auto ito = Objects.find(Owner);
+        auto ObjectIter = Objects.find(Owner);
         unsigned char* Base = BytePtr(Owner);
-        for (auto& p : ito->second.Ti->properties)
+        for (auto& MetaProp : ObjectIter->second.Ti->properties)
         {
-            if (IsPointerProperty(p.type))
-            {
-                auto* Slot = reinterpret_cast<QObject**>(Base + p.offset);
-                *Slot = nullptr;
-                std::cout << "[Unlink] Id=" << OwnerId << "." << p.name << " -> null\n";
-            }
+            Unlink(Owner, MetaProp.name);
         }
         
         return true;
@@ -391,41 +430,17 @@ namespace QGC
     bool GcManager::UnlinkAllByName(const std::string& Name)
     {
         QObject* Obj = FindByDebugName(Name);
+        
         if (!Obj) return false;
 
         auto ObjectIter = Objects.find(Obj);
         unsigned char* Base = BytePtr(Obj);
-        for (auto& P : ObjectIter->second.Ti->properties)
+        for (auto& MetaProp : ObjectIter->second.Ti->properties)
         {
-            if (IsPointerProperty(P.type))
-            {
-                auto* Slot = reinterpret_cast<QObject**>(Base + P.offset);
-                *Slot = nullptr;
-                std::cout << "[Unlink] Name=" << Name << "." << P.name << " -> null\n";
-            }
+            Unlink(Obj, MetaProp.name);
         }
-
+        
         return true;
-    }
-
-    bool GcManager::UnlinkByName(const std::string& Name, const std::string& Property)
-    {
-        QObject* Obj = FindByDebugName(Name);
-        if (!Obj) return false;
-
-        auto ito = Objects.find(Obj);
-        unsigned char* Base = BytePtr(Obj);
-        for (auto& P : ito->second.Ti->properties)
-        {
-            if (P.name == Property && IsPointerProperty(P.type))
-            {
-                auto* Slot = reinterpret_cast<QObject**>(Base + P.offset);
-                *Slot = nullptr;
-                std::cout << "[Unlink] Name=" << Name << "." << Property << " -> null\n";
-                return true;
-            }
-        }
-        return false;
     }
 
     bool GcManager::SetProperty(QObject* Obj, const std::string& Property, const std::string& Value)
@@ -483,22 +498,28 @@ namespace QGC
         return SetProperty(Obj, Property, Value);
     }
 
+    qmeta::Variant GcManager::Call(QObject* Obj, const std::string& FuncName, const std::vector<qmeta::Variant>& Args)
+    {
+        if (!Obj) throw std::runtime_error("Object not found");
+        auto It = Objects.find(Obj);
+        if (It == Objects.end()) throw std::runtime_error("Not GC-managed");
+        return qmeta::CallByName(Obj, *It->second.Ti, FuncName, Args);
+    }
+
     qmeta::Variant GcManager::CallById(uint64_t Id, const std::string& Function, const std::vector<qmeta::Variant>& Args)
     {
         QObject* Obj = FindById(Id);
         if (!Obj) throw std::runtime_error("Object not found by Id");
-        auto It = Objects.find(Obj);
-        if (It == Objects.end()) throw std::runtime_error("Not GC-managed");
-        return qmeta::CallByName(Obj, *It->second.Ti, Function, Args);
+
+        return Call(Obj, Function, Args);
     }
 
     qmeta::Variant GcManager::CallByName(const std::string& Name, const std::string& Function, const std::vector<qmeta::Variant>& Args)
     {
         QObject* Obj = FindByDebugName(Name);
         if (!Obj) throw std::runtime_error("Object not found by Name");
-        auto It = Objects.find(Obj);
-        if (It == Objects.end()) throw std::runtime_error("Not GC-managed");
-        return qmeta::CallByName(Obj, *It->second.Ti, Function, Args);
+
+        return Call(Obj, Function, Args);
     }
 
     bool GcManager::Save(uint64_t Id, const std::string& FileNameIfAny)

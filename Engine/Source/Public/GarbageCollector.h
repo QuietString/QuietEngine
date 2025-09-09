@@ -63,13 +63,16 @@ namespace QGC
         void ListFunctionsByDebugName(const std::string& Name) const;
         
         bool Link(uint64_t OwnerId, const std::string& Property, uint64_t TargetId);
-        bool Unlink(uint64_t OwnerId, const std::string& Property);
-        bool UnlinkAllProperties(uint64_t OwnerId);
-        bool UnlinkAllByName(const std::string& Name);
+        bool Unlink(QObject* Object, const std::string& Property);
+        bool UnlinkById(uint64_t Id, const std::string& Property);
         bool UnlinkByName(const std::string& Name, const std::string& Property);
+        bool UnlinkAllById(uint64_t OwnerId);
+        bool UnlinkAllByName(const std::string& Name);
         bool SetProperty(QObject* Obj, const std::string& Property, const std::string& Value);
         bool SetPropertyById(uint64_t Id, const std::string& Property, const std::string& Value);
         bool SetPropertyByName(const std::string& Name, const std::string& Property, const std::string& Value);
+
+        qmeta::Variant Call(QObject* Obj, const std::string& FuncName, const std::vector<qmeta::Variant>& Args);
         qmeta::Variant CallById(uint64_t Id, const std::string& Function, const std::vector<qmeta::Variant>& Args);
         qmeta::Variant CallByName(const std::string& Name, const std::string& Function, const std::vector<qmeta::Variant>& Args);
 

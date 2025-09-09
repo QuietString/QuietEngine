@@ -98,14 +98,11 @@ void Demo::GenerateObjectsForGcTest()
     if (World)
     {
         World->Objects.push_back(A);
-        World->Objects.push_back(B);
     }
 
     A->Friend = C;
     A->Health = 45;
-    A->SetWalkSpeed(720.0f);
-    
-    B->Friend = D;
-    B->Health = 30;
-    B->SetWalkSpeed(160.0f);
+    A->Friends.push_back(B);
+    A->Friends.push_back(C);
+    A->Friends.push_back(D);
 }

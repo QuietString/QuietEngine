@@ -30,6 +30,7 @@ inline void QHT_Register_Game(Registry& R) {
     T_QPlayer.properties.push_back(MetaProperty{"Health", "int", offsetof(QPlayer, Health), MetaMap{} });
     T_QPlayer.properties.push_back(MetaProperty{"WalkSpeed", "float", offsetof(QPlayer, WalkSpeed), MetaMap{} });
     T_QPlayer.properties.push_back(MetaProperty{"Friend", "QPlayer*", offsetof(QPlayer, Friend), MetaMap{} });
+    T_QPlayer.properties.push_back(MetaProperty{"Friends", "std::vector<QPlayer*>", offsetof(QPlayer, Friends), MetaMap{} });
     {
         MetaFunction F;
         F.name = "AddHealth";
