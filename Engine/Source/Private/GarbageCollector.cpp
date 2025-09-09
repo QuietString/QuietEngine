@@ -89,16 +89,6 @@ namespace QGC
         return static_cast<const unsigned char*>(p);
     }
 
-    bool GcManager::IsQObjectPointerType(const std::string& Type)
-    {
-        // Very naive: treat any "X*" as candidate; we will filter by managed set membership.
-        for (char c : Type)
-        {
-            if (c == '*') return true;
-        }
-        return false;
-    }
-
     // Helpers
     static inline bool EndsWithStar(const std::string& s)
     {

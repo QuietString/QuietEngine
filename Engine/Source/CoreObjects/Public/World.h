@@ -4,7 +4,6 @@
 #include "Object.h"
 #include "qmeta_macros.h"
 
-// Globally accessible singleton root object
 class QWorld : public QObject
 {
 public:

@@ -102,7 +102,6 @@ namespace QGC
         
         void TraversePointers(QObject* Obj, const qmeta::TypeInfo& Ti, std::vector<QObject*>& OutChildren) const;
         static bool IsPointerProperty(const std::string& TypeStr);
-        static bool IsQObjectPointerType(const std::string& Type);
         
     private:
         std::unordered_map<QObject*, Node> Objects;
