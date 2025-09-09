@@ -98,8 +98,7 @@ namespace QGC
             uint64_t Id = 0;
             bool Marked = false;
         };
-
-
+        
         // Marks all objects from a root to kill by BFS 
         void Mark(QObject* Root);
         
@@ -117,8 +116,14 @@ namespace QGC
         double Interval = 2.0;
 
     public:
+        static bool IsPointerType(const std::string& Type);
+        static bool IsVectorOfPointer(const std::string& Type);
+        
         static bool IsRawQObjectPtr(const std::string& type);
         static bool IsVectorOfQObjectPtr(const std::string& type);
         static unsigned char* BytePtr(void* p) { return static_cast<unsigned char*>(p); }
+
+        // Whether a pointer is tracked by GC (safe check for console formatting etc.)
+        bool IsManaged(const QObject* Obj) const;
     };
 }

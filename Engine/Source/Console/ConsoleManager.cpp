@@ -35,39 +35,59 @@ static std::string FormatPropertyValue(QObject* Owner, const qmeta::TypeInfo& Ti
     if (equals_any({"std::string","string"}))               { OutputStream << '"' << *reinterpret_cast<std::string*>(Addr) << '"'; return OutputStream.str(); }
 
     GcManager& Gc = GcManager::Get();
-    // QObject* -> print DebugName (or null)
-    if (Gc.IsRawQObjectPtr(T))
-    {
-        QObject* PObj = *reinterpret_cast<QObject**>(Addr);
-        if (!PObj) return "null";
-        const std::string& Nm = PObj->GetDebugName();
-        return Nm.empty() ? "(Unnamed)" : Nm;
-    }
 
+    // QObject* (and any derived) -> print DebugName (or address fallback)
+    if (Gc.IsPointerType(T))
+    {
+        // Read raw pointer value and try to treat it as QObject* if GC-managed
+        void* Raw = *reinterpret_cast<void**>(Addr);
+        if (!Raw) return "null";
+
+        QObject* AsObj = reinterpret_cast<QObject*>(Raw);
+        if (Gc.IsManaged(AsObj))
+        {
+            const std::string& Nm = AsObj->GetDebugName();
+            return Nm.empty() ? "(Unnamed)" : Nm;
+        }
+        else
+        {
+            std::ostringstream oss;
+            oss << Raw;
+            return oss.str();
+        }
+    }
+    
     // std::vector<...>
     if (T.find("std::vector") != std::string::npos)
     {
-        // std::vector<QObject*>
-        if (GcManager::IsVectorOfQObjectPtr(T))
+        // any std::vector<T*> (T possibly derived from QObject)
+        if (Gc.IsVectorOfPointer(T))
         {
-            auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Addr);
+            auto* Vec = reinterpret_cast<const std::vector<QObject*>*>(Addr);
             const size_t Count = Vec->size();
             const size_t MaxPreview = 8;
-            OutputStream << "size=" << Count << " [QObject*] [";
+            OutputStream << "size=" << Count << " [" << Ti.name << "*] [";
             size_t Limit = std::min(Count, MaxPreview);
             for (size_t i = 0; i < Limit; ++i)
             {
                 if (i) OutputStream << ", ";
                 QObject* E = (*Vec)[i];
                 if (!E) { OutputStream << "null"; continue; }
-                const std::string& Nm = E->GetDebugName();
-                OutputStream << (Nm.empty() ? "(Unnamed)" : Nm);
+                if (Gc.IsManaged(E))
+                {
+                    const std::string& Nm = E->GetDebugName();
+                    OutputStream << (Nm.empty() ? "(Unnamed)" : Nm);
+                }
+                else
+                {
+                    OutputStream << static_cast<void*>(E);
+                }
             }
             if (Count > Limit) OutputStream << ", ...";
             OutputStream << "]";
             return OutputStream.str();
         }
-
+        
         // Common primitive vectors preview
         auto preview_prim = [&](auto* VecPtr, const char* tag) -> std::string {
             const size_t Count = VecPtr->size();
@@ -219,14 +239,14 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             QObject* Obj = GC.FindByDebugName(Name);
             if (!Obj)
             {
-                std::cout << "Not found: " << Name << "\n";
+                std::cout << "Not found: " << Name << std::endl;
                 return false;
             }
 
             const qmeta::TypeInfo* Ti = GC.GetTypeInfo(Obj);
             if (!Ti)
             {
-                std::cout << "No TypeInfo for: " << Name << "\n";
+                std::cout << "No TypeInfo for: " << Name << std::endl;
                 return false;
             }
 
@@ -238,7 +258,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             }
             if (!MP)
             {
-                std::cout << "Property not found: " << Prop << "\n";
+                std::cout << "Property not found: " << Prop << std::endl;
                 return false;
             }
 

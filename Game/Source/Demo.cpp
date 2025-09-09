@@ -95,13 +95,13 @@ void Demo::GenerateObjectsForGcTest()
     auto* C = NewObject<QPlayer>();
     auto* D = NewObject<QPlayer>();
     QWorld* World = static_cast<QWorld*>(GC.GetRoot());
-    if (World)
-    {
-        World->Objects.push_back(A);
-    }
+    if (!World) return;
 
+    World->Objects.push_back(A);
+    
     A->Friend = C;
     A->Health = 45;
+    
     A->Friends.push_back(B);
     A->Friends.push_back(C);
     A->Friends.push_back(D);

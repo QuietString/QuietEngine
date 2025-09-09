@@ -78,21 +78,31 @@ namespace QGC
     {
         Interval = Seconds;
     }
-
-    static inline unsigned char* BytePtr(void* p)
-    {
-        return static_cast<unsigned char*>(p);
-    }
-
-    static inline const unsigned char* BytePtr(const void* p)
-    {
-        return static_cast<const unsigned char*>(p);
-    }
-
+    
     // Helpers
     static inline bool EndsWithStar(const std::string& s)
     {
         return !s.empty() && s.back() == '*';
+    }
+
+    bool GcManager::IsPointerType(const std::string& Type)
+    {
+        // raw pointer of any T*: exclude vectors
+        return Type.find("std::vector") == std::string::npos && EndsWithStar(Type);
+    }
+
+    bool GcManager::IsVectorOfPointer(const std::string& Type)
+    {
+        // very permissive: any "std::vector< ... * >"
+        if (Type.find("std::vector") == std::string::npos) return false;
+        // naive check that there's a '*' before the closing '>'
+        auto lt = Type.find('<');
+        auto gt = Type.rfind('>');
+        if (lt == std::string::npos || gt == std::string::npos || lt >= gt) return false;
+        auto inner = Type.substr(lt + 1, gt - lt - 1);
+        // strip spaces
+        inner.erase(std::remove_if(inner.begin(), inner.end(), ::isspace), inner.end());
+        return !inner.empty() && inner.back() == '*';
     }
 
     bool GcManager::IsRawQObjectPtr(const std::string& type)
@@ -110,16 +120,22 @@ namespace QGC
             && type.find("QObject*") != std::string::npos;
     }
 
+    bool GcManager::IsManaged(const QObject* Obj) const
+    {
+        if (!Obj) return false;
+        return Objects.find(const_cast<QObject*>(Obj)) != Objects.end();
+    }
+
     void GcManager::TraversePointers(QObject* Obj, const TypeInfo& Ti, std::vector<QObject*>& OutChildren) const
     {
         OutChildren.clear();
         unsigned char* Base = BytePtr(Obj);
         for (const MetaProperty& P : Ti.properties)
         {
-            if (IsRawQObjectPtr(P.type))
+            if (IsPointerType(P.type))
             {
-                // Raw QObject*
-                QObject** Slot = reinterpret_cast<QObject**>(Base + P.offset);
+                // any raw pointer T*
+                QObject* const* Slot = reinterpret_cast<QObject* const*>(Base + P.offset);
                 if (Slot && *Slot)
                 {
                     auto It = Objects.find(*Slot);
@@ -127,10 +143,10 @@ namespace QGC
                         OutChildren.push_back(*Slot);
                 }
             }
-            else if (IsVectorOfQObjectPtr(P.type))
+            else if (IsVectorOfPointer(P.type))
             {
-                // std::vector<QObject*>
-                auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Base + P.offset);
+                // any std::vector<T*>, treat as vector<QObject*>
+                auto* Vec = reinterpret_cast<const std::vector<QObject*>*>(Base + P.offset);
                 for (QObject* Child : *Vec)
                 {
                     if (!Child) continue;
@@ -359,7 +375,7 @@ namespace QGC
             if (MetaProp.name != Property) continue;
             
             // Handle raw QObject*
-            if (IsRawQObjectPtr(MetaProp.type))
+            if (IsPointerType(MetaProp.type))
             {
                 auto* Slot = reinterpret_cast<QObject**>(Base + MetaProp.offset);
                 *Slot = nullptr;
@@ -368,7 +384,7 @@ namespace QGC
             }
 
             // Handle std::vector<QObject*>
-            if (IsVectorOfQObjectPtr(MetaProp.type))
+            if (IsVectorOfPointer(MetaProp.type))
             {
                 auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Base + MetaProp.offset);
                 // Remove all references held by the vector
