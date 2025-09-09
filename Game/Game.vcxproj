@@ -22,7 +22,7 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-        <ConfigurationType>StaticLibrary</ConfigurationType>
+        <ConfigurationType>Application</ConfigurationType>
         <UseDebugLibraries>true</UseDebugLibraries>
         <PlatformToolset>v143</PlatformToolset>
         <CharacterSet>Unicode</CharacterSet>
@@ -49,14 +49,16 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-        <LinkIncremental>true</LinkIncremental>
+        <LinkIncremental>false</LinkIncremental>
         <LocalDebuggerWorkingDirectory>$(SolutionDir)</LocalDebuggerWorkingDirectory>
+        <!-- Optional: unique output/obj -->
+        <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
+        <IntDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\obj\</IntDir>
     </PropertyGroup>
 
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
         <ClCompile>
-            <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
-            <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+            <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
             <PrecompiledHeader>NotUsing</PrecompiledHeader>
             <WarningLevel>Level3</WarningLevel>
             <Optimization>Disabled</Optimization>
@@ -68,20 +70,30 @@
                 $(ProjectDir)Source;
                 $(ProjectDir)Intermediate\Include\QHT;
                 $(SolutionDir)Engine\Source\Public;
+                $(SolutionDir)Engine\Intermediate\Include\QHT;
                 %(AdditionalIncludeDirectories)
             </AdditionalIncludeDirectories>
+            <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+            <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
         </ClCompile>
         <Link>
             <SubSystem>Console</SubSystem>
             <GenerateDebugInformation>true</GenerateDebugInformation>
+            <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
         </Link>
-        <!-- Run QHT before compiling -->
         <PreBuildEvent>
             <Message>[QHT] Game scanning...</Message>
             <Command>cmd /c "py &quot;$(SolutionDir)Programs\HeaderTool\QHT.py&quot; --unit Game --src &quot;$(QhtSrc)&quot; --out &quot;$(QhtOut)&quot; || python &quot;$(SolutionDir)Programs\HeaderTool\QHT.py&quot; --unit Game --src &quot;$(QhtSrc)&quot; --out &quot;$(QhtOut)&quot;"</Command>
         </PreBuildEvent>
     </ItemDefinitionGroup>
 
+    <!-- Game depends on Engine (build order + link) -->
+    <ItemGroup>
+        <ProjectReference Include="..\Engine\Engine.vcxproj">
+            <Project>{B0F7671E-B61A-49EC-BA74-91DDABC19D08}</Project>
+        </ProjectReference>
+    </ItemGroup>
+    
     <ItemGroup>
         <ClCompile Include="Source\Classes\Player.cpp" />
         <ClCompile Include="Source\Core\GameModule.cpp" />

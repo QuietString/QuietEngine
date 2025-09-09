@@ -7,12 +7,6 @@
             <Platform>x64</Platform>
         </ProjectConfiguration>
     </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Game\Game.vcxproj">
-            <Project>{4E6332AB-C52E-44F4-96FD-639E631C008D}</Project>
-        </ProjectReference>
-    </ItemGroup>
     
     <PropertyGroup Label="Globals">
         <VCProjectVersion>15.0</VCProjectVersion>
@@ -29,7 +23,7 @@
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
         <LocalDebuggerWorkingDirectory>$(SolutionDir)</LocalDebuggerWorkingDirectory>
-        <ConfigurationType>Application</ConfigurationType>
+        <ConfigurationType>StaticLibrary</ConfigurationType>
         <UseDebugLibraries>true</UseDebugLibraries>
         <PlatformToolset>v143</PlatformToolset>
         <CharacterSet>Unicode</CharacterSet>
@@ -52,15 +46,14 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+        <LinkIncremental>false</LinkIncremental>
         <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
         <IntDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\obj\</IntDir>
-        <LinkIncremental>false</LinkIncremental>
     </PropertyGroup>
 
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
         <ClCompile>
-            <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
-            <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+            <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
             <PrecompiledHeader>NotUsing</PrecompiledHeader>
             <WarningLevel>Level3</WarningLevel>
             <Optimization>Disabled</Optimization>
@@ -74,6 +67,8 @@
                 $(ProjectDir)Intermediate\Include\QHT;
                 %(AdditionalIncludeDirectories)
             </AdditionalIncludeDirectories>
+            <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+            <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
         </ClCompile>
         <Link>
             <SubSystem>Console</SubSystem>
