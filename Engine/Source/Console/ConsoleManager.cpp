@@ -293,34 +293,43 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
         }
         else if (Cmd == "set" && Tokens.size() >= 4)
         {
-            std::cout << "[set] not implemented for now." << std::endl;
-            //GC.SetPropertyFromString(tokens[1], tokens[2], tokens[3]);
-            return true;
+            bool bResult = GC.SetPropertyByName(Tokens[1], Tokens[2], Tokens[3]);
+            if (bResult)
+            {
+                std::cout << "Set " << Tokens[1] << "." << Tokens[2] << " to " << Tokens[3] << std::endl;
+            }
+            else
+            {
+                std::cout << "Failed to set " << Tokens[1] << "." << Tokens[2] << std::endl;
+            }
+
+            return bResult;
         }
         else if (Cmd == "call" && Tokens.size() >= 3)
         {
-            std::cout << "[call] is not implemented for now.\n";
-            // std::vector<qmeta::Variant> args;
-            // for (size_t i = 3; i < tokens.size(); ++i)
-            // {
-            //     const std::string& a = tokens[i];
-            //     // naive parse: int/float/bool/string
-            //     if (a == "true" || a == "false")
-            //     {
-            //         args.emplace_back(a == "true");
-            //     }
-            //     else if (a.find('.') != std::string::npos)
-            //     {
-            //         args.emplace_back(std::stod(a));
-            //     }
-            //     else
-            //     {
-            //         // try int
-            //         try { args.emplace_back(std::stoll(a)); }
-            //         catch (...) { args.emplace_back(a); }
-            //     }
-            // }
-            // GC.Call(tokens[1], tokens[2], args);
+            std::vector<qmeta::Variant> Args;
+            for (size_t i = 3; i < Tokens.size(); ++i)
+            {
+                const std::string& a = Tokens[i];
+                // naive parse: int/float/bool/string
+                if (a == "true" || a == "false")
+                {
+                    Args.emplace_back(a == "true");
+                }
+                else if (a.find('.') != std::string::npos)
+                {
+                    Args.emplace_back(std::stod(a));
+                }
+                else
+                {
+                    // try int
+                    try { Args.emplace_back(std::stoll(a)); }
+                    catch (...) { Args.emplace_back(a); }
+                }
+            }
+            
+            GC.CallByName(Tokens[1], Tokens[2], Args);
+            
             return true;
         }
         else if (Cmd == "save" && Tokens.size() >= 2)

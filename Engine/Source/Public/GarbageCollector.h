@@ -67,9 +67,12 @@ namespace QGC
         bool UnlinkAllProperties(uint64_t OwnerId);
         bool UnlinkAllByName(const std::string& Name);
         bool UnlinkByName(const std::string& Name, const std::string& Property);
-        bool SetPropertyFromStringById(uint64_t Id, const std::string& Property, const std::string& Value);
+        bool SetProperty(QObject* Obj, const std::string& Property, const std::string& Value);
+        bool SetPropertyById(uint64_t Id, const std::string& Property, const std::string& Value);
+        bool SetPropertyByName(const std::string& Name, const std::string& Property, const std::string& Value);
         qmeta::Variant CallById(uint64_t Id, const std::string& Function, const std::vector<qmeta::Variant>& Args);
-        
+        qmeta::Variant CallByName(const std::string& Name, const std::string& Function, const std::vector<qmeta::Variant>& Args);
+
         // Asset IO
         bool Save(uint64_t Id, const std::string& FileNameIfAny);
         bool Load(uint64_t Id, const std::string& FileNameIfAny);

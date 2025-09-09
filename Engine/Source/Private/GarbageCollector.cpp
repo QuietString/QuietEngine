@@ -438,10 +438,8 @@ namespace QGC
         return false;
     }
 
-    bool GcManager::SetPropertyFromStringById(uint64_t Id, const std::string& Property, const std::string& Value)
+    bool GcManager::SetProperty(QObject* Obj, const std::string& Property, const std::string& Value)
     {
-        QObject* Obj = FindById(Id);
-        if (!Obj) return false;
         auto It = Objects.find(Obj);
         if (It == Objects.end()) return false;
         unsigned char* Base = BytePtr(Obj);
@@ -479,10 +477,35 @@ namespace QGC
         return false;
     }
 
+    bool GcManager::SetPropertyById(uint64_t Id, const std::string& Property, const std::string& Value)
+    {
+        QObject* Obj = FindById(Id);
+        if (!Obj) return false;
+
+        return SetProperty(Obj, Property, Value);
+    }
+
+    bool GcManager::SetPropertyByName(const std::string& Name, const std::string& Property, const std::string& Value)
+    {
+        QObject* Obj = FindByDebugName(Name);
+        if (!Obj) return false;
+
+        return SetProperty(Obj, Property, Value);
+    }
+
     qmeta::Variant GcManager::CallById(uint64_t Id, const std::string& Function, const std::vector<qmeta::Variant>& Args)
     {
         QObject* Obj = FindById(Id);
         if (!Obj) throw std::runtime_error("Object not found by Id");
+        auto It = Objects.find(Obj);
+        if (It == Objects.end()) throw std::runtime_error("Not GC-managed");
+        return qmeta::CallByName(Obj, *It->second.Ti, Function, Args);
+    }
+
+    qmeta::Variant GcManager::CallByName(const std::string& Name, const std::string& Function, const std::vector<qmeta::Variant>& Args)
+    {
+        QObject* Obj = FindByDebugName(Name);
+        if (!Obj) throw std::runtime_error("Object not found by Name");
         auto It = Objects.find(Obj);
         if (It == Objects.end()) throw std::runtime_error("Not GC-managed");
         return qmeta::CallByName(Obj, *It->second.Ti, Function, Args);
