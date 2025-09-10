@@ -25,16 +25,6 @@ static inline Variant _qmeta_invoke_QPlayer_SetWalkSpeed(void* obj, const Varian
     return Variant();
 }
 
-static inline Variant _qmeta_invoke_QGcPerfTest_Build(void* obj, const Variant* args, std::size_t) {
-    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
-    int a0 = args[0].as<int>();
-    int a1 = args[1].as<int>();
-    int a2 = args[2].as<int>();
-    int a3 = args[3].as<int>();
-    self->Build(a0, a1, a2, a3);
-    return Variant();
-}
-
 static inline Variant _qmeta_invoke_QGcPerfTest_PatternChain(void* obj, const Variant* args, std::size_t) {
     QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
     int a0 = args[0].as<int>();
@@ -165,19 +155,7 @@ inline void QHT_Register_Game(Registry& R) {
     }
     TypeInfo& T_QGcPerfTest = R.add_type("QGcPerfTest", sizeof(QGcPerfTest));
     T_QGcPerfTest.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
-    T_QGcPerfTest.properties.push_back(MetaProperty{"RootCount", "int", offsetof(QGcPerfTest, RootCount), MetaMap{} });
-    T_QGcPerfTest.properties.push_back(MetaProperty{"Depth", "int", offsetof(QGcPerfTest, Depth), MetaMap{} });
-    T_QGcPerfTest.properties.push_back(MetaProperty{"Branching", "int", offsetof(QGcPerfTest, Branching), MetaMap{} });
     T_QGcPerfTest.properties.push_back(MetaProperty{"Roots", "std::vector<QObject*>", offsetof(QGcPerfTest, Roots), MetaMap{} });
-    {
-        MetaFunction F;
-        F.name = "Build";
-        F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcPerfTest_Build;
-        F.params = std::vector<MetaParam>{ MetaParam{"InRootCount", "int"}, MetaParam{"InDepth", "int"}, MetaParam{"InBranching", "int"}, MetaParam{"Seed", "int"} };
-        F.meta = MetaMap{};
-        T_QGcPerfTest.functions.push_back(std::move(F));
-    }
     {
         MetaFunction F;
         F.name = "PatternChain";

@@ -153,55 +153,6 @@ bool QGcPerfTest::RemoveEdge(QObject_GcTest* Parent, QObject_GcTest* Child)
     return removed;
 }
 
-// ---------------- Tree builder (legacy) ----------------
-
-void QGcPerfTest::Build(int InRootCount, int InDepth, int InBranching, int Seed)
-{
-    if (InRootCount <= 0 || InDepth < 0 || InBranching <= 0)
-    {
-        std::cout << "[GcPerfTest] Invalid params. roots>0, depth>=0, branching>0\n";
-        return;
-    }
-
-    ClearGraph();
-    RootCount = InRootCount;
-    Depth     = InDepth;
-    Branching = InBranching;
-
-    std::mt19937 rng(static_cast<uint32_t>(Seed));
-    QWorld* World = GetWorld();
-    if (!World) { std::cout << "[GcPerfTest] World not found.\n"; return; }
-
-    Levels.resize(static_cast<size_t>(Depth) + 1);
-
-    for (int i = 0; i < RootCount; ++i)
-    {
-        auto* R = MakeNode();
-        Levels[0].push_back(R);
-        Roots.push_back(R);
-    }
-
-    for (int d = 0; d < Depth; ++d)
-    {
-        const auto& Cur = Levels[(size_t)d];
-        auto& Next = Levels[(size_t)(d + 1)];
-        for (QObject_GcTest* Parent : Cur)
-        {
-            for (int k = 0; k < Branching; ++k)
-            {
-                auto* C = MakeNode();
-                LinkChild(Parent, C);
-                Next.push_back(C);
-            }
-        }
-    }
-
-    World->Objects.push_back(this);
-    std::cout << "[GcPerfTest] Tree built: roots=" << RootCount
-              << " depth=" << Depth << " branching=" << Branching
-              << " total=" << AllNodes.size() << "\n";
-}
-
 // ---------------- Pattern builders ----------------
 
 void QGcPerfTest::PatternChain(int Length, int Seed)

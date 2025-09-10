@@ -10,13 +10,7 @@ class QObject_GcTest;
 class QGcPerfTest : public QObject
 {
 public:
-    // Tree config (legacy)
-    QPROPERTY()
-    int RootCount = 1;
-    QPROPERTY()
-    int Depth = 10;
-    QPROPERTY()
-    int Branching = 3;
+
     QPROPERTY()
     std::vector<QObject*> Roots;
 
@@ -24,16 +18,21 @@ public:
     std::vector<QObject_GcTest*> AllNodes;
     std::vector<std::vector<QObject_GcTest*>> Levels; // BFS layers from Roots
 
-    // ---------- Existing tree builder ----------
-    QFUNCTION()
-    void Build(int InRootCount, int InDepth, int InBranching, int Seed = 1337);
-
     // ---------- General graph patterns ----------
-    QFUNCTION() void PatternChain(int Length, int Seed = 1);
-    QFUNCTION() void PatternGrid(int Width, int Height, int Seed = 1);
-    QFUNCTION() void PatternRandom(int Nodes, int AvgOut, int Seed = 1337);
-    QFUNCTION() void PatternRings(int Rings, int RingSize, int Seed = 7);
-    QFUNCTION() void PatternDiamond(int Layers, int Breadth, int Seed = 3);
+    QFUNCTION()
+    void PatternChain(int Length, int Seed = 1);
+    
+    QFUNCTION()
+    void PatternGrid(int Width, int Height, int Seed = 1);
+    
+    QFUNCTION()
+    void PatternRandom(int Nodes, int AvgOut, int Seed = 1337);
+    
+    QFUNCTION()
+    void PatternRings(int Rings, int RingSize, int Seed = 7);
+    
+    QFUNCTION()
+    void PatternDiamond(int Layers, int Breadth, int Seed = 3);
 
     // ---------- Mutations / breaks ----------
     // Break all links of selected parents at depth (existing).

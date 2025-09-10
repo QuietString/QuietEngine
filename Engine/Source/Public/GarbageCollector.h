@@ -56,9 +56,6 @@ namespace QGC
         void Tick(double DeltaSeconds);
         double Collect();
 
-    private:
-        void TrimAfterCollect();
-
     public:
         void SetAutoInterval(double Seconds);
 
