@@ -2,6 +2,7 @@
 
 #include "EngineGlobals.h"
 #include "GarbageCollector.h"
+#include "TestObject.h"
 
 namespace 
 {
@@ -10,7 +11,7 @@ namespace
 
 void QWorld::SpawnObject()
 {
-    NewObject<QObject>();
+    NewObject<QTestObject>();
 }
 
 void QWorld::AddObject(const std::string& ObjName)

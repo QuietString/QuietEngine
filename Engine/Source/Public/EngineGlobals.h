@@ -22,12 +22,12 @@ T* NewObject(Args&&... args)
     {
         throw std::runtime_error(std::string("TypeInfo not found for ") + std::string(qtype::TypeName<T>()));
     }
-            
+    
     T* Obj = new T(std::forward<Args>(args)...);
     
     const uint64_t Id = NextGlobalId.fetch_add(1, std::memory_order_relaxed) + 1; // start at 1
     Obj->SetObjectId(Id);
-            
+    
     // Auto debug-name: ClassName_ID
     std::string AutoName;
     AutoName.reserve(Ti->name.size() + 20);

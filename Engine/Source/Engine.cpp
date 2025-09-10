@@ -3,6 +3,7 @@
 #include <ios>
 #include <iostream>
 
+#include "Character.h"
 #include "EngineGlobals.h"
 #include "GarbageCollector.h"
 #include "Module.h"
@@ -57,6 +58,9 @@ int main(int argc, char* argv[])
     
     QWorld* World = CreateWorld();
     GC.AddRoot(World);
+
+    QCharacter* Character = NewObject<QCharacter>();
+    World->Objects.push_back(Character);
     
     // BeginPlay() all modules.
     M.BeginPlayAll();

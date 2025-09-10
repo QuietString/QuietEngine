@@ -1,11 +1,12 @@
 ﻿#pragma once
 #include <vector>
 
+#include "Actor.h"
 #include "Object.h"
 #include "qmeta_macros.h"
 
 
-class QPlayer : public QObject
+class QPlayer : public QActor
 {
 public:
     QPROPERTY()
