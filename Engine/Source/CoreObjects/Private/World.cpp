@@ -4,10 +4,6 @@ namespace
 {
     QWorld* WorldSingleton;
 }
-QWorld::QWorld()
-    : SingleObject(nullptr)
-    , SingleObject2(nullptr)
-{}
 
 void QWorld::SetWorldSingleton(QWorld* World)
 {

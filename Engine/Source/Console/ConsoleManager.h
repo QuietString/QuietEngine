@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 
+
 namespace ConsoleManager
 {
     // Simple tokenizer that honors quoted tokens.

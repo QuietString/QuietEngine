@@ -54,6 +54,8 @@ namespace QGC
 
         // GC steps
         void Tick(double DeltaSeconds);
+
+        // Return execution time(ms).
         double Collect();
 
     public:

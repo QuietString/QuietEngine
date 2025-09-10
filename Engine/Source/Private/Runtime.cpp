@@ -9,6 +9,7 @@
 #include "qmeta_runtime.h"
 #include <condition_variable>
 
+#include "Console/ConsoleIO.h"
 #include "Console/ConsoleManager.h"
 
 #if defined(_WIN32)
@@ -99,15 +100,16 @@ void qruntime::ProcessPendingCommands()
 {
     for (;;)
     {
-        std::string line;
+        std::string Line;
         {
-            std::lock_guard<std::mutex> lock(G_CmdMutex);
+            std::lock_guard<std::mutex> Lock(G_CmdMutex);
             if (G_CmdQueue.empty()) break;
-            line = std::move(G_CmdQueue.front());
+            Line = std::move(G_CmdQueue.front());
             G_CmdQueue.pop();
         }
-        ExecuteCommand(line);
-        std::cout.flush();
+        
+        ExecuteCommand(Line);
+        ConsoleIO::FlushCoutIfDirty();
     }
 }
 

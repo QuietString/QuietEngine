@@ -84,6 +84,7 @@
     </ItemDefinitionGroup>
 
     <ItemGroup>
+        <ClCompile Include="Source\Console\ConsoleIO.cpp" />
         <ClCompile Include="Source\Console\ConsoleManager.cpp" />
         <ClCompile Include="Source\CoreObjects\Private\World.cpp" />
         <ClCompile Include="Source\Engine.cpp" />
@@ -96,7 +97,9 @@
 
     <ItemGroup>
         <ClInclude Include="Intermediate\Include\QHT\Engine.qht.gen.hpp" />
+        <ClInclude Include="Source\Console\ConsoleIO.h" />
         <ClInclude Include="Source\Console\ConsoleManager.h" />
+        <ClInclude Include="Source\Console\DirtyStreamBuffer.h" />
         <ClInclude Include="Source\CoreObjects\Public\World.h" />
         <ClInclude Include="Source\Public\Asset.h" />
         <ClInclude Include="Source\Public\CoreMinimal.h" />

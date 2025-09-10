@@ -241,16 +241,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     if (Ti && Ti->name == "QGcPerfTest")
                         return O;
                 }
-                if (W->SingleObject)
-                {
-                    Ti = GC.GetTypeInfo(W->SingleObject);
-                    if (Ti && Ti->name == "QGcPerfTest") return W->SingleObject;
-                }
-                if (W->SingleObject2)
-                {
-                    Ti = GC.GetTypeInfo(W->SingleObject2);
-                    if (Ti && Ti->name == "QGcPerfTest") return W->SingleObject2;
-                }
+
                 return nullptr;
             };
 
@@ -335,11 +326,11 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     return true;
                 }
             }
-            else if (Tokens.size() >= 2 && Tokens[1] == "break")
+            else if (Tokens.size() >= 2 && Tokens[1] == "breakd")
             {
                 if (Tokens.size() < 4)
                 {
-                    std::cout << "Usage: gctest break <depth> <all|count> [seed]\n";
+                    std::cout << "Usage: gctest breakd <depth> <all|count> [seed]\n";
                     return true;
                 }
                 int depth = std::stoi(Tokens[2]);
@@ -400,7 +391,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             }
 
             std::cout << "Invalid cmd: " << Tokens[0] << " " << Tokens[1] << "\n";
-            return false;
+            return true;
         }
         else if (Cmd == "ls")
         {
@@ -417,7 +408,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             if (Tokens.size() < 3)
             {
                 std::cout << "Usage: read <Name> <Property>\n";
-                return false;
+                return true;
             }
 
             const std::string& Name = Tokens[1];
@@ -427,14 +418,14 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             if (!Obj)
             {
                 std::cout << "Not found: " << Name << "\n";
-                return false;
+                return true;
             }
 
             const qmeta::TypeInfo* Ti = GC.GetTypeInfo(Obj);
             if (!Ti)
             {
                 std::cout << "No TypeInfo for: " << Name << "\n";
-                return false;
+                return true;
             }
 
             // Locate property meta to know its type and offset
@@ -446,7 +437,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             if (!MP)
             {
                 std::cout << "Property not found: " << Prop << "\n";
-                return false;
+                return true;
             }
 
             std::string ValueStr = FormatPropertyValue(Obj, *Ti, *MP);
@@ -466,10 +457,11 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
         }
         else if (Cmd == "unlink")
         {
+            std::string UnlinkUsage = "Usage: unlink [single|all] <OwnerName> <Property>\n";
             if (Tokens.size() < 3 || Tokens.size() > 5)
             {
-                std::cout << "Usage: unlink <OwnerName> <Property> [single|all]\n";
-                return false;
+                std::cout << UnlinkUsage;
+                return true;
             }
             
             if (Tokens[1] == "single" && Tokens.size() == 4)
@@ -480,7 +472,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     std::cout << "Failed to unlink " << Tokens[1] << "." << Tokens[2] << "\n";
                 }
                 
-                return bResult;
+                return true;
             }
             else if (Tokens[1] == "all" && Tokens.size() == 3)
             {
@@ -490,12 +482,12 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     std::cout << "Failed to unlink " << Tokens[1] << "." << Tokens[2] << "\n";
                 }
 
-                return bResult;
+                return true;
             }
             else
             {
-                std::cout << "Usage: unlink <OwnerName> <Property> [single|all]" << "\n";
-                return false;
+                std::cout << UnlinkUsage;
+                return true;
             }
         }
         else if (Cmd == "set" && Tokens.size() >= 4)
@@ -510,7 +502,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 std::cout << "Failed to set " << Tokens[1] << "." << Tokens[2] << "\n";
             }
 
-            return bResult;
+            return true;
         }
         else if (Cmd == "call" && Tokens.size() >= 3)
         {
@@ -557,7 +549,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
         else
         {
             std::cout << "Unknown command: " << Cmd << "\n";
-            return false;
+            return true;
         }
     }
     catch (const std::exception& e)

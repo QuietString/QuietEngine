@@ -16,7 +16,7 @@ public:
 
     // Working sets (non-reflected)
     std::vector<QObject_GcTest*> AllNodes;
-    std::vector<std::vector<QObject_GcTest*>> Levels; // BFS layers from Roots
+    std::vector<std::vector<QObject_GcTest*>> DepthLayers; // BFS layers from Roots
 
     // ---------- General graph patterns ----------
     QFUNCTION()
@@ -68,7 +68,7 @@ private:
     void LinkChild(QObject_GcTest* Parent, QObject_GcTest* Child);
 
     // Build helpers
-    void RebuildLevelsFromRoots();
+    void RebuildLayers();
     std::vector<QObject_GcTest*> GetReachable() const;
 
     // Edge helpers

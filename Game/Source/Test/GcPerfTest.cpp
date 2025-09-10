@@ -19,7 +19,7 @@ void QGcPerfTest::ClearGraph()
 {
     Roots.clear();
     AllNodes.clear();
-    Levels.clear();
+    DepthLayers.clear();
 }
 
 QObject_GcTest* QGcPerfTest::MakeNode()
@@ -43,40 +43,46 @@ QObject_GcTest* QGcPerfTest::PickRandom(const std::vector<QObject_GcTest*>& From
     return From[dist(Rng)];
 }
 
-void QGcPerfTest::RebuildLevelsFromRoots()
+void QGcPerfTest::RebuildLayers()
 {
-    Levels.clear();
-    std::unordered_map<QObject_GcTest*, int> depth;
-    std::queue<QObject_GcTest*> q;
-    for (QObject* r : Roots)
+    DepthLayers.clear();
+    std::unordered_map<QObject_GcTest*, int> ObjectDepthMap;
+    std::queue<QObject_GcTest*> Queue;
+    for (QObject* Root : Roots)
     {
-        auto* gr = static_cast<QObject_GcTest*>(r);
-        if (!gr) continue;
-        depth[gr] = 0;
-        q.push(gr);
+        auto* RootCasted = static_cast<QObject_GcTest*>(Root);
+        if (!RootCasted) continue;
+
+        ObjectDepthMap[RootCasted] = 0;
+        Queue.push(RootCasted);
     }
-    int maxD = 0;
-    while (!q.empty())
+    
+    int MaxD = 0;
+    while (!Queue.empty())
     {
-        auto* u = q.front(); q.pop();
-        int d = depth[u];
-        maxD = std::max(maxD, d);
-        for (auto* v : u->Children)
+        auto* CurObj = Queue.front(); Queue.pop();
+        int Depth = ObjectDepthMap[CurObj];
+        MaxD = std::max(MaxD, Depth);
+        for (auto* NextObj : CurObj->Children)
         {
-            if (!v) continue;
-            if (depth.find(v) == depth.end())
+            if (!NextObj) continue;
+            if (ObjectDepthMap.find(NextObj) == ObjectDepthMap.end())
             {
-                depth[v] = d + 1;
-                q.push(v);
+                ObjectDepthMap[NextObj] = Depth + 1;
+                Queue.push(NextObj);
             }
         }
     }
-    Levels.resize(static_cast<size_t>(maxD) + 1);
-    for (auto& kv : depth)
+    
+    DepthLayers.resize(static_cast<size_t>(MaxD) + 1);
+    
+    for (auto& [Obj, Depth] : ObjectDepthMap)
     {
-        QObject_GcTest* node = kv.first;
-        int d = kv.second;
-        if (d >= 0) Levels[(size_t)d].push_back(node);
+        QObject_GcTest* Node = Obj;
+        if (Depth >= 0)
+        {
+            DepthLayers[(size_t)Depth].push_back(Node);
+        }
     }
 }
 
@@ -84,24 +90,24 @@ std::vector<QObject_GcTest*> QGcPerfTest::GetReachable() const
 {
     std::vector<QObject_GcTest*> Out;
     std::unordered_set<QObject_GcTest*> Vis;
-    std::queue<QObject_GcTest*> q;
-    for (QObject* r : Roots)
+    std::queue<QObject_GcTest*> Queue;
+    for (QObject* Root : Roots)
     {
-        auto* gr = static_cast<QObject_GcTest*>(r);
-        if (!gr || Vis.count(gr)) continue;
-        Vis.insert(gr);
-        q.push(gr);
+        auto* RootCasted = static_cast<QObject_GcTest*>(Root);
+        if (!RootCasted || Vis.count(RootCasted)) continue;
+        Vis.insert(RootCasted);
+        Queue.push(RootCasted);
     }
-    while (!q.empty())
+    while (!Queue.empty())
     {
-        auto* u = q.front(); q.pop();
+        auto* u = Queue.front(); Queue.pop();
         Out.push_back(u);
         for (auto* v : u->Children)
         {
             if (v && !Vis.count(v))
             {
                 Vis.insert(v);
-                q.push(v);
+                Queue.push(v);
             }
         }
     }
@@ -135,9 +141,11 @@ void QGcPerfTest::CollectEdgesReachable(std::vector<EdgeRef>& Out) const
 
 bool QGcPerfTest::RemoveEdge(QObject_GcTest* Parent, QObject_GcTest* Child)
 {
-    if (!Parent) return false;
-    bool removed = false;
-    // remove from vector
+    if (!Parent)
+    {
+        return false;
+    }
+    
     auto& vec = Parent->Children;
     for (size_t i = 0; i < vec.size(); ++i)
     {
@@ -145,12 +153,11 @@ bool QGcPerfTest::RemoveEdge(QObject_GcTest* Parent, QObject_GcTest* Child)
         {
             vec[i] = vec.back();
             vec.pop_back();
-            removed = true;
-            break;
+            return true;
         }
     }
 
-    return removed;
+    return false;
 }
 
 // ---------------- Pattern builders ----------------
@@ -170,8 +177,8 @@ void QGcPerfTest::PatternChain(int Length, int Seed)
         LinkChild(cur, nxt);
         cur = nxt;
     }
-    World->Objects.push_back(this);
-    RebuildLevelsFromRoots();
+    
+    RebuildLayers();
     std::cout << "[GcPerfTest] Chain built: length=" << Length
               << " total=" << AllNodes.size() << "\n";
 }
@@ -197,8 +204,8 @@ void QGcPerfTest::PatternGrid(int Width, int Height, int Seed)
         if (x + 1 < Width)  LinkChild(grid[y][x], grid[y][x+1]);
         if (y + 1 < Height) LinkChild(grid[y][x], grid[y+1][x]);
     }
-    World->Objects.push_back(this);
-    RebuildLevelsFromRoots();
+    
+    RebuildLayers();
     std::cout << "[GcPerfTest] Grid built: " << Width << "x" << Height
               << " total=" << AllNodes.size() << "\n";
 }
@@ -206,32 +213,42 @@ void QGcPerfTest::PatternGrid(int Width, int Height, int Seed)
 void QGcPerfTest::PatternRandom(int Nodes, int AvgOut, int Seed)
 {
     ClearGraph();
-    if (Nodes <= 0 || AvgOut < 0) { std::cout << "[GcPerfTest] nodes>0, avgOut>=0\n"; return; }
-    QWorld* World = GetWorld(); if (!World) { std::cout << "World not found.\n"; return; }
+    
+    if (Nodes <= 0 || AvgOut < 0)
+    {
+        std::cout << "[GcPerfTest] nodes>0, avgOut>=0\n";
+        return;
+    }
+    
+    QWorld* World = GetWorld();
+    if (!World)
+    {
+        std::cout << "World not found.\n";
+        return;
+    }
 
     AllNodes.reserve((size_t)Nodes);
     for (int i = 0; i < Nodes; ++i) MakeNode();
 
     Roots.push_back(AllNodes.front());
 
-    std::mt19937 rng(static_cast<uint32_t>(Seed));
-    std::uniform_int_distribution<int> pick(0, Nodes - 1);
+    std::mt19937 Rng(static_cast<uint32_t>(Seed));
+    std::uniform_int_distribution<int> Pick(0, Nodes - 1);
 
     for (int i = 0; i < Nodes; ++i)
     {
-        auto* p = AllNodes[(size_t)i];
+        auto* Parent = AllNodes[(size_t)i];
         int deg = AvgOut;
         for (int k = 0; k < deg; ++k)
         {
-            auto* c = AllNodes[(size_t)pick(rng)];
-            if (c == p) continue;
-            LinkChild(p, c);
+            auto* Child = AllNodes[(size_t)Pick(Rng)];
+            if (Child == Parent) continue;
+            LinkChild(Parent, Child);
         }
     }
-    World->Objects.push_back(this);
-    RebuildLevelsFromRoots();
-    std::cout << "[GcPerfTest] Random graph: nodes=" << Nodes
-              << " avgOut=" << AvgOut << " total=" << AllNodes.size() << "\n";
+    
+    RebuildLayers();
+    std::cout << "[GcPerfTest] Random graph: nodes=" << Nodes << " avgOut=" << AvgOut << " total=" << AllNodes.size() << "\n";
 }
 
 void QGcPerfTest::PatternRings(int Rings, int RingSize, int Seed)
@@ -270,8 +287,8 @@ void QGcPerfTest::PatternRings(int Rings, int RingSize, int Seed)
         if (r == 0) Roots.push_back(Ring[0]);
         PrevRingFirst = Ring[0];
     }
-    World->Objects.push_back(this);
-    RebuildLevelsFromRoots();
+    
+    RebuildLayers();
     std::cout << "[GcPerfTest] Rings: rings=" << Rings << " ringSize=" << RingSize << " total=" << AllNodes.size() << "\n";
 }
 
@@ -328,7 +345,7 @@ void QGcPerfTest::PatternDiamond(int Layers, int Breadth, int Seed)
         }
     }
     World->Objects.push_back(this);
-    RebuildLevelsFromRoots();
+    RebuildLayers();
     std::cout << "[GcPerfTest] Diamond: layers=" << Layers << " breadth=" << Breadth << " total=" << AllNodes.size() << "\n";
 }
 
@@ -341,35 +358,45 @@ int QGcPerfTest::BreakAtDepth(int TargetDepth, int Count, int Seed)
         std::cout << "[GcPerfTest] TargetDepth must be > 0\n";
         return 0;
     }
-    if (Levels.empty()) RebuildLevelsFromRoots();
-    if (TargetDepth >= (int)Levels.size())
+    
+    if (DepthLayers.empty())
+    {
+        RebuildLayers();
+    }
+    
+    if (TargetDepth >= (int)DepthLayers.size())
     {
         std::cout << "[GcPerfTest] Invalid TargetDepth " << TargetDepth << "\n";
         return 0;
     }
-    auto& Parents = Levels[(size_t)(TargetDepth - 1)];
+    
+    auto& Parents = DepthLayers[(size_t)(TargetDepth - 1)];
     if (Parents.empty())
     {
         std::cout << "[GcPerfTest] No parents at depth " << TargetDepth - 1 << "\n";
         return 0;
     }
-    std::vector<int> idx(Parents.size());
-    std::iota(idx.begin(), idx.end(), 0);
-    std::mt19937 rng(static_cast<uint32_t>(Seed));
-    std::shuffle(idx.begin(), idx.end(), rng);
+    
+    std::vector<int> Idx(Parents.size());
+    std::iota(Idx.begin(), Idx.end(), 0);
+    std::mt19937 Rng(static_cast<uint32_t>(Seed));
+    std::shuffle(Idx.begin(), Idx.end(), Rng);
 
-    if (Count < 0 || Count > (int)Parents.size()) Count = (int)Parents.size();
-    idx.resize((size_t)Count);
+    if (Count < 0 || Count > (int)Parents.size())
+    {
+        Count = (int)Parents.size();
+    }
+    
+    Idx.resize((size_t)Count);
 
     int cut = 0;
-    for (int i : idx)
+    for (int i : Idx)
     {
         auto* p = Parents[(size_t)i];
         cut += (int)p->Children.size();
         p->Children.clear();
     }
-    std::cout << "[GcPerfTest] Cut " << cut << " links at depth " << TargetDepth
-              << " from " << Count << " parents.\n";
+    std::cout << "[GcPerfTest] Cut " << cut << " links at depth " << TargetDepth << " from " << Count << " parents.\n";
     return cut;
 }
 
@@ -378,7 +405,7 @@ int QGcPerfTest::BreakPercent(double Percent, int Depth, int Seed)
     Percent = std::clamp(Percent, 0.0, 100.0);
     if (Percent <= 0.0) return 0;
 
-    if (Levels.empty()) RebuildLevelsFromRoots();
+    if (DepthLayers.empty()) RebuildLayers();
     std::mt19937 rng(static_cast<uint32_t>(Seed));
     std::uniform_real_distribution<double> roll(0.0, 100.0);
 
@@ -390,8 +417,8 @@ int QGcPerfTest::BreakPercent(double Percent, int Depth, int Seed)
     }
     else
     {
-        if (Depth >= (int)Levels.size()) { std::cout << "[GcPerfTest] Invalid depth\n"; return 0; }
-        targets = Levels[(size_t)Depth];
+        if (Depth >= (int)DepthLayers.size()) { std::cout << "[GcPerfTest] Invalid depth\n"; return 0; }
+        targets = DepthLayers[(size_t)Depth];
     }
 
     int cut = 0;
@@ -454,7 +481,7 @@ int QGcPerfTest::DetachRoots(int Count, double Percentage)
             removed += n;
         }
     }
-    RebuildLevelsFromRoots();
+    RebuildLayers();
     std::cout << "[GcPerfTest] DetachRoots removed=" << removed
               << " remainingRoots=" << Roots.size() << "\n";
     return removed;
@@ -464,12 +491,12 @@ int QGcPerfTest::DetachRoots(int Count, double Percentage)
 
 void QGcPerfTest::PrintDepthStats(int TargetDepth) const
 {
-    if (TargetDepth < 0 || TargetDepth >= (int)Levels.size())
+    if (TargetDepth < 0 || TargetDepth >= (int)DepthLayers.size())
     {
         std::cout << "[GcPerfTest] Invalid depth " << TargetDepth << "\n";
         return;
     }
-    const auto& L = Levels[(size_t)TargetDepth];
+    const auto& L = DepthLayers[(size_t)TargetDepth];
     size_t N = L.size();
     size_t minC = SIZE_MAX, maxC = 0, sumC = 0;
 
@@ -480,33 +507,35 @@ void QGcPerfTest::PrintDepthStats(int TargetDepth) const
         maxC = std::max(maxC, c);
         sumC += c;
     }
-    double avgC = N ? (double)sumC / (double)N : 0.0;
+    double AvgC = N ? (double)sumC / (double)N : 0.0;
     std::cout << "[GcPerfTest] Depth " << TargetDepth
               << " nodes=" << N
               << " children(min/avg/max)=(" << (N ? minC : 0) << "/"
-              << avgC << "/" << maxC << ")\n";
+              << AvgC << "/" << maxC << ")\n";
 }
 
 void QGcPerfTest::MeasureGc(int Repeats)
 {
-    if (Repeats <= 0) { std::cout << "[GcPerfTest] repeats>0 required\n"; return; }
+    if (Repeats <= 0)
+    {
+        std::cout << "[GcPerfTest] repeats>0 required\n";
+        return;
+    }
+    
     auto& GC = GcManager::Get();
-    double minv = 1e100, maxv = -1.0, sum = 0.0;
+    double Minv = 1e100, Maxv = -1.0, Sum = 0.0;
 
     for (int i = 0; i < Repeats; ++i)
     {
-        const auto T0 = std::chrono::high_resolution_clock::now();
-        GC.Collect();
-        const auto T1 = std::chrono::high_resolution_clock::now();
-        const double Ms = std::chrono::duration<double, std::milli>(T1 - T0).count();
-        minv = std::min(minv, Ms);
-        maxv = std::max(maxv, Ms);
-        sum += Ms;
+        const double Ms = GC.Collect();
+        Minv = std::min(Minv, Ms);
+        Maxv = std::max(Maxv, Ms);
+        Sum += Ms;
     }
     std::cout << "[GcPerfTest] MeasureGc repeats=" << Repeats
-              << " avg=" << (sum / Repeats)
-              << " min=" << minv
-              << " max=" << maxv << " ms\n";
+              << " avg=" << (Sum / Repeats)
+              << " min=" << Minv
+              << " max=" << Maxv << " ms\n";
 }
 
 // ---------------- Churn ----------------
@@ -539,7 +568,7 @@ void QGcPerfTest::Churn(int Steps, int AllocPerStep, double BreakPct, int GcEver
         // 3) optional GC
         if (GcEveryN > 0 && (s % GcEveryN == 0)) GcManager::Get().Collect();
     }
-    RebuildLevelsFromRoots();
+    RebuildLayers();
     std::cout << "[GcPerfTest] Churn done: steps=" << Steps
               << " alloc/step=" << AllocPerStep
               << " breakPct=" << BreakPct

@@ -8,6 +8,7 @@
 #include "Module.h"
 #include "Object_GcTest.h"
 #include "Runtime.h"
+#include "Console/ConsoleIO.h"
 #include "CoreObjects/Public/World.h"
 
 // Force-link the Game static library so its auto-registrar runs
@@ -28,6 +29,8 @@ int main(int argc, char* argv[])
 
     qmod::ModuleManager& M = qmod::ModuleManager::Get();
 
+    ConsoleIO::InstallDirtyCout();
+    
     std::cout << "Starting QuietEngine..." << std::endl;
 
     // Bring up all statically registered modules (Engine, Game, etc.)
