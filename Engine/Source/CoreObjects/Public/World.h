@@ -14,7 +14,13 @@ public:
     std::vector<QObject*> Objects;
 
     QFUNCTION()
-    void AddObject(QObject* Obj);
+    void SpawnObject();
+    
+    QFUNCTION()
+    void AddObject(const std::string& ObjName);
+
+    QFUNCTION()
+    void RemoveObject(const std::string& ObjName);
     
     static void SetWorldSingleton(QWorld* World);
 };

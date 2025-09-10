@@ -41,7 +41,7 @@
 
     <!-- QHT variables -->
     <PropertyGroup>
-        <QhtSrc>$(ProjectDir)Source</QhtSrc>
+        <QhtSrc>$(ProjectDir)Source\CoreObjects</QhtSrc>
         <QhtOut>$(ProjectDir)Intermediate\Include\QHT\Engine.qht.gen.hpp</QhtOut>
     </PropertyGroup>
 
@@ -102,12 +102,12 @@
         <ClInclude Include="Source\Console\ConsoleIO.h" />
         <ClInclude Include="Source\Console\ConsoleManager.h" />
         <ClInclude Include="Source\Console\DirtyStreamBuffer.h" />
+        <ClInclude Include="Source\CoreObjects\Public\Object.h" />
         <ClInclude Include="Source\CoreObjects\Public\World.h" />
         <ClInclude Include="Source\Core\GarbageCollector.h" />
         <ClInclude Include="Source\Public\Asset.h" />
         <ClInclude Include="Source\Public\CoreMinimal.h" />
         <ClInclude Include="Source\Public\EngineGlobals.h" />
-        <ClInclude Include="Source\Public\Object.h" />
         <ClInclude Include="Source\Public\ObjectBase.h" />
         <ClInclude Include="Source\Public\TestObject.h" />
         <ClInclude Include="Source\Public\qmeta_macros.h" />

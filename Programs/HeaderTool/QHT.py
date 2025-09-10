@@ -54,7 +54,7 @@ class ClassInfo:
         return bool(self.properties or self.functions)
     def is_qobject(self):
         b = self.bases.replace("public", " ").replace("protected", " ").replace("private", " ")
-        return "QObject" in b or "::QObject" in b
+        return "QObjectBase" in b or "::QObjectBase" in b
 
 def split_params(params_str: str):
     params_str = params_str.strip()

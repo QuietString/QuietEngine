@@ -449,7 +449,6 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
         }
         else if (Cmd == "funcs" && Tokens.size() >= 2)
         {
-            std::cout << "[func] not implemented for now.\n";
             GC.ListFunctionsByDebugName(Tokens[1]);
             return true;
         }
@@ -538,7 +537,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
         {
             std::cout << "[save] is not implemented for now.\n";
 
-            //const std::string file = (tokens.size() >= 3 ? tokens[2] : "");
+            //const std::string file = (Tokens.size() >= 3 ? Tokens[2] : "");
             //GC.Save(tokens[1], file);
             return true;
         }

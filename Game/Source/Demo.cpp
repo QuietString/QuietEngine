@@ -122,3 +122,15 @@ void Demo::RunTester()
     std::cout << "[GcTester] Ready. Instance name: " << Tester->GetDebugName()
               << " (use commands: gctest ...  or  call " << Tester->GetDebugName() << " <Func> ...)" << std::endl;
 }
+
+void Demo::SpawnPlayer()
+{
+    QWorld* World = GetWorld();
+    if (!World)
+    {
+        return;
+    }
+
+    QPlayer* P = NewObject<QPlayer>();
+    World->Objects.push_back(P);
+}

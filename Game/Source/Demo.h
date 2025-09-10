@@ -11,4 +11,6 @@ namespace Demo
     void GenerateSimpleTest();
 
     void RunTester();
+
+    void SpawnPlayer();
 }
