@@ -56,7 +56,7 @@ namespace QGC
         void Tick(double DeltaSeconds);
 
         // Return execution time(ms).
-        double Collect();
+        double Collect(bool bSilent = false);
 
     public:
         void SetAutoInterval(double Seconds);

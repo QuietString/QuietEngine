@@ -9,7 +9,7 @@
 #include "Runtime.h"
 #include "World.h"
 #include "Classes/Player.h"
-#include "Test/GcPerfTest.h"
+#include "Test/GcTester.h"
 
 void Demo::RunDemo()
 {
@@ -110,14 +110,16 @@ void Demo::GenerateSimpleTest()
 
 void Demo::RunTester()
 {
-    // Create the GC perf tester and make it reachable
-    QGcPerfTest* Tester = NewObject<QGcPerfTest>();
     QWorld* World = GetWorld();
-    if (World)
+    if (!World)
     {
-        World->Objects.push_back(Tester);
+        return;
     }
 
-    std::cout << "[GcPerfTest] Ready. Instance name: " << Tester->GetDebugName()
+    // Create the GC tester and make it reachable
+    QGcTester* Tester = NewObject<QGcTester>();
+    World->Objects.push_back(Tester);
+    
+    std::cout << "[GcTester] Ready. Instance name: " << Tester->GetDebugName()
               << " (use commands: gctest ...  or  call " << Tester->GetDebugName() << " <Func> ...)" << std::endl;
 }

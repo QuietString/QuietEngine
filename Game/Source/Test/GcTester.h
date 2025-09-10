@@ -7,7 +7,7 @@
 class QObject_GcTest;
 
 // GC performance and functionality test harness.
-class QGcPerfTest : public QObject
+class QGcTester : public QObject
 {
 public:
 
@@ -30,9 +30,24 @@ public:
     
     QFUNCTION()
     void PatternRings(int Rings, int RingSize, int Seed = 7);
-    
+
+    /**
+     *   Example shape  *
+     * L0:              A
+     *                 /|\
+     * L1:           B  C  D
+     *             /|\ /|\ /|\
+     * L2:        E..G H..J K..M
+     *             \|/  \|/  \|/
+     * L3:          N    O    P
+     *              \    |    /
+     * L4:               Q
+     */
     QFUNCTION()
     void PatternDiamond(int Layers, int Breadth, int Seed = 3);
+
+    QFUNCTION()
+    void ClearAll();
 
     // ---------- Mutations / breaks ----------
     // Break all links of selected parents at depth (existing).
@@ -47,9 +62,9 @@ public:
     QFUNCTION()
     int BreakRandomEdges(int EdgeCount, int Seed = 99);
 
-    // Detach some roots (count >=0 => count; count<0 and percentage>0 => by percent).
+    // Detach some roots
     QFUNCTION()
-    int DetachRoots(int Count, double Percentage /* 0..100 */);
+    int DetachRoots(int Count, double Ratio /* 0...1 */);
 
     // ---------- Stats / measure ----------
     QFUNCTION() void PrintDepthStats(int TargetDepth) const;
@@ -68,7 +83,7 @@ private:
     void LinkChild(QObject_GcTest* Parent, QObject_GcTest* Child);
 
     // Build helpers
-    void RebuildLayers();
+    void BuildLayers(QObject_GcTest* Root, bool bClearExisting);
     std::vector<QObject_GcTest*> GetReachable() const;
 
     // Edge helpers

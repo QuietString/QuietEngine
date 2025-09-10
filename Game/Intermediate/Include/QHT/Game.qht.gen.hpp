@@ -9,7 +9,7 @@ using namespace qmeta;
 // Unit: Game
 
 #include "Classes/Player.h"
-#include "Test/GcPerfTest.h"
+#include "Test/GcTester.h"
 
 static inline Variant _qmeta_invoke_QPlayer_AddHealth(void* obj, const Variant* args, std::size_t) {
     QPlayer* self = static_cast<QPlayer*>(obj);
@@ -25,16 +25,16 @@ static inline Variant _qmeta_invoke_QPlayer_SetWalkSpeed(void* obj, const Varian
     return Variant();
 }
 
-static inline Variant _qmeta_invoke_QGcPerfTest_PatternChain(void* obj, const Variant* args, std::size_t) {
-    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+static inline Variant _qmeta_invoke_QGcTester_PatternChain(void* obj, const Variant* args, std::size_t) {
+    QGcTester* self = static_cast<QGcTester*>(obj);
     int a0 = args[0].as<int>();
     int a1 = args[1].as<int>();
     self->PatternChain(a0, a1);
     return Variant();
 }
 
-static inline Variant _qmeta_invoke_QGcPerfTest_PatternGrid(void* obj, const Variant* args, std::size_t) {
-    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+static inline Variant _qmeta_invoke_QGcTester_PatternGrid(void* obj, const Variant* args, std::size_t) {
+    QGcTester* self = static_cast<QGcTester*>(obj);
     int a0 = args[0].as<int>();
     int a1 = args[1].as<int>();
     int a2 = args[2].as<int>();
@@ -42,8 +42,8 @@ static inline Variant _qmeta_invoke_QGcPerfTest_PatternGrid(void* obj, const Var
     return Variant();
 }
 
-static inline Variant _qmeta_invoke_QGcPerfTest_PatternRandom(void* obj, const Variant* args, std::size_t) {
-    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+static inline Variant _qmeta_invoke_QGcTester_PatternRandom(void* obj, const Variant* args, std::size_t) {
+    QGcTester* self = static_cast<QGcTester*>(obj);
     int a0 = args[0].as<int>();
     int a1 = args[1].as<int>();
     int a2 = args[2].as<int>();
@@ -51,8 +51,8 @@ static inline Variant _qmeta_invoke_QGcPerfTest_PatternRandom(void* obj, const V
     return Variant();
 }
 
-static inline Variant _qmeta_invoke_QGcPerfTest_PatternRings(void* obj, const Variant* args, std::size_t) {
-    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+static inline Variant _qmeta_invoke_QGcTester_PatternRings(void* obj, const Variant* args, std::size_t) {
+    QGcTester* self = static_cast<QGcTester*>(obj);
     int a0 = args[0].as<int>();
     int a1 = args[1].as<int>();
     int a2 = args[2].as<int>();
@@ -60,8 +60,8 @@ static inline Variant _qmeta_invoke_QGcPerfTest_PatternRings(void* obj, const Va
     return Variant();
 }
 
-static inline Variant _qmeta_invoke_QGcPerfTest_PatternDiamond(void* obj, const Variant* args, std::size_t) {
-    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+static inline Variant _qmeta_invoke_QGcTester_PatternDiamond(void* obj, const Variant* args, std::size_t) {
+    QGcTester* self = static_cast<QGcTester*>(obj);
     int a0 = args[0].as<int>();
     int a1 = args[1].as<int>();
     int a2 = args[2].as<int>();
@@ -69,8 +69,14 @@ static inline Variant _qmeta_invoke_QGcPerfTest_PatternDiamond(void* obj, const 
     return Variant();
 }
 
-static inline Variant _qmeta_invoke_QGcPerfTest_BreakAtDepth(void* obj, const Variant* args, std::size_t) {
-    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+static inline Variant _qmeta_invoke_QGcTester_ClearAll(void* obj, const Variant* args, std::size_t) {
+    QGcTester* self = static_cast<QGcTester*>(obj);
+    self->ClearAll();
+    return Variant();
+}
+
+static inline Variant _qmeta_invoke_QGcTester_BreakAtDepth(void* obj, const Variant* args, std::size_t) {
+    QGcTester* self = static_cast<QGcTester*>(obj);
     int a0 = args[0].as<int>();
     int a1 = args[1].as<int>();
     int a2 = args[2].as<int>();
@@ -78,8 +84,8 @@ static inline Variant _qmeta_invoke_QGcPerfTest_BreakAtDepth(void* obj, const Va
     return Variant(_ret);
 }
 
-static inline Variant _qmeta_invoke_QGcPerfTest_BreakPercent(void* obj, const Variant* args, std::size_t) {
-    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+static inline Variant _qmeta_invoke_QGcTester_BreakPercent(void* obj, const Variant* args, std::size_t) {
+    QGcTester* self = static_cast<QGcTester*>(obj);
     double a0 = args[0].as<double>();
     int a1 = args[1].as<int>();
     int a2 = args[2].as<int>();
@@ -87,38 +93,38 @@ static inline Variant _qmeta_invoke_QGcPerfTest_BreakPercent(void* obj, const Va
     return Variant(_ret);
 }
 
-static inline Variant _qmeta_invoke_QGcPerfTest_BreakRandomEdges(void* obj, const Variant* args, std::size_t) {
-    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+static inline Variant _qmeta_invoke_QGcTester_BreakRandomEdges(void* obj, const Variant* args, std::size_t) {
+    QGcTester* self = static_cast<QGcTester*>(obj);
     int a0 = args[0].as<int>();
     int a1 = args[1].as<int>();
     auto _ret = self->BreakRandomEdges(a0, a1);
     return Variant(_ret);
 }
 
-static inline Variant _qmeta_invoke_QGcPerfTest_DetachRoots(void* obj, const Variant* args, std::size_t) {
-    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+static inline Variant _qmeta_invoke_QGcTester_DetachRoots(void* obj, const Variant* args, std::size_t) {
+    QGcTester* self = static_cast<QGcTester*>(obj);
     int a0 = args[0].as<int>();
     double a1 = args[1].as<double>();
     auto _ret = self->DetachRoots(a0, a1);
     return Variant(_ret);
 }
 
-static inline Variant _qmeta_invoke_QGcPerfTest_PrintDepthStats(void* obj, const Variant* args, std::size_t) {
-    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+static inline Variant _qmeta_invoke_QGcTester_PrintDepthStats(void* obj, const Variant* args, std::size_t) {
+    QGcTester* self = static_cast<QGcTester*>(obj);
     int a0 = args[0].as<int>();
     self->PrintDepthStats(a0);
     return Variant();
 }
 
-static inline Variant _qmeta_invoke_QGcPerfTest_MeasureGc(void* obj, const Variant* args, std::size_t) {
-    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+static inline Variant _qmeta_invoke_QGcTester_MeasureGc(void* obj, const Variant* args, std::size_t) {
+    QGcTester* self = static_cast<QGcTester*>(obj);
     int a0 = args[0].as<int>();
     self->MeasureGc(a0);
     return Variant();
 }
 
-static inline Variant _qmeta_invoke_QGcPerfTest_Churn(void* obj, const Variant* args, std::size_t) {
-    QGcPerfTest* self = static_cast<QGcPerfTest*>(obj);
+static inline Variant _qmeta_invoke_QGcTester_Churn(void* obj, const Variant* args, std::size_t) {
+    QGcTester* self = static_cast<QGcTester*>(obj);
     int a0 = args[0].as<int>();
     int a1 = args[1].as<int>();
     double a2 = args[2].as<double>();
@@ -153,115 +159,124 @@ inline void QHT_Register_Game(Registry& R) {
         F.meta = MetaMap{};
         T_QPlayer.functions.push_back(std::move(F));
     }
-    TypeInfo& T_QGcPerfTest = R.add_type("QGcPerfTest", sizeof(QGcPerfTest));
-    T_QGcPerfTest.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
-    T_QGcPerfTest.properties.push_back(MetaProperty{"Roots", "std::vector<QObject*>", offsetof(QGcPerfTest, Roots), MetaMap{} });
+    TypeInfo& T_QGcTester = R.add_type("QGcTester", sizeof(QGcTester));
+    T_QGcTester.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
+    T_QGcTester.properties.push_back(MetaProperty{"Roots", "std::vector<QObject*>", offsetof(QGcTester, Roots), MetaMap{} });
     {
         MetaFunction F;
         F.name = "PatternChain";
         F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcPerfTest_PatternChain;
+        F.invoker = &_qmeta_invoke_QGcTester_PatternChain;
         F.params = std::vector<MetaParam>{ MetaParam{"Length", "int"}, MetaParam{"Seed", "int"} };
         F.meta = MetaMap{};
-        T_QGcPerfTest.functions.push_back(std::move(F));
+        T_QGcTester.functions.push_back(std::move(F));
     }
     {
         MetaFunction F;
         F.name = "PatternGrid";
         F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcPerfTest_PatternGrid;
+        F.invoker = &_qmeta_invoke_QGcTester_PatternGrid;
         F.params = std::vector<MetaParam>{ MetaParam{"Width", "int"}, MetaParam{"Height", "int"}, MetaParam{"Seed", "int"} };
         F.meta = MetaMap{};
-        T_QGcPerfTest.functions.push_back(std::move(F));
+        T_QGcTester.functions.push_back(std::move(F));
     }
     {
         MetaFunction F;
         F.name = "PatternRandom";
         F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcPerfTest_PatternRandom;
+        F.invoker = &_qmeta_invoke_QGcTester_PatternRandom;
         F.params = std::vector<MetaParam>{ MetaParam{"Nodes", "int"}, MetaParam{"AvgOut", "int"}, MetaParam{"Seed", "int"} };
         F.meta = MetaMap{};
-        T_QGcPerfTest.functions.push_back(std::move(F));
+        T_QGcTester.functions.push_back(std::move(F));
     }
     {
         MetaFunction F;
         F.name = "PatternRings";
         F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcPerfTest_PatternRings;
+        F.invoker = &_qmeta_invoke_QGcTester_PatternRings;
         F.params = std::vector<MetaParam>{ MetaParam{"Rings", "int"}, MetaParam{"RingSize", "int"}, MetaParam{"Seed", "int"} };
         F.meta = MetaMap{};
-        T_QGcPerfTest.functions.push_back(std::move(F));
+        T_QGcTester.functions.push_back(std::move(F));
     }
     {
         MetaFunction F;
         F.name = "PatternDiamond";
         F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcPerfTest_PatternDiamond;
+        F.invoker = &_qmeta_invoke_QGcTester_PatternDiamond;
         F.params = std::vector<MetaParam>{ MetaParam{"Layers", "int"}, MetaParam{"Breadth", "int"}, MetaParam{"Seed", "int"} };
         F.meta = MetaMap{};
-        T_QGcPerfTest.functions.push_back(std::move(F));
+        T_QGcTester.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "ClearAll";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTester_ClearAll;
+        F.params = std::vector<MetaParam>{  };
+        F.meta = MetaMap{};
+        T_QGcTester.functions.push_back(std::move(F));
     }
     {
         MetaFunction F;
         F.name = "BreakAtDepth";
         F.return_type = "int";
-        F.invoker = &_qmeta_invoke_QGcPerfTest_BreakAtDepth;
+        F.invoker = &_qmeta_invoke_QGcTester_BreakAtDepth;
         F.params = std::vector<MetaParam>{ MetaParam{"TargetDepth", "int"}, MetaParam{"Count", "int"}, MetaParam{"Seed", "int"} };
         F.meta = MetaMap{};
-        T_QGcPerfTest.functions.push_back(std::move(F));
+        T_QGcTester.functions.push_back(std::move(F));
     }
     {
         MetaFunction F;
         F.name = "BreakPercent";
         F.return_type = "int";
-        F.invoker = &_qmeta_invoke_QGcPerfTest_BreakPercent;
+        F.invoker = &_qmeta_invoke_QGcTester_BreakPercent;
         F.params = std::vector<MetaParam>{ MetaParam{"Percent", "double"}, MetaParam{"Depth", "int"}, MetaParam{"Seed", "int"} };
         F.meta = MetaMap{};
-        T_QGcPerfTest.functions.push_back(std::move(F));
+        T_QGcTester.functions.push_back(std::move(F));
     }
     {
         MetaFunction F;
         F.name = "BreakRandomEdges";
         F.return_type = "int";
-        F.invoker = &_qmeta_invoke_QGcPerfTest_BreakRandomEdges;
+        F.invoker = &_qmeta_invoke_QGcTester_BreakRandomEdges;
         F.params = std::vector<MetaParam>{ MetaParam{"EdgeCount", "int"}, MetaParam{"Seed", "int"} };
         F.meta = MetaMap{};
-        T_QGcPerfTest.functions.push_back(std::move(F));
+        T_QGcTester.functions.push_back(std::move(F));
     }
     {
         MetaFunction F;
         F.name = "DetachRoots";
         F.return_type = "int";
-        F.invoker = &_qmeta_invoke_QGcPerfTest_DetachRoots;
-        F.params = std::vector<MetaParam>{ MetaParam{"Count", "int"}, MetaParam{"Percentage", "double"} };
+        F.invoker = &_qmeta_invoke_QGcTester_DetachRoots;
+        F.params = std::vector<MetaParam>{ MetaParam{"Count", "int"}, MetaParam{"Ratio", "double"} };
         F.meta = MetaMap{};
-        T_QGcPerfTest.functions.push_back(std::move(F));
+        T_QGcTester.functions.push_back(std::move(F));
     }
     {
         MetaFunction F;
         F.name = "PrintDepthStats";
         F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcPerfTest_PrintDepthStats;
+        F.invoker = &_qmeta_invoke_QGcTester_PrintDepthStats;
         F.params = std::vector<MetaParam>{ MetaParam{"TargetDepth", "int"} };
         F.meta = MetaMap{};
-        T_QGcPerfTest.functions.push_back(std::move(F));
+        T_QGcTester.functions.push_back(std::move(F));
     }
     {
         MetaFunction F;
         F.name = "MeasureGc";
         F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcPerfTest_MeasureGc;
+        F.invoker = &_qmeta_invoke_QGcTester_MeasureGc;
         F.params = std::vector<MetaParam>{ MetaParam{"Repeats", "int"} };
         F.meta = MetaMap{};
-        T_QGcPerfTest.functions.push_back(std::move(F));
+        T_QGcTester.functions.push_back(std::move(F));
     }
     {
         MetaFunction F;
         F.name = "Churn";
         F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcPerfTest_Churn;
+        F.invoker = &_qmeta_invoke_QGcTester_Churn;
         F.params = std::vector<MetaParam>{ MetaParam{"Steps", "int"}, MetaParam{"AllocPerStep", "int"}, MetaParam{"BreakPct", "double"}, MetaParam{"GcEveryN", "int"}, MetaParam{"Seed", "int"} };
         F.meta = MetaMap{};
-        T_QGcPerfTest.functions.push_back(std::move(F));
+        T_QGcTester.functions.push_back(std::move(F));
     }
 }

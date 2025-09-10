@@ -238,7 +238,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 {
                     if (!O) continue;
                     Ti = GC.GetTypeInfo(O);
-                    if (Ti && Ti->name == "QGcPerfTest")
+                    if (Ti && Ti->name == "QGcTester")
                         return O;
                 }
 
@@ -248,7 +248,13 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             QObject* Tester = FindTester();
             if (!Tester)
             {
-                std::cout << "QGcPerfTest instance not found. Make sure the Game module created it in BeginPlay().\n";
+                std::cout << "QGcTester instance not found. Make sure the Game module created it in BeginPlay().\n";
+                return true;
+            }
+
+            if (Tokens.size() == 2 && Tokens[1] == "clear")
+            {
+                GC.Call(Tester, "ClearAll", {});
                 return true;
             }
 
@@ -360,11 +366,11 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             }
             else if (Tokens.size() >= 2 && Tokens[1] == "detachroots")
             {
-                // gctest detachroots <count|0> [percent]
-                if (Tokens.size() < 3) { std::cout << "gctest detachroots <count> [percent]\n"; return true; }
-                int count = std::stoi(Tokens[2]);
-                double percent = (Tokens.size() >= 4) ? std::stod(Tokens[3]) : 0.0;
-                GC.Call(Tester, "DetachRoots", { qmeta::Variant(count), qmeta::Variant(percent) });
+                // gctest detachroots <count|0> [ratio]
+                if (Tokens.size() < 3) { std::cout << "gctest detachroots <count> [ratio]\n"; return true; }
+                int Count = std::stoi(Tokens[2]);
+                double Ratio = (Tokens.size() >= 4) ? std::stod(Tokens[3]) : 0.0;
+                GC.Call(Tester, "DetachRoots", { qmeta::Variant(Count), qmeta::Variant(Ratio) });
                 return true;
             }
             else if (Tokens.size() >= 2 && Tokens[1] == "measure")

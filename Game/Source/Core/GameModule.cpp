@@ -5,7 +5,7 @@
 
 #include "Demo.h"
 #include "World.h"
-#include "Test/GcPerfTest.h"
+#include "Test/GcTester.h"
 
 Q_FORCE_LINK_MODULE(Engine);
 

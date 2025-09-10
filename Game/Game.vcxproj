@@ -100,7 +100,7 @@
         <ClCompile Include="Source\Core\GameModule.cpp" />
         <ClCompile Include="Source\Core\QHT_Bridge_Game.cpp" />
         <ClCompile Include="Source\Demo.cpp" />
-        <ClCompile Include="Source\Test\GcPerfTest.cpp" />
+        <ClCompile Include="Source\Test\GcTester.cpp" />
     </ItemGroup>
 
     <ItemGroup>

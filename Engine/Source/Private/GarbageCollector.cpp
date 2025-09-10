@@ -184,7 +184,7 @@ namespace QGC
         }
     }
 
-    double GcManager::Collect()
+    double GcManager::Collect(bool bSilent)
     {
         const auto T0 = std::chrono::high_resolution_clock::now();
         
@@ -273,8 +273,19 @@ namespace QGC
 
         const auto T1 = std::chrono::high_resolution_clock::now();
         const double Ms = std::chrono::duration<double, std::milli>(T1 - T0).count();
-        
-        std::cout << "[GC] Collected " << Dead.size() << " objects, alive=" << Objects.size() << ". Took " << Ms << " ms." "\n";
+
+        if (!bSilent)
+        {
+            if (Dead.size() < 10)
+            {
+                for (QObject* D : Dead)
+                {
+                    std::cout << "[GC] Killed: " << D->GetDebugName() << "\n";
+                }
+            }
+            
+            std::cout << "[GC] Collected " << Dead.size() << " objects, alive=" << Objects.size() << ". Took " << Ms << " ms." "\n";
+        }
 
         return Ms;
     }
