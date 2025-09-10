@@ -9,6 +9,7 @@
 #include "Object_GcTest.h"
 #include "Runtime.h"
 #include "Console/ConsoleIO.h"
+#include "Core/GarbageCollector.h"
 #include "CoreObjects/Public/World.h"
 
 // Force-link the Game static library so its auto-registrar runs
@@ -20,6 +21,14 @@ inline QWorld* CreateWorld()
     QWorld::SetWorldSingleton(World);
 
     return World;
+}
+
+inline GarbageCollector& CreateGC()
+{
+    GarbageCollector* GC = new GarbageCollector();
+    GarbageCollector::SetGcSingleton(GC);
+
+    return *GC;
 }
 
 int main(int argc, char* argv[])
@@ -42,9 +51,8 @@ int main(int argc, char* argv[])
     {
         Primary = M.EnsureLoaded(Name);
     }
-    
-    QGC::GcManager& GC = QGC::GcManager::Get();
-    GC.Initialize();
+
+    GarbageCollector& GC = CreateGC();
     GC.SetAutoInterval(0);
     
     QWorld* World = CreateWorld();

@@ -11,10 +11,42 @@ using namespace qmeta;
 #include "CoreObjects/Public/World.h"
 #include "Public/Object_GcTest.h"
 
+static inline Variant _qmeta_invoke_QObject_GcTest_SetInteger(void* obj, const Variant* args, std::size_t) {
+    QObject_GcTest* self = static_cast<QObject_GcTest*>(obj);
+    int a0 = args[0].as<int>();
+    self->SetInteger(a0);
+    return Variant();
+}
+
+static inline Variant _qmeta_invoke_QObject_GcTest_RemoveChildren(void* obj, const Variant* args, std::size_t) {
+    QObject_GcTest* self = static_cast<QObject_GcTest*>(obj);
+    self->RemoveChildren();
+    return Variant();
+}
+
 inline void QHT_Register_Engine(Registry& R) {
     TypeInfo& T_QObject_GcTest = R.add_type("QObject_GcTest", sizeof(QObject_GcTest));
     T_QObject_GcTest.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
+    T_QObject_GcTest.properties.push_back(MetaProperty{"Integer", "int", offsetof(QObject_GcTest, Integer), MetaMap{} });
     T_QObject_GcTest.properties.push_back(MetaProperty{"Children", "std::vector<QObject_GcTest*>", offsetof(QObject_GcTest, Children), MetaMap{} });
+    {
+        MetaFunction F;
+        F.name = "SetInteger";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QObject_GcTest_SetInteger;
+        F.params = std::vector<MetaParam>{ MetaParam{"InValue", "int"} };
+        F.meta = MetaMap{};
+        T_QObject_GcTest.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "RemoveChildren";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QObject_GcTest_RemoveChildren;
+        F.params = std::vector<MetaParam>{  };
+        F.meta = MetaMap{};
+        T_QObject_GcTest.functions.push_back(std::move(F));
+    }
     TypeInfo& T_QWorld = R.add_type("QWorld", sizeof(QWorld));
     T_QWorld.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
     T_QWorld.properties.push_back(MetaProperty{"Objects", "std::vector<QObject*>", offsetof(QWorld, Objects), MetaMap{} });

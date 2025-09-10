@@ -70,6 +70,7 @@
                 $(ProjectDir)Source;
                 $(ProjectDir)Intermediate\Include\QHT;
                 $(SolutionDir)Engine\Source\Public;
+                $(SolutionDir)Engine\Source\Core;
                 $(SolutionDir)Engine\Source\CoreObjects\Public;
                 $(SolutionDir)Engine\Intermediate\Include\QHT;
                 %(AdditionalIncludeDirectories)

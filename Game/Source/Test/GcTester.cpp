@@ -12,8 +12,7 @@
 #include "GarbageCollector.h"
 #include "Object_GcTest.h"
 #include "World.h"
-
-using namespace QGC;
+#include "../../../Engine/Source/Core/GarbageCollector.h"
 
 void QGcTester::ClearGraph()
 {
@@ -229,13 +228,33 @@ void QGcTester::PatternGrid(int Width, int Height, int Seed)
     QObject_GcTest* Head = grid[0][0];
     Roots.push_back(Head);
 
-    // edges: right and down
+    // edges: left, right, up, down
     for (int y = 0; y < Height; ++y)
-    for (int x = 0; x < Width; ++x)
     {
-        if (x + 1 < Width)  LinkChild(grid[y][x], grid[y][x+1]);
-        if (y + 1 < Height) LinkChild(grid[y][x], grid[y+1][x]);
+        for (int x = 0; x < Width; ++x)
+        {
+            if (x + 1 < Width)
+            {
+                LinkChild(grid[y][x], grid[y][x+1]);
+            }
+
+            if (x - 1 >= 0)
+            {
+                LinkChild(grid[y][x], grid[y][x - 1]);
+            }
+            
+            if (y + 1 < Height)
+            {
+                LinkChild(grid[y][x], grid[y+1][x]);  
+            }
+
+            if (y - 1 >= 0)
+            {
+                LinkChild(grid[y][x], grid[y-1][x]);  
+            }
+        }
     }
+    
     
     BuildLayers((grid[0][0]));
     std::cout << "[GcTester] Grid built: " << Width << "x" << Height << " total=" << AllNodes.size() << "\n";
@@ -396,7 +415,7 @@ void QGcTester::PatternDiamond(int Layers, int Breadth, int Seed)
 void QGcTester::ClearAll()
 {
     ClearGraph();
-    GcManager::Get().Collect(true);
+    GarbageCollector::Get().Collect(true);
     
     std::cout << "[GcTester] Cleared all test objects. \n";
 }
@@ -582,7 +601,7 @@ void QGcTester::MeasureGc(int Repeats)
         return;
     }
     
-    auto& GC = GcManager::Get();
+    auto& GC = GarbageCollector::Get();
     double Minv = 1e100, Maxv = -1.0, Sum = 0.0;
 
     for (int i = 0; i < Repeats; ++i)
@@ -626,7 +645,7 @@ void QGcTester::Churn(int Steps, int AllocPerStep, double BreakPct, int GcEveryN
         if (BreakPct > 0.0) BreakPercent(BreakPct, -1, Rng());
 
         // 3) optional GC
-        if (GcEveryN > 0 && (s % GcEveryN == 0)) GcManager::Get().Collect();
+        if (GcEveryN > 0 && (s % GcEveryN == 0)) GarbageCollector::Get().Collect();
     }
     BuildLayers(nullptr, true);
     std::cout << "[GcTester] Churn done: steps=" << Steps

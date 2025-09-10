@@ -53,12 +53,12 @@ namespace
 
 void qruntime::Tick(double DeltaSeconds)
 {
-    QGC::GcManager::Get().Tick(DeltaSeconds);
+    GarbageCollector::Get().Tick(DeltaSeconds);
 }
 
 void qruntime::SetGcInterval(double Seconds)
 {
-    QGC::GcManager::Get().SetAutoInterval(Seconds);
+    GarbageCollector::Get().SetAutoInterval(Seconds);
 }
 
 void qruntime::StartConsoleInput()

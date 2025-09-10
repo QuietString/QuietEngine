@@ -8,6 +8,7 @@
 #include "qmeta_runtime.h"
 #include "Runtime.h"
 #include "World.h"
+#include "../../Engine/Source/Core/GarbageCollector.h"
 #include "Classes/Player.h"
 #include "Test/GcTester.h"
 
@@ -87,9 +88,7 @@ void Demo::RunSaveLoad()
 
 void Demo::GenerateSimpleTest()
 {
-    using namespace QGC;
-    
-    auto& GC = GcManager::Get();
+    auto& GC = GarbageCollector::Get();
 
     auto* A = NewObject<QPlayer>();
     auto* B = NewObject<QPlayer>();

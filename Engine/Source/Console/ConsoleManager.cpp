@@ -9,7 +9,6 @@
 // --- helper: stringify a property value by its reflected type ---
 static std::string FormatPropertyValue(QObject* Owner, const qmeta::TypeInfo& Ti, const qmeta::MetaProperty& P)
 {
-    using namespace QGC;
     using namespace qmeta;
 
     std::ostringstream OutputStream;
@@ -35,17 +34,17 @@ static std::string FormatPropertyValue(QObject* Owner, const qmeta::TypeInfo& Ti
     if (equals_any({"bool"}))                               { OutputStream << (*reinterpret_cast<bool*>(Addr) ? "true" : "false"); return OutputStream.str(); }
     if (equals_any({"std::string","string"}))               { OutputStream << '"' << *reinterpret_cast<std::string*>(Addr) << '"'; return OutputStream.str(); }
 
-    GcManager& Gc = GcManager::Get();
+    GarbageCollector& GC = GarbageCollector::Get();
 
     // QObject* (and any derived) -> print DebugName (or address fallback)
-    if (Gc.IsPointerType(T))
+    if (GC.IsPointerType(T))
     {
         // Read raw pointer value and try to treat it as QObject* if GC-managed
         void* Raw = *reinterpret_cast<void**>(Addr);
         if (!Raw) return "null";
 
         QObject* AsObj = reinterpret_cast<QObject*>(Raw);
-        if (Gc.IsManaged(AsObj))
+        if (GC.IsManaged(AsObj))
         {
             const std::string& Nm = AsObj->GetDebugName();
             return Nm.empty() ? "(Unnamed)" : Nm;
@@ -62,7 +61,7 @@ static std::string FormatPropertyValue(QObject* Owner, const qmeta::TypeInfo& Ti
     if (T.find("std::vector") != std::string::npos)
     {
         // any std::vector<T*> (T possibly derived from QObject)
-        if (Gc.IsVectorOfPointer(T))
+        if (GC.IsVectorOfPointer(T))
         {
             auto* Vec = reinterpret_cast<const std::vector<QObject*>*>(Addr);
             const size_t Count = Vec->size();
@@ -74,7 +73,7 @@ static std::string FormatPropertyValue(QObject* Owner, const qmeta::TypeInfo& Ti
                 if (i) OutputStream << ", ";
                 QObject* E = (*Vec)[i];
                 if (!E) { OutputStream << "null"; continue; }
-                if (Gc.IsManaged(E))
+                if (GC.IsManaged(E))
                 {
                     const std::string& Nm = E->GetDebugName();
                     OutputStream << (Nm.empty() ? "(Unnamed)" : Nm);
@@ -174,15 +173,13 @@ std::vector<std::string> ConsoleManager::Tokenize(const std::string& s)
 
 bool ConsoleManager::ExecuteCommand(const std::string& Line)
 {
-    using namespace QGC;
-
     auto Tokens = Tokenize(Line);
     if (Tokens.empty())
     {
         return false;
     }
 
-    auto& GC = GcManager::Get();
+    auto& GC = GarbageCollector::Get();
     const std::string& Cmd = Tokens[0];
 
     try
@@ -515,21 +512,21 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             std::vector<qmeta::Variant> Args;
             for (size_t i = 3; i < Tokens.size(); ++i)
             {
-                const std::string& a = Tokens[i];
+                const std::string& CurToken = Tokens[i];
                 // naive parse: int/float/bool/string
-                if (a == "true" || a == "false")
+                if (CurToken == "true" || CurToken == "false")
                 {
-                    Args.emplace_back(a == "true");
+                    Args.emplace_back(CurToken == "true");
                 }
-                else if (a.find('.') != std::string::npos)
+                else if (CurToken.find('.') != std::string::npos)
                 {
-                    Args.emplace_back(std::stod(a));
+                    Args.emplace_back(std::stod(CurToken));
                 }
                 else
                 {
                     // try int
-                    try { Args.emplace_back(std::stoll(a)); }
-                    catch (...) { Args.emplace_back(a); }
+                    try { Args.emplace_back(std::stoll(CurToken)); }
+                    catch (...) { Args.emplace_back(CurToken); }
                 }
             }
             

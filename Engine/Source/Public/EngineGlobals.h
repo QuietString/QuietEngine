@@ -35,7 +35,7 @@ T* NewObject(Args&&... args)
     AutoName.append(std::to_string(Id));
     Obj->SetDebugName(AutoName);
 
-    QGC::GcManager& GC = QGC::GcManager::Get();
+    GarbageCollector& GC = GarbageCollector::Get();
     GC.RegisterInternal(Obj, *Ti, AutoName, Id);
     return Obj;
 }
