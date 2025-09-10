@@ -9,7 +9,24 @@
 using namespace qmeta;
 // Unit: Game
 
+#include "Classes/Player.h"
 #include "Test/GcTester.h"
+
+static Variant _qmeta_invoke_QPlayer_AddHealth(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QPlayer*>(Self);
+    if (argc < 1) throw std::runtime_error("QPlayer::AddHealth requires 1 args");
+    auto _a0 = args[0].as<int>();
+    auto _ret = self->AddHealth(_a0);
+    return Variant(_ret);
+}
+
+static Variant _qmeta_invoke_QPlayer_SetWalkSpeed(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QPlayer*>(Self);
+    if (argc < 1) throw std::runtime_error("QPlayer::SetWalkSpeed requires 1 args");
+    auto _a0 = args[0].as<float>();
+    self->SetWalkSpeed(_a0);
+    return Variant();
+}
 
 static Variant _qmeta_invoke_QGcTester_PatternChain(void* Self, const Variant* args, size_t argc) {
     (void)argc; auto* self = static_cast<QGcTester*>(Self);
@@ -133,8 +150,35 @@ static Variant _qmeta_invoke_QGcTester_Churn(void* Self, const Variant* args, si
 }
 
 inline void QHT_Register_Game(Registry& R) {
+    TypeInfo& T_QPlayer = R.add_type("QPlayer", sizeof(QPlayer));
+    T_QPlayer.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
+    T_QPlayer.base_name = "QActor";
+    T_QPlayer.properties.push_back(MetaProperty{"Health", "int", offsetof(QPlayer, Health), MetaMap{} });
+    T_QPlayer.properties.push_back(MetaProperty{"WalkSpeed", "float", offsetof(QPlayer, WalkSpeed), MetaMap{} });
+    T_QPlayer.properties.push_back(MetaProperty{"Name", "std::string", offsetof(QPlayer, Name), MetaMap{} });
+    T_QPlayer.properties.push_back(MetaProperty{"Friend", "QPlayer*", offsetof(QPlayer, Friend), MetaMap{} });
+    T_QPlayer.properties.push_back(MetaProperty{"Friends", "std::vector<QPlayer*>", offsetof(QPlayer, Friends), MetaMap{} });
+    {
+        MetaFunction F;
+        F.name = "AddHealth";
+        F.return_type = "int";
+        F.invoker = &_qmeta_invoke_QPlayer_AddHealth;
+        F.params = std::vector<MetaParam>{ MetaParam{"Amount", "int"} };
+        F.meta = MetaMap{};
+        T_QPlayer.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "SetWalkSpeed";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QPlayer_SetWalkSpeed;
+        F.params = std::vector<MetaParam>{ MetaParam{"Speed", "float"} };
+        F.meta = MetaMap{};
+        T_QPlayer.functions.push_back(std::move(F));
+    }
     TypeInfo& T_QGcTester = R.add_type("QGcTester", sizeof(QGcTester));
     T_QGcTester.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
+    T_QGcTester.base_name = "QObject";
     T_QGcTester.properties.push_back(MetaProperty{"Roots", "std::vector<QObject*>", offsetof(QGcTester, Roots), MetaMap{} });
     {
         MetaFunction F;

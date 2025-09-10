@@ -43,7 +43,7 @@
     <!-- QHT variables -->
     <PropertyGroup>
         <!-- Scan both Engine and Game headers to resolve ancestry -->
-        <QhtSrc>$(ProjectDir)Source;$(ProjectDir)Source\CoreObjects\Public</QhtSrc>
+        <QhtSrc>$(ProjectDir)Source;$(SolutionDir)Engine\Source\CoreObjects\Public</QhtSrc>
         <!-- Emit only classes declared under Game -->
         <QhtEmit>$(ProjectDir)Source</QhtEmit>
         <!-- Output generated header -->

@@ -4,8 +4,6 @@
 #include <qmeta_runtime.h>
 
 #include "Demo.h"
-#include "World.h"
-#include "Test/GcTester.h"
 
 Q_FORCE_LINK_MODULE(Engine);
 
@@ -40,7 +38,7 @@ public:
         //Demo::GenerateSimpleTest();
 
         //Demo::RunTester();
-        //Demo::SpawnPlayer();
+        Demo::SpawnPlayer();
     }
     
     virtual void Tick(double DeltaSeconds) override
@@ -51,6 +49,4 @@ public:
 Q_IMPLEMENT_PRIMARY_GAME_MODULE(FGameModule, "Game")
 
 // Anchor to force-link the Game module from the Engine host
-extern "C" void Q_Mod_Game_Anchor()
-{
-}
+extern "C" void Q_Mod_Game_Anchor() {}

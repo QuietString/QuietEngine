@@ -63,7 +63,7 @@ class ClassInfo:
         self.bases = bases or ""
         self.properties = []
         self.functions = []
-    def has_any(self):
+    def has_any_marks(self):
         return bool(self.properties or self.functions)
     def is_qobject(self):
         # After resolve_qobject_flags() is called, use cached result.
@@ -123,7 +123,7 @@ def resolve_qobject_flags(class_list):
                 break
         base_cache[name] = res
         return res
-    # Attach cache flag for each class
+    # Attach a cache flag for each class
     for c in class_list:
         c._is_qobject_cache = is_qobj_name(c.name) or any(
             bn == "QObject" or bn.endswith("::QObject") for bn in _extract_base_names(c.bases)
@@ -287,6 +287,12 @@ def emit_header(classes, out_path: Path, unit: str, bases):
         cname = ci.name
         lines.append(f"    TypeInfo& T_{cname} = R.add_type(\"{cname}\", sizeof({cname}));\n")
         lines.append(f'    T_{cname}.meta = MetaMap{{ std::make_pair(std::string("Module"), std::string("{unit}")) }};\n')
+
+        bases = _extract_base_names(ci.bases)
+        if bases:
+            base_name = bases[0]
+            lines.append(f'    T_{cname}.base_name = "{base_name}";\n')
+
         for p in ci.properties:
             meta_items = ", ".join([f"std::make_pair(std::string(\"{k}\"), std::string(\"{v}\"))" for k,v in p.meta])
             meta_code = f"MetaMap{{ {meta_items} }}" if meta_items else "MetaMap{}"
@@ -333,10 +339,10 @@ if __name__ == '__main__':
     # 2) Resolve QObject ancestry globally
     resolve_qobject_flags(classes_all)
 
-    # 3) Filter: QObject-derived (direct/indirect), and must have markers (or be QObject itself)
+    # 3) Filter: QObject-derived (direct/indirect), or QObject itself
     classes = []
     for ci in classes_all:
-        if not (ci.is_qobject() and (ci.has_any() or ci.name == "QObject")):
+        if not (ci.is_qobject() and (ci.has_any_marks() or ci.name == "QObject")):
             continue
         if emit_dirs:
             sp = ci.src_path.resolve() if ci.src_path else None

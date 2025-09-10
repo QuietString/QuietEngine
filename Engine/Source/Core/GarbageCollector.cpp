@@ -375,36 +375,38 @@ void GarbageCollector::ListPropertiesByDebugName(const std::string& Name) const
     QObject* Obj = FindByDebugName(Name);
     if (!Obj)
     {
-        std::cout << "Not found: " << Name << "\n"; return;
+        std::cout << "Object [" << Name <<"] is not found." << "\n"; return;
     }
     
     auto It = Objects.find(Obj);
     const TypeInfo& Ti = *It->second.Ti;
     
     std::cout << "[Properties] " << Name << " : " << Ti.name << "\n";
-    for (auto& p : Ti.properties)
-    {
-        std::cout << " - " << p.type << " " << p.name << " (offset " << p.offset << ")" << "\n";
-    }
+    Ti.ForEachProperty([&](const MetaProperty& p){
+        std::cout << " - " << p.type << " " << p.name << " (offset " << p.offset << ")\n";
+    });
 }
 
 void GarbageCollector::ListFunctionsByDebugName(const std::string& Name) const
 {
     QObject* Obj = FindByDebugName(Name);
-    if (!Obj) { std::cout << "Not found: " << Name << "\n"; return; }
+    if (!Obj)
+    {
+        std::cout << "Object [" << Name <<"] is not found." << "\n"; return;
+    }
+    
     auto It = Objects.find(Obj);
     const TypeInfo& Ti = *It->second.Ti;
+
     std::cout << "[Functions] " << Name << " : " << Ti.name << "\n";
-    for (auto& MemberFunc : Ti.functions)
-    {
-        std::cout << " - " << MemberFunc.return_type << " " << MemberFunc.name << "(";
-        for (size_t i = 0; i < MemberFunc.params.size(); ++i)
-        {
+    Ti.ForEachFunction([&](const MetaFunction& Func){
+        std::cout << " - " << Func.return_type << " " << Func.name << "(";
+        for (size_t i = 0; i < Func.params.size(); ++i) {
             if (i) std::cout << ", ";
-            std::cout << MemberFunc.params[i].type << " " << MemberFunc.params[i].name;
+            std::cout << Func.params[i].type << " " << Func.params[i].name;
         }
         std::cout << ")\n";
-    }
+    });
 }
 
 QObject* GarbageCollector::FindById(uint64_t Id) const

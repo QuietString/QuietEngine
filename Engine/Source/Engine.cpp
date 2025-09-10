@@ -53,6 +53,11 @@ int main(int argc, char* argv[])
         Primary = M.EnsureLoaded(Name);
     }
 
+    qmeta::Registry& R = qmeta::GetRegistry();
+    
+    // Resolve base pointers once after all registrations (to link inheritance in the metadata)
+    R.link_bases();
+
     GarbageCollector& GC = CreateGC();
     GC.SetAutoInterval(0);
     

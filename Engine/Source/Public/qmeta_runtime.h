@@ -106,6 +106,68 @@ struct TypeInfo {
     std::vector<MetaProperty> properties;
     std::vector<MetaFunction> functions;
     MetaMap meta;
+
+    // unresolved base type name (set by QHT)
+    std::string base_name;             
+
+    // resolved base after Registry::link_bases()
+    const TypeInfo* base = nullptr;
+
+    template <class F>
+    void ForEachProperty(F&& Func) const
+    {
+        if (base) base->ForEachProperty(Func);
+        for (auto& p : properties) Func(p);
+    }
+    
+    template <class F>
+    void ForEachFunction(F&& Func) const
+    {
+        if (base) base->ForEachFunction(Func);
+        for (auto& f : functions) Func(f);
+    }
+    
+    const MetaProperty* FindProperty(std::string_view n) const
+    {
+        if (base)
+        {
+            if (auto* r = base->FindProperty(n))
+            {
+                return r;
+            }
+        }
+        
+        for (auto& p : properties)
+        {
+            if (p.name == n)
+            {
+                return &p;  
+            }
+        }
+        
+        return nullptr;
+    }
+    
+    const MetaFunction* FindFunction(std::string_view n) const
+    {
+        if (base)
+        {
+            if (auto* r = base->FindFunction(n))
+            {
+                return r;
+            }
+        }
+        
+        for (auto& f : functions)
+        {
+            if (f.name == n)
+            {
+                return &f;   
+            }    
+        }
+        
+        return nullptr;
+    }
 };
 
 class Registry
@@ -113,26 +175,40 @@ class Registry
 public:
     const TypeInfo* find(std::string_view type_name) const
     {
-        auto it = types_.find(std::string(type_name));
-        return it == types_.end() ? nullptr : &it->second;
+        auto it = Types.find(std::string(type_name));
+        return it == Types.end() ? nullptr : &it->second;
     }
 
     TypeInfo& add_type(std::string name, std::size_t size)
     {
-        auto [it, inserted] = types_.try_emplace(std::move(name));
+        auto [it, inserted] = Types.try_emplace(std::move(name));
         TypeInfo& t = it->second;
         t.name = it->first;
         t.size = size;
         return t;
     }
 
+    void link_bases()
+    {
+        for (auto& [_, t] : Types)
+        {
+            if (!t.base_name.empty())
+            {
+                if (auto Iter = Types.find(t.base_name); Iter != Types.end())
+                {
+                    t.base = &Iter->second;    
+                }
+            }
+        }
+    }
+    
     const std::unordered_map<std::string, TypeInfo>& all() const
     {
-        return types_;
+        return Types;
     }
 
 private:
-    std::unordered_map<std::string, TypeInfo> types_;
+    std::unordered_map<std::string, TypeInfo> Types;
 };
 
 inline Registry& GetRegistry()
