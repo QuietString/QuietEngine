@@ -4,7 +4,7 @@
 #include <random>
 #include "CoreMinimal.h"
 
-class QObject_GcTest;
+class QTestObject;
 
 // GC performance and functionality test harness.
 class QGcTester : public QObject
@@ -15,8 +15,8 @@ public:
     std::vector<QObject*> Roots;
 
     // Working sets (non-reflected)
-    std::vector<QObject_GcTest*> AllNodes;
-    std::vector<std::vector<QObject_GcTest*>> DepthLayers; // BFS layers from Roots
+    std::vector<QTestObject*> AllNodes;
+    std::vector<std::vector<QTestObject*>> DepthLayers; // BFS layers from Roots
 
     // ---------- General graph patterns ----------
     QFUNCTION()
@@ -80,18 +80,18 @@ public:
 
 private:
     void ClearGraph();
-    void LinkChild(QObject_GcTest* Parent, QObject_GcTest* Child);
+    void LinkChild(QTestObject* Parent, QTestObject* Child);
 
     // Build helpers
-    void BuildLayers(QObject_GcTest* Root, bool bClearExisting);
-    std::vector<QObject_GcTest*> GetReachable() const;
+    void BuildLayers(QTestObject* Root, bool bClearExisting);
+    std::vector<QTestObject*> GetReachable() const;
 
     // Edge helpers
-    struct EdgeRef { QObject_GcTest* Parent; QObject_GcTest* Child; size_t ChildIndex; };
+    struct EdgeRef { QTestObject* Parent; QTestObject* Child; size_t ChildIndex; };
     void CollectEdgesReachable(std::vector<EdgeRef>& Out) const;
-    bool RemoveEdge(QObject_GcTest* Parent, QObject_GcTest* Child);
+    bool RemoveEdge(QTestObject* Parent, QTestObject* Child);
 
     // Utility
-    QObject_GcTest* MakeNode();
-    QObject_GcTest* PickRandom(const std::vector<QObject_GcTest*>& From, std::mt19937& Rng);
+    QTestObject* MakeNode();
+    QTestObject* PickRandom(const std::vector<QTestObject*>& From, std::mt19937& Rng);
 };

@@ -6,7 +6,7 @@
 #include "EngineGlobals.h"
 #include "GarbageCollector.h"
 #include "Module.h"
-#include "Object_GcTest.h"
+#include "TestObject.h"
 #include "Runtime.h"
 #include "Console/ConsoleIO.h"
 #include "Core/GarbageCollector.h"

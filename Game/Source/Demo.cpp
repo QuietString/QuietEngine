@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "Asset.h"
-#include "Object_GcTest.h"
+#include "TestObject.h"
 #include "qmeta_runtime.h"
 #include "Runtime.h"
 #include "World.h"

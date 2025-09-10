@@ -13,6 +13,9 @@ public:
     
     QPROPERTY()
     float WalkSpeed = 600.0f;
+
+    QPROPERTY()
+    std::string Name = "NoName";
     
     QPROPERTY()
     QPlayer* Friend = nullptr;
@@ -21,7 +24,7 @@ public:
     std::vector<QPlayer*> Friends;
     
     QFUNCTION()
-    int AddHealth(int Delta);
+    int AddHealth(int Amount);
     
     QFUNCTION()
     void SetWalkSpeed(float Speed);

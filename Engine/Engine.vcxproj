@@ -109,7 +109,7 @@
         <ClInclude Include="Source\Public\EngineGlobals.h" />
         <ClInclude Include="Source\Public\Object.h" />
         <ClInclude Include="Source\Public\ObjectBase.h" />
-        <ClInclude Include="Source\Public\Object_GcTest.h" />
+        <ClInclude Include="Source\Public\TestObject.h" />
         <ClInclude Include="Source\Public\qmeta_macros.h" />
         <ClInclude Include="Source\Public\qmeta_runtime.h" />
         <ClInclude Include="Source\Public\Module.h" />

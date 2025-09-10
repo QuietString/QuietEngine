@@ -10,7 +10,7 @@
 
 #include "EngineGlobals.h"
 #include "GarbageCollector.h"
-#include "Object_GcTest.h"
+#include "TestObject.h"
 #include "World.h"
 #include "../../../Engine/Source/Core/GarbageCollector.h"
 
@@ -21,36 +21,36 @@ void QGcTester::ClearGraph()
     DepthLayers.clear();
 }
 
-QObject_GcTest* QGcTester::MakeNode()
+QTestObject* QGcTester::MakeNode()
 {
-    auto* n = NewObject<QObject_GcTest>();
+    auto* n = NewObject<QTestObject>();
     AllNodes.push_back(n);
     return n;
 }
 
-void QGcTester::LinkChild(QObject_GcTest* Parent, QObject_GcTest* Child)
+void QGcTester::LinkChild(QTestObject* Parent, QTestObject* Child)
 {
     if (!Parent || !Child) return;
 
     Parent->Children.push_back(Child);
 }
 
-QObject_GcTest* QGcTester::PickRandom(const std::vector<QObject_GcTest*>& From, std::mt19937& Rng)
+QTestObject* QGcTester::PickRandom(const std::vector<QTestObject*>& From, std::mt19937& Rng)
 {
     if (From.empty()) return nullptr;
     std::uniform_int_distribution<size_t> dist(0, From.size() - 1);
     return From[dist(Rng)];
 }
 
-void QGcTester::BuildLayers(QObject_GcTest* Root, bool bClearExisting = false)
+void QGcTester::BuildLayers(QTestObject* Root, bool bClearExisting = false)
 {
     if (bClearExisting)
     {
         DepthLayers.clear();
     }
 
-    std::unordered_map<QObject_GcTest*, int> ObjectDepthMap;
-    std::queue<QObject_GcTest*> Queue;
+    std::unordered_map<QTestObject*, int> ObjectDepthMap;
+    std::queue<QTestObject*> Queue;
     
     if (Root)
     {
@@ -61,7 +61,7 @@ void QGcTester::BuildLayers(QObject_GcTest* Root, bool bClearExisting = false)
     {
         for (QObject* FoundRoot : Roots)
         {
-            auto* RootCasted = static_cast<QObject_GcTest*>(FoundRoot);
+            auto* RootCasted = static_cast<QTestObject*>(FoundRoot);
             if (!RootCasted) continue;
 
             ObjectDepthMap[RootCasted] = 0;
@@ -90,7 +90,7 @@ void QGcTester::BuildLayers(QObject_GcTest* Root, bool bClearExisting = false)
     
     for (auto& [Obj, Depth] : ObjectDepthMap)
     {
-        QObject_GcTest* Node = Obj;
+        QTestObject* Node = Obj;
         if (Depth >= 0)
         {
             DepthLayers[(size_t)Depth].push_back(Node);
@@ -98,14 +98,14 @@ void QGcTester::BuildLayers(QObject_GcTest* Root, bool bClearExisting = false)
     }
 }
 
-std::vector<QObject_GcTest*> QGcTester::GetReachable() const
+std::vector<QTestObject*> QGcTester::GetReachable() const
 {
-    std::vector<QObject_GcTest*> Out;
-    std::unordered_set<QObject_GcTest*> Vis;
-    std::queue<QObject_GcTest*> Queue;
+    std::vector<QTestObject*> Out;
+    std::unordered_set<QTestObject*> Vis;
+    std::queue<QTestObject*> Queue;
     for (QObject* Root : Roots)
     {
-        auto* RootCasted = static_cast<QObject_GcTest*>(Root);
+        auto* RootCasted = static_cast<QTestObject*>(Root);
         if (!RootCasted || Vis.count(RootCasted)) continue;
         Vis.insert(RootCasted);
         Queue.push(RootCasted);
@@ -129,11 +129,11 @@ std::vector<QObject_GcTest*> QGcTester::GetReachable() const
 void QGcTester::CollectEdgesReachable(std::vector<EdgeRef>& Out) const
 {
     Out.clear();
-    std::unordered_set<QObject_GcTest*> vis;
-    std::queue<QObject_GcTest*> q;
+    std::unordered_set<QTestObject*> vis;
+    std::queue<QTestObject*> q;
     for (QObject* r : Roots)
     {
-        auto* gr = static_cast<QObject_GcTest*>(r);
+        auto* gr = static_cast<QTestObject*>(r);
         if (!gr || vis.count(gr)) continue;
         vis.insert(gr);
         q.push(gr);
@@ -144,14 +144,14 @@ void QGcTester::CollectEdgesReachable(std::vector<EdgeRef>& Out) const
         // vector children
         for (size_t i = 0; i < u->Children.size(); ++i)
         {
-            QObject_GcTest* v = u->Children[i];
+            QTestObject* v = u->Children[i];
             if (v) Out.push_back({u, v, i});
             if (v && !vis.count(v)) { vis.insert(v); q.push(v); }
         }
     }
 }
 
-bool QGcTester::RemoveEdge(QObject_GcTest* Parent, QObject_GcTest* Child)
+bool QGcTester::RemoveEdge(QTestObject* Parent, QTestObject* Child)
 {
     if (!Parent)
     {
@@ -219,13 +219,13 @@ void QGcTester::PatternGrid(int Width, int Height, int Seed)
         return;
     }
 
-    std::vector<std::vector<QObject_GcTest*>> grid(Height, std::vector<QObject_GcTest*>(Width, nullptr));
+    std::vector<std::vector<QTestObject*>> grid(Height, std::vector<QTestObject*>(Width, nullptr));
     for (int y = 0; y < Height; ++y)
         for (int x = 0; x < Width; ++x)
             grid[y][x] = MakeNode();
 
     // root: top-left
-    QObject_GcTest* Head = grid[0][0];
+    QTestObject* Head = grid[0][0];
     Roots.push_back(Head);
 
     // edges: left, right, up, down
@@ -278,7 +278,7 @@ void QGcTester::PatternRandom(int Nodes, int AvgOut, int Seed)
     AllNodes.reserve((size_t)Nodes);
     for (int i = 0; i < Nodes; ++i) MakeNode();
 
-    QObject_GcTest* Head = AllNodes.front();
+    QTestObject* Head = AllNodes.front();
     Roots.push_back(Head);
 
     std::mt19937 Rng(static_cast<uint32_t>(Seed));
@@ -317,12 +317,12 @@ void QGcTester::PatternRings(int Rings, int RingSize, int Seed)
 
     std::mt19937 Rng(static_cast<uint32_t>(Seed));
 
-    QObject_GcTest* PrevRingFirst = nullptr;
-    QObject_GcTest* Head = nullptr;
+    QTestObject* PrevRingFirst = nullptr;
+    QTestObject* Head = nullptr;
     
     for (int RingIdx = 0; RingIdx < Rings; ++RingIdx)
     {
-        std::vector<QObject_GcTest*> Ring;
+        std::vector<QTestObject*> Ring;
         Ring.reserve((size_t)RingSize);
         
         for (int i = 0; i < RingSize; ++i)
@@ -372,7 +372,7 @@ void QGcTester::PatternDiamond(int Layers, int Breadth, int Seed)
 
     std::mt19937 Rng(static_cast<uint32_t>(Seed));
 
-    std::vector<std::vector<QObject_GcTest*>> L;
+    std::vector<std::vector<QTestObject*>> L;
     L.resize((size_t)Layers);
     // top
     L[0].push_back(MakeNode());
@@ -488,7 +488,7 @@ int QGcTester::BreakPercent(double Percent, int Depth, int Seed)
     std::mt19937 rng(static_cast<uint32_t>(Seed));
     std::uniform_real_distribution<double> roll(0.0, 100.0);
 
-    std::vector<QObject_GcTest*> targets;
+    std::vector<QTestObject*> targets;
     if (Depth < 0)
     {
         auto reach = GetReachable();
@@ -631,7 +631,7 @@ void QGcTester::Churn(int Steps, int AllocPerStep, double BreakPct, int GcEveryN
         if (reach.empty() && !Roots.empty())
         {
             // ensure at least root exists
-            auto* r = static_cast<QObject_GcTest*>(Roots[0]);
+            auto* r = static_cast<QTestObject*>(Roots[0]);
             reach.push_back(r);
         }
         for (int i = 0; i < AllocPerStep; ++i)

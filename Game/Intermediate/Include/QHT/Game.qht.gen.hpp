@@ -139,6 +139,7 @@ inline void QHT_Register_Game(Registry& R) {
     T_QPlayer.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
     T_QPlayer.properties.push_back(MetaProperty{"Health", "int", offsetof(QPlayer, Health), MetaMap{} });
     T_QPlayer.properties.push_back(MetaProperty{"WalkSpeed", "float", offsetof(QPlayer, WalkSpeed), MetaMap{} });
+    T_QPlayer.properties.push_back(MetaProperty{"Name", "std::string", offsetof(QPlayer, Name), MetaMap{} });
     T_QPlayer.properties.push_back(MetaProperty{"Friend", "QPlayer*", offsetof(QPlayer, Friend), MetaMap{} });
     T_QPlayer.properties.push_back(MetaProperty{"Friends", "std::vector<QPlayer*>", offsetof(QPlayer, Friends), MetaMap{} });
     {
@@ -146,7 +147,7 @@ inline void QHT_Register_Game(Registry& R) {
         F.name = "AddHealth";
         F.return_type = "int";
         F.invoker = &_qmeta_invoke_QPlayer_AddHealth;
-        F.params = std::vector<MetaParam>{ MetaParam{"Delta", "int"} };
+        F.params = std::vector<MetaParam>{ MetaParam{"Amount", "int"} };
         F.meta = MetaMap{};
         T_QPlayer.functions.push_back(std::move(F));
     }

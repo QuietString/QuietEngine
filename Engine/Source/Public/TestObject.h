@@ -4,7 +4,7 @@
 #include "Object.h"
 #include "qmeta_macros.h"
 
-class QObject_GcTest : public QObject
+class QTestObject : public QObject
 {
 public:
     QPROPERTY()
@@ -17,5 +17,5 @@ public:
     void RemoveChildren() { Children.clear(); }
     
     QPROPERTY()
-    std::vector<QObject_GcTest*> Children;
+    std::vector<QTestObject*> Children;
 };

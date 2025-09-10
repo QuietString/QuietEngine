@@ -12,6 +12,9 @@ public:
 
     QPROPERTY()
     std::vector<QObject*> Objects;
+
+    QFUNCTION()
+    void AddObject(QObject* Obj);
     
     static void SetWorldSingleton(QWorld* World);
 };
