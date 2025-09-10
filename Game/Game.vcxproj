@@ -42,8 +42,10 @@
 
     <!-- QHT variables -->
     <PropertyGroup>
-        <!-- Scan Game module headers -->
-        <QhtSrc>$(ProjectDir)Source</QhtSrc>
+        <!-- Scan both Engine and Game headers to resolve ancestry -->
+        <QhtSrc>$(ProjectDir)Source;$(ProjectDir)Source\CoreObjects\Public</QhtSrc>
+        <!-- Emit only classes declared under Game -->
+        <QhtEmit>$(ProjectDir)Source</QhtEmit>
         <!-- Output generated header -->
         <QhtOut>$(ProjectDir)Intermediate\Include\QHT\Game.qht.gen.hpp</QhtOut>
     </PropertyGroup>
@@ -85,7 +87,7 @@
         </Link>
         <PreBuildEvent>
             <Message>[QHT] Game scanning...</Message>
-            <Command>cmd /c "py &quot;$(SolutionDir)Programs\HeaderTool\QHT.py&quot; --unit Game --src &quot;$(QhtSrc)&quot; --out &quot;$(QhtOut)&quot; || python &quot;$(SolutionDir)Programs\HeaderTool\QHT.py&quot; --unit Game --src &quot;$(QhtSrc)&quot; --out &quot;$(QhtOut)&quot;"</Command>
+            <Command>cmd /c "py &quot;$(SolutionDir)Programs\HeaderTool\QHT.py&quot; --unit Game --src &quot;$(QhtSrc)&quot; --emit &quot;$(QhtEmit)&quot; --out &quot;$(QhtOut)&quot;"</Command>
         </PreBuildEvent>
     </ItemDefinitionGroup>
 
