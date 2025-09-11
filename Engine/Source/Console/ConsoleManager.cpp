@@ -432,18 +432,15 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             }
 
             // Locate property meta to know its type and offset
-            const qmeta::MetaProperty* MP = nullptr;
-            for (auto& P : Ti->properties)
-            {
-                if (P.name == Prop) { MP = &P; break; }
-            }
-            if (!MP)
+            const qmeta::MetaProperty* MetaProp = Ti->FindProperty(Prop);
+            
+            if (!MetaProp)
             {
                 std::cout << "Property not found: " << Prop << "\n";
                 return true;
             }
 
-            std::string ValueStr = FormatPropertyValue(Obj, *Ti, *MP);
+            std::string ValueStr = FormatPropertyValue(Obj, *Ti, *MetaProp);
             std::cout << ValueStr << "\n";
             return true;
         }

@@ -8,6 +8,8 @@
 #include <functional>
 #include <typeindex>
 #include <format>
+#include <iostream>
+#include <ostream>
 #include <type_traits>
 #include <stdexcept>
 
@@ -220,6 +222,19 @@ inline Registry& GetRegistry()
 // Utility: get property address by name
 inline void* GetPropertyPtr(void* Obj, const TypeInfo& Ti, std::string_view PropName)
 {
+    const TypeInfo* ParentInfo = Ti.base;
+    
+    if (ParentInfo)
+    {
+        for (auto& p : ParentInfo->properties)
+        {
+            if (p.name == PropName)
+            {
+                return static_cast<void*>(static_cast<unsigned char*>(Obj) + p.offset);
+            }
+        }
+    }
+
     for (auto& p : Ti.properties)
     {
         if (p.name == PropName)
@@ -227,12 +242,26 @@ inline void* GetPropertyPtr(void* Obj, const TypeInfo& Ti, std::string_view Prop
             return static_cast<void*>(static_cast<unsigned char*>(Obj) + p.offset);
         }
     }
+    
     return nullptr;
 }
 
 // Utility: call a function by name
 inline Variant CallByName(void* Obj, const TypeInfo& Ti, const std::string_view func, const std::vector<Variant>& Args)
 {
+    const TypeInfo* ParentInfo = Ti.base;
+    if (ParentInfo)
+    {
+        for (auto& Func : ParentInfo->functions)
+        {
+            if (Func.name == func)
+            {
+                if (!Func.invoker) throw std::runtime_error("qmeta: null invoker");
+                return Func.invoker(Obj, Args.data(), Args.size());
+            }
+        }
+    }
+    
     for (auto& Func : Ti.functions)
     {
         if (Func.name == func)
