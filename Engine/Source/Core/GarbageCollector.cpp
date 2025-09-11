@@ -29,7 +29,6 @@ GarbageCollector& GarbageCollector::Get()
 void GarbageCollector::RegisterInternal(QObject* Obj, const TypeInfo& Ti, const std::string& Name, uint64_t Id)
 {
     Node N;
-    N.Ptr = Obj;
     N.Ti = &Ti;
     N.Id = Id;
     Objects.emplace(Obj, N);
@@ -183,7 +182,7 @@ void GarbageCollector::Mark(QObject* Root)
         N.Marked = true;
 
         std::vector<QObject*> Children;
-        TraversePointers(N.Ptr, *N.Ti, Children);
+        TraversePointers(Cur, *N.Ti, Children);
         for (QObject* C : Children)
         {
             Stack.push_back(C);
@@ -193,24 +192,35 @@ void GarbageCollector::Mark(QObject* Root)
 
 double GarbageCollector::Collect(bool bSilent)
 {
-    const auto T0 = std::chrono::high_resolution_clock::now();
-    
+    using Clock = std::chrono::high_resolution_clock;
+    auto ms = [](const Clock::time_point& a, const Clock::time_point& b)
+    {
+        return std::chrono::duration<double, std::milli>(a - b).count();
+    };
+
+    const auto TTotal0 = Clock::now();
+
     // 1) Clear marks
+    const auto TClear0 = Clock::now();
     for (auto& Pair : Objects)
     {
         Pair.second.Marked = false;
     }
+    const auto TClear1 = Clock::now();
 
     // 2) Mark from roots
+    const auto TMark0 = Clock::now();
     for (QObject* R : Roots)
     {
         Mark(R);
     }
+    const auto TMark1 = Clock::now();
 
     // 3) Build a list of dead objects (no mark)
+    const auto TDead0 = Clock::now();
     std::vector<QObject*> Dead;
     Dead.reserve(Objects.size());
-    
+
     for (auto& Pair : Objects)
     {
         if (!Pair.second.Marked)
@@ -218,16 +228,18 @@ double GarbageCollector::Collect(bool bSilent)
             Dead.push_back(Pair.first);
         }
     }
-
+    const auto TDead1 = Clock::now();
+    
     // 4) Null-out references to dead objects in survivors to avoid dangling pointers
+    const auto TFix0 = Clock::now();
     for (auto& Pair : Objects)
     {
         if (!Pair.second.Marked) continue;
-        
+
         QObject* Owner = Pair.first;
         unsigned char* Base = BytePtr(Owner);
         const TypeInfo& Ti = *Pair.second.Ti;
-        
+
         for (const MetaProperty& P : Ti.properties)
         {
             if (IsRawQObjectPtr(P.type))
@@ -251,7 +263,7 @@ double GarbageCollector::Collect(bool bSilent)
                     auto It = Objects.find(Child);
                     if (It != Objects.end() && !It->second.Marked)
                     {
-                        Child = nullptr; // or erase later if you prefer   
+                        Child = nullptr; // or erase later if you prefer
                     }
                 }
                 // Optional: compact the vector
@@ -259,35 +271,47 @@ double GarbageCollector::Collect(bool bSilent)
             }
         }
     }
+    const auto TFix1 = Clock::now();
 
-    // 5) Delete the dead and remove from maps
+    // 5) Delete the dead and remove from maps (sweep)
+    const auto TSweep0 = Clock::now();
     for (QObject* D : Dead)
     {
         auto It = Objects.find(D);
         if (It != Objects.end())
         {
-            delete It->second.Ptr;
-            Objects.erase(It);
+            QObject* Obj = It->first;     // keep pointer
+            Objects.erase(It);            // remove from registry first
+            delete Obj;                   // then destroy memory
         }
     }
+    
+    const auto TSweep1 = Clock::now();
 
-    const auto T1 = std::chrono::high_resolution_clock::now();
-    const double Ms = std::chrono::duration<double, std::milli>(T1 - T0).count();
+    const auto TTotal1 = Clock::now();
+
+    const double MsClear    = ms(TClear1, TClear0);
+    const double MsMark     = ms(TMark1, TMark0);
+    const double MsBuild    = ms(TDead1, TDead0);
+    const double MsFixup    = ms(TFix1,  TFix0);
+    const double MsSweep    = ms(TSweep1, TSweep0);
+    const double MsTotal    = ms(TTotal1, TTotal0);
 
     if (!bSilent)
     {
-        if (Dead.size() < 10)
-        {
-            for (QObject* D : Dead)
-            {
-                std::cout << "[GC] Killed: " << D->GetDebugName() << "\n";
-            }
-        }
-        
-        std::cout << "[GC] Collected " << Dead.size() << " objects, alive=" << Objects.size() << ". Took " << Ms << " ms." "\n";
+        std::cout << "[GC] Collected " << Dead.size()
+                  << " objects, alive=" << Objects.size()
+                  << ". Total " << MsTotal << " ms.\n";
+
+        std::cout << "[GC] Phase timings (ms) - "
+                  << "clear="    << MsClear  << ", "
+                  << "mark="     << MsMark   << ", "
+                  << "buildDead="<< MsBuild  << ", "
+                  << "fixup="    << MsFixup  << ", "
+                  << "sweep="    << MsSweep  << "\n";
     }
 
-    return Ms;
+    return MsTotal;
 }
 
 void GarbageCollector::ListObjects() const

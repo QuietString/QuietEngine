@@ -2,25 +2,13 @@
 #include "GarbageCollector.h"
 #include <algorithm>
 #include <sstream>
-#include <vector>
 #include <iostream>
-#include <iomanip>
 #include <queue>
 #include "qmeta_runtime.h"
 #include <condition_variable>
 
 #include "Console/ConsoleIO.h"
 #include "Console/ConsoleManager.h"
-
-#if defined(_WIN32)
-// Optional: improve sleep granularity to ~1ms (system-wide).
-// Link: winmm.lib
-#define QRUNTIME_USE_WINMM 0
-#if QRUNTIME_USE_WINMM
-    #include <mmsystem.h>
-    #pragma comment(lib, "winmm.lib")
-#endif
-#endif
 
 namespace
 {
@@ -35,20 +23,6 @@ namespace
     std::atomic<bool> G_InputRun { false };
 
     qruntime::TickCallback G_GameTick;
-
-#if defined(_WIN32) && QRUNTIME_USE_WINMM
-    struct TimerResolutionScope
-    {
-        TimerResolutionScope()
-        {
-            timeBeginPeriod(1);
-        }
-        ~TimerResolutionScope()
-        {
-            timeEndPeriod(1);
-        }
-    };
-#endif
 }
 
 void qruntime::Tick(double DeltaSeconds)

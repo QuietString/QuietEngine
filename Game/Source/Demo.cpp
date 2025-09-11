@@ -3,12 +3,9 @@
 #include <filesystem>
 #include <iostream>
 
-#include "Asset.h"
-#include "TestObject.h"
 #include "qmeta_runtime.h"
-#include "Runtime.h"
 #include "World.h"
-#include "../../Engine/Source/Core/GarbageCollector.h"
+#include "GarbageCollector.h"
 #include "Classes/Player.h"
 #include "Test/GcTester.h"
 

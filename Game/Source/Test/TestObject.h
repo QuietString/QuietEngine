@@ -12,6 +12,18 @@ public:
 
     QFUNCTION()
     void SetInteger(int InValue) { Integer = InValue; }
+    
+    QFUNCTION()
+    void RemoveFriend(int Idx);
+    
+    QPROPERTY()
+    QTestObject* Friend1;
+
+    QPROPERTY()
+    QTestObject* Friend2;
+
+    QPROPERTY()
+    QTestObject* Friend3;
 
     QFUNCTION()
     void RemoveChildren() { Children.clear(); }

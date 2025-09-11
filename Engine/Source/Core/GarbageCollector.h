@@ -64,7 +64,6 @@ public:
 private:
     struct Node
     {
-        QObject* Ptr = nullptr;
         const qmeta::TypeInfo* Ti = nullptr;
         uint64_t Id = 0;
         bool Marked = false;

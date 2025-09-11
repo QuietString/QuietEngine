@@ -12,7 +12,6 @@ using namespace qmeta;
 #include "Actor.h"
 #include "Character.h"
 #include "Object.h"
-#include "TestObject.h"
 #include "World.h"
 
 static Variant _qmeta_invoke_QActor_SetActorInteger(void* Self, const Variant* args, size_t argc) {
@@ -20,26 +19,6 @@ static Variant _qmeta_invoke_QActor_SetActorInteger(void* Self, const Variant* a
     if (argc < 1) throw std::runtime_error("QActor::SetActorInteger requires 1 args");
     auto _a0 = args[0].as<int>();
     self->SetActorInteger(_a0);
-    return Variant();
-}
-
-static Variant _qmeta_invoke_QTestObject_SetInteger(void* Self, const Variant* args, size_t argc) {
-    (void)argc; auto* self = static_cast<QTestObject*>(Self);
-    if (argc < 1) throw std::runtime_error("QTestObject::SetInteger requires 1 args");
-    auto _a0 = args[0].as<int>();
-    self->SetInteger(_a0);
-    return Variant();
-}
-
-static Variant _qmeta_invoke_QTestObject_RemoveChildren(void* Self, const Variant* args, size_t argc) {
-    (void)argc; auto* self = static_cast<QTestObject*>(Self);
-    self->RemoveChildren();
-    return Variant();
-}
-
-static Variant _qmeta_invoke_QWorld_SpawnObject(void* Self, const Variant* args, size_t argc) {
-    (void)argc; auto* self = static_cast<QWorld*>(Self);
-    self->SpawnObject();
     return Variant();
 }
 
@@ -81,42 +60,10 @@ inline void QHT_Register_Engine(Registry& R) {
     TypeInfo& T_QObject = R.add_type("QObject", sizeof(QObject));
     T_QObject.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
     T_QObject.base_name = "QObjectBase";
-    TypeInfo& T_QTestObject = R.add_type("QTestObject", sizeof(QTestObject));
-    T_QTestObject.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
-    T_QTestObject.base_name = "QObject";
-    T_QTestObject.properties.push_back(MetaProperty{"Integer", "int", offsetof(QTestObject, Integer), MetaMap{} });
-    T_QTestObject.properties.push_back(MetaProperty{"Children", "std::vector<QTestObject*>", offsetof(QTestObject, Children), MetaMap{} });
-    {
-        MetaFunction F;
-        F.name = "SetInteger";
-        F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QTestObject_SetInteger;
-        F.params = std::vector<MetaParam>{ MetaParam{"InValue", "int"} };
-        F.meta = MetaMap{};
-        T_QTestObject.functions.push_back(std::move(F));
-    }
-    {
-        MetaFunction F;
-        F.name = "RemoveChildren";
-        F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QTestObject_RemoveChildren;
-        F.params = std::vector<MetaParam>{  };
-        F.meta = MetaMap{};
-        T_QTestObject.functions.push_back(std::move(F));
-    }
     TypeInfo& T_QWorld = R.add_type("QWorld", sizeof(QWorld));
     T_QWorld.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
     T_QWorld.base_name = "QObject";
     T_QWorld.properties.push_back(MetaProperty{"Objects", "std::vector<QObject*>", offsetof(QWorld, Objects), MetaMap{} });
-    {
-        MetaFunction F;
-        F.name = "SpawnObject";
-        F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QWorld_SpawnObject;
-        F.params = std::vector<MetaParam>{  };
-        F.meta = MetaMap{};
-        T_QWorld.functions.push_back(std::move(F));
-    }
     {
         MetaFunction F;
         F.name = "AddObject";

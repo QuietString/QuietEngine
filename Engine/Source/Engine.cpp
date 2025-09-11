@@ -3,14 +3,11 @@
 #include <ios>
 #include <iostream>
 
-#include "Character.h"
 #include "EngineGlobals.h"
 #include "GarbageCollector.h"
 #include "Module.h"
-#include "TestObject.h"
 #include "Runtime.h"
 #include "Console/ConsoleIO.h"
-#include "Core/GarbageCollector.h"
 #include "CoreObjects/Public/World.h"
 
 // Force-link the Game static library so its auto-registrar runs
@@ -80,20 +77,6 @@ int main(int argc, char* argv[])
     // Start background console input
     qruntime::StartConsoleInput();
 
-    for (int i = 0; i < 1000; i++)
-    {
-        QTestObject* Obj = NewObject<QTestObject>();
-    }
-
-    for (int i = 0; i < 1000; i++)
-    {
-        QActor* Obj = NewObject<QActor>();
-    }
-
-    for (int i = 0; i < 1000; i++)
-    {
-        QCharacter* Obj = NewObject<QCharacter>();
-    }
     // Run the main loop (fixed 16ms ~60Hz)
     std::chrono::milliseconds TimeStep(16);
     qruntime::RunMainLoop(TimeStep,5);

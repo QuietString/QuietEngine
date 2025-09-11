@@ -276,7 +276,6 @@
         <ClInclude Include="Source\CoreObjects\Public\Character.h" />
         <ClInclude Include="Source\CoreObjects\Public\Object.h" />
         <ClInclude Include="Source\CoreObjects\Public\ObjectBase.h" />
-        <ClInclude Include="Source\CoreObjects\Public\TestObject.h" />
         <ClInclude Include="Source\CoreObjects\Public\World.h" />
         <ClInclude Include="Source\Core\GarbageCollector.h" />
         <ClInclude Include="Source\Public\Asset.h" />

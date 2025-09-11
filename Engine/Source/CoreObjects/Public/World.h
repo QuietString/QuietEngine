@@ -14,9 +14,6 @@ public:
     std::vector<QObject*> Objects;
 
     QFUNCTION()
-    void SpawnObject();
-    
-    QFUNCTION()
     void AddObject(const std::string& ObjName);
 
     QFUNCTION()

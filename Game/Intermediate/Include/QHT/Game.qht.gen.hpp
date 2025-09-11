@@ -11,6 +11,7 @@ using namespace qmeta;
 
 #include "Classes/Player.h"
 #include "Test/GcTester.h"
+#include "Test/TestObject.h"
 
 static Variant _qmeta_invoke_QPlayer_AddHealth(void* Self, const Variant* args, size_t argc) {
     (void)argc; auto* self = static_cast<QPlayer*>(Self);
@@ -146,6 +147,28 @@ static Variant _qmeta_invoke_QGcTester_Churn(void* Self, const Variant* args, si
     auto _a3 = args[3].as<int>();
     auto _a4 = args[4].as<int>();
     self->Churn(_a0, _a1, _a2, _a3, _a4);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QTestObject_SetInteger(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QTestObject*>(Self);
+    if (argc < 1) throw std::runtime_error("QTestObject::SetInteger requires 1 args");
+    auto _a0 = args[0].as<int>();
+    self->SetInteger(_a0);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QTestObject_RemoveFriend(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QTestObject*>(Self);
+    if (argc < 1) throw std::runtime_error("QTestObject::RemoveFriend requires 1 args");
+    auto _a0 = args[0].as<int>();
+    self->RemoveFriend(_a0);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QTestObject_RemoveChildren(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QTestObject*>(Self);
+    self->RemoveChildren();
     return Variant();
 }
 
@@ -296,5 +319,40 @@ inline void QHT_Register_Game(Registry& R) {
         F.params = std::vector<MetaParam>{ MetaParam{"Steps", "int"}, MetaParam{"AllocPerStep", "int"}, MetaParam{"BreakPct", "double"}, MetaParam{"GcEveryN", "int"}, MetaParam{"Seed", "int"} };
         F.meta = MetaMap{};
         T_QGcTester.functions.push_back(std::move(F));
+    }
+    TypeInfo& T_QTestObject = R.add_type("QTestObject", sizeof(QTestObject));
+    T_QTestObject.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
+    T_QTestObject.base_name = "QObject";
+    T_QTestObject.properties.push_back(MetaProperty{"Integer", "int", offsetof(QTestObject, Integer), MetaMap{} });
+    T_QTestObject.properties.push_back(MetaProperty{"Friend1", "QTestObject*", offsetof(QTestObject, Friend1), MetaMap{} });
+    T_QTestObject.properties.push_back(MetaProperty{"Friend2", "QTestObject*", offsetof(QTestObject, Friend2), MetaMap{} });
+    T_QTestObject.properties.push_back(MetaProperty{"Friend3", "QTestObject*", offsetof(QTestObject, Friend3), MetaMap{} });
+    T_QTestObject.properties.push_back(MetaProperty{"Children", "std::vector<QTestObject*>", offsetof(QTestObject, Children), MetaMap{} });
+    {
+        MetaFunction F;
+        F.name = "SetInteger";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QTestObject_SetInteger;
+        F.params = std::vector<MetaParam>{ MetaParam{"InValue", "int"} };
+        F.meta = MetaMap{};
+        T_QTestObject.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "RemoveFriend";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QTestObject_RemoveFriend;
+        F.params = std::vector<MetaParam>{ MetaParam{"Idx", "int"} };
+        F.meta = MetaMap{};
+        T_QTestObject.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "RemoveChildren";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QTestObject_RemoveChildren;
+        F.params = std::vector<MetaParam>{  };
+        F.meta = MetaMap{};
+        T_QTestObject.functions.push_back(std::move(F));
     }
 }
