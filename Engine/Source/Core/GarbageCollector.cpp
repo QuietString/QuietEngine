@@ -266,8 +266,6 @@ double GarbageCollector::Collect(bool bSilent)
                         Child = nullptr; // or erase later if you prefer
                     }
                 }
-                // Optional: compact the vector
-                // Vec->erase(std::remove(Vec->begin(), Vec->end(), nullptr), Vec->end());
             }
         }
     }
@@ -285,7 +283,8 @@ double GarbageCollector::Collect(bool bSilent)
             delete Obj;                   // then destroy memory
         }
     }
-    
+
+    // perf logs
     const auto TSweep1 = Clock::now();
 
     const auto TTotal1 = Clock::now();

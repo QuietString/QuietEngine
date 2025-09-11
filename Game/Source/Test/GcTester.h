@@ -23,7 +23,7 @@ public:
     // Working sets (non-reflected)
     std::vector<QTestObject*> AllNodes;
     std::vector<std::vector<QTestObject*>> DepthLayers; // BFS layers from Roots
-
+    
     // ---------- General graph patterns ----------
     QFUNCTION()
     void PatternChain(int Length, int Seed = 1);

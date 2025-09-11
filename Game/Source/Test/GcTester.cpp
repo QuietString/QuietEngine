@@ -410,7 +410,7 @@ void QGcTester::PatternRandom(int Nodes, int BranchCount, int Seed)
         }
     }
     
-    BuildLayers(Head, false);
+    BuildLayers(Head);
     std::cout << "[GcTester] Random graph: nodes=" << Nodes << " branchCount=" << BranchCount << " total=" << AllNodes.size() << "\n";
 }
 
@@ -645,8 +645,12 @@ int QGcTester::BreakPercent(double Percent, int Depth, int Seed, bool bSilient)
             }
         }
     }
+
+    if (!bSilient)
+    {
+        std::cout << "[GcTester] BreakPercent depth=" << Depth << " percent=" << Percent << " cut=" << Cut << "\n";    
+    }
     
-    std::cout << "[GcTester] BreakPercent depth=" << Depth << " percent=" << Percent << " cut=" << Cut << "\n";
     return Cut;
 }
 
@@ -761,12 +765,13 @@ void QGcTester::Churn(int Steps, int AllocPerStep, double BreakPct, int GcEveryN
     
     for (int s = 1; s <= Steps; ++s)
     {
+        QTestObject* Root = nullptr;
         // 1) allocate and attach to random reachable parents
         auto Reached = GetReachable();
         if (Reached.empty() && !Roots.empty())
         {
             // ensure at least root exists
-            auto* Root = static_cast<QTestObject*>(Roots[0]);
+            Root = static_cast<QTestObject*>(Roots[0]);
             Reached.push_back(Root);
         }
         for (int i = 0; i < AllocPerStep; ++i)
@@ -779,6 +784,8 @@ void QGcTester::Churn(int Steps, int AllocPerStep, double BreakPct, int GcEveryN
             }
         }
 
+        BuildLayers(Root, true);
+        
         // 2) random break by percent across all depths
         if (BreakPct > 0.0)
         {
@@ -788,13 +795,12 @@ void QGcTester::Churn(int Steps, int AllocPerStep, double BreakPct, int GcEveryN
         // 3) optional GC
         if (GcEveryN > 0 && (s % GcEveryN == 0))
         {
-            std::cout << "[GcTester] Cut " << CutCountBetweenGc << "objects during " << GcEveryN << " steps" << "\n";
+            std::cout << "[GcTester] created " << Steps * AllocPerStep << " objects"<< ", cut " << CutCountBetweenGc << " objects during " << GcEveryN << " steps" << "\n";
             CutCountBetweenGc = 0;
             GarbageCollector::Get().Collect();   
         }
     }
     
-    BuildLayers(nullptr, true);
     std::cout << "[GcTester] Churn done: steps=" << Steps
               << " alloc/step=" << AllocPerStep
               << " breakPct=" << BreakPct
