@@ -8,6 +8,9 @@ public:
     QPROPERTY()
     int ActorInteger;
 
+    QPROPERTY()
+    QActor* Owner = nullptr;
+    
     QFUNCTION()
     void SetActorInteger(int InValue) { ActorInteger = InValue; }
 };
