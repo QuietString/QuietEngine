@@ -14,6 +14,12 @@ public:
     QPROPERTY()
     std::vector<QObject*> Roots;
 
+    QPROPERTY()
+    bool bUseVector = true;
+
+    QFUNCTION()
+    void SetUseVector(bool bUse);
+    
     // Working sets (non-reflected)
     std::vector<QTestObject*> AllNodes;
     std::vector<std::vector<QTestObject*>> DepthLayers; // BFS layers from Roots
@@ -26,7 +32,7 @@ public:
     void PatternGrid(int Width, int Height, int Seed = 1);
     
     QFUNCTION()
-    void PatternRandom(int Nodes, int AvgOut, int Seed = 1337);
+    void PatternRandom(int Nodes, int BranchCount, int Seed = 1337);
     
     QFUNCTION()
     void PatternRings(int Rings, int RingSize, int Seed = 7);
@@ -56,7 +62,7 @@ public:
 
     // Remove a percentage of outgoing edges. If depth<0 => all depths.
     QFUNCTION()
-    int BreakPercent(double Percent, int Depth /* -1 == all */, int Seed = 24);
+    int BreakPercent(double Percent, int Depth /* -1 == all */, int Seed = 24, bool bSilient = false);
 
     // Remove N random edges from reachable set.
     QFUNCTION()
@@ -94,4 +100,10 @@ private:
     // Utility
     QTestObject* MakeNode();
     QTestObject* PickRandom(const std::vector<QTestObject*>& From, std::mt19937& Rng);
+
+    // Returns non-null children respecting the current storage mode.
+    void GatherChildren(QTestObject* Node, std::vector<QTestObject*>& Out) const;
+
+    // Count of non-null children in current mode.
+    size_t GetChildCount(const QTestObject* Node) const;
 };

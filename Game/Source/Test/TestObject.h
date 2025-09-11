@@ -17,14 +17,20 @@ public:
     void RemoveFriend(int Idx);
     
     QPROPERTY()
-    QTestObject* Friend1;
+    QTestObject* Friend1 = nullptr;
 
     QPROPERTY()
-    QTestObject* Friend2;
+    QTestObject* Friend2 = nullptr;
 
     QPROPERTY()
-    QTestObject* Friend3;
+    QTestObject* Friend3 = nullptr;
 
+    QPROPERTY()
+    QTestObject* Friend4 = nullptr;
+    
+    QPROPERTY()
+    QTestObject* Friend5 = nullptr;
+    
     QFUNCTION()
     void RemoveChildren() { Children.clear(); }
     

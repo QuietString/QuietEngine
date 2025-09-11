@@ -236,7 +236,9 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     if (!O) continue;
                     Ti = GC.GetTypeInfo(O);
                     if (Ti && Ti->name == "QGcTester")
+                    {
                         return O;
+                    }
                 }
 
                 return nullptr;
@@ -253,6 +255,20 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             {
                 GC.Call(Tester, "ClearAll", {});
                 return true;
+            }
+
+            if (Tokens.size() == 2)
+            {
+                if (Tokens[1] == "s")
+                {
+                    GC.Call(Tester, "SetUseVector", {false});
+                    return true;
+                }
+                else if (Tokens[1] == "v")
+                {
+                    GC.Call(Tester, "SetUseVector", {true});
+                    return true;
+                }
             }
 
             if (Tokens.size() >= 2 && Tokens[1] == "build")
@@ -298,11 +314,11 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 }
                 else if (Mode == "random")
                 {
-                    if (Tokens.size() < 5) { std::cout << "gctest pattern random <nodes> <avgOut> [seed]\n"; return true; }
-                    int nodes = std::stoi(Tokens[3]);
-                    int avgOut = std::stoi(Tokens[4]);
-                    int seed = (Tokens.size() >= 6) ? std::stoi(Tokens[5]) : 1337;
-                    GC.Call(Tester, "PatternRandom", { qmeta::Variant(nodes), qmeta::Variant(avgOut), qmeta::Variant(seed) });
+                    if (Tokens.size() < 5) { std::cout << "gctest pattern random <nodes> <branchCount> [seed]\n"; return true; }
+                    int Nodes = std::stoi(Tokens[3]);
+                    int BranchCount = std::stoi(Tokens[4]);
+                    int Seed = (Tokens.size() >= 6) ? std::stoi(Tokens[5]) : 1337;
+                    GC.Call(Tester, "PatternRandom", { qmeta::Variant(Nodes), qmeta::Variant(BranchCount), qmeta::Variant(Seed) });
                     return true;
                 }
                 else if (Mode == "rings")

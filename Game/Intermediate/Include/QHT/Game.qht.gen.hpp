@@ -29,6 +29,14 @@ static Variant _qmeta_invoke_QPlayer_SetWalkSpeed(void* Self, const Variant* arg
     return Variant();
 }
 
+static Variant _qmeta_invoke_QGcTester_SetUseVector(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTester*>(Self);
+    if (argc < 1) throw std::runtime_error("QGcTester::SetUseVector requires 1 args");
+    auto _a0 = args[0].as<bool>();
+    self->SetUseVector(_a0);
+    return Variant();
+}
+
 static Variant _qmeta_invoke_QGcTester_PatternChain(void* Self, const Variant* args, size_t argc) {
     (void)argc; auto* self = static_cast<QGcTester*>(Self);
     if (argc < 2) throw std::runtime_error("QGcTester::PatternChain requires 2 args");
@@ -96,11 +104,12 @@ static Variant _qmeta_invoke_QGcTester_BreakAtDepth(void* Self, const Variant* a
 
 static Variant _qmeta_invoke_QGcTester_BreakPercent(void* Self, const Variant* args, size_t argc) {
     (void)argc; auto* self = static_cast<QGcTester*>(Self);
-    if (argc < 3) throw std::runtime_error("QGcTester::BreakPercent requires 3 args");
+    if (argc < 4) throw std::runtime_error("QGcTester::BreakPercent requires 4 args");
     auto _a0 = args[0].as<double>();
     auto _a1 = args[1].as<int>();
     auto _a2 = args[2].as<int>();
-    auto _ret = self->BreakPercent(_a0, _a1, _a2);
+    auto _a3 = args[3].as<bool>();
+    auto _ret = self->BreakPercent(_a0, _a1, _a2, _a3);
     return Variant(_ret);
 }
 
@@ -203,6 +212,16 @@ inline void QHT_Register_Game(Registry& R) {
     T_QGcTester.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
     T_QGcTester.base_name = "QObject";
     T_QGcTester.properties.push_back(MetaProperty{"Roots", "std::vector<QObject*>", offsetof(QGcTester, Roots), MetaMap{} });
+    T_QGcTester.properties.push_back(MetaProperty{"bUseVector", "bool", offsetof(QGcTester, bUseVector), MetaMap{} });
+    {
+        MetaFunction F;
+        F.name = "SetUseVector";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTester_SetUseVector;
+        F.params = std::vector<MetaParam>{ MetaParam{"bUse", "bool"} };
+        F.meta = MetaMap{};
+        T_QGcTester.functions.push_back(std::move(F));
+    }
     {
         MetaFunction F;
         F.name = "PatternChain";
@@ -226,7 +245,7 @@ inline void QHT_Register_Game(Registry& R) {
         F.name = "PatternRandom";
         F.return_type = "void";
         F.invoker = &_qmeta_invoke_QGcTester_PatternRandom;
-        F.params = std::vector<MetaParam>{ MetaParam{"Nodes", "int"}, MetaParam{"AvgOut", "int"}, MetaParam{"Seed", "int"} };
+        F.params = std::vector<MetaParam>{ MetaParam{"Nodes", "int"}, MetaParam{"BranchCount", "int"}, MetaParam{"Seed", "int"} };
         F.meta = MetaMap{};
         T_QGcTester.functions.push_back(std::move(F));
     }
@@ -271,7 +290,7 @@ inline void QHT_Register_Game(Registry& R) {
         F.name = "BreakPercent";
         F.return_type = "int";
         F.invoker = &_qmeta_invoke_QGcTester_BreakPercent;
-        F.params = std::vector<MetaParam>{ MetaParam{"Percent", "double"}, MetaParam{"Depth", "int"}, MetaParam{"Seed", "int"} };
+        F.params = std::vector<MetaParam>{ MetaParam{"Percent", "double"}, MetaParam{"Depth", "int"}, MetaParam{"Seed", "int"}, MetaParam{"bSilient", "bool"} };
         F.meta = MetaMap{};
         T_QGcTester.functions.push_back(std::move(F));
     }
@@ -327,6 +346,8 @@ inline void QHT_Register_Game(Registry& R) {
     T_QTestObject.properties.push_back(MetaProperty{"Friend1", "QTestObject*", offsetof(QTestObject, Friend1), MetaMap{} });
     T_QTestObject.properties.push_back(MetaProperty{"Friend2", "QTestObject*", offsetof(QTestObject, Friend2), MetaMap{} });
     T_QTestObject.properties.push_back(MetaProperty{"Friend3", "QTestObject*", offsetof(QTestObject, Friend3), MetaMap{} });
+    T_QTestObject.properties.push_back(MetaProperty{"Friend4", "QTestObject*", offsetof(QTestObject, Friend4), MetaMap{} });
+    T_QTestObject.properties.push_back(MetaProperty{"Friend5", "QTestObject*", offsetof(QTestObject, Friend5), MetaMap{} });
     T_QTestObject.properties.push_back(MetaProperty{"Children", "std::vector<QTestObject*>", offsetof(QTestObject, Children), MetaMap{} });
     {
         MetaFunction F;

@@ -12,7 +12,6 @@
 #include "GarbageCollector.h"
 #include "TestObject.h"
 #include "World.h"
-#include "../../../Engine/Source/Core/GarbageCollector.h"
 
 void QGcTester::ClearGraph()
 {
@@ -23,16 +22,35 @@ void QGcTester::ClearGraph()
 
 QTestObject* QGcTester::MakeNode()
 {
-    auto* n = NewObject<QTestObject>();
-    AllNodes.push_back(n);
-    return n;
+    auto* Node = NewObject<QTestObject>();
+    AllNodes.push_back(Node);
+    return Node;
 }
 
 void QGcTester::LinkChild(QTestObject* Parent, QTestObject* Child)
 {
     if (!Parent || !Child) return;
 
-    Parent->Children.push_back(Child);
+    if (bUseVector)
+    {
+        Parent->Children.push_back(Child);
+        return;
+    }
+    else
+    {
+        QTestObject** Slots[5] = { &Parent->Friend1, &Parent->Friend2, &Parent->Friend3, &Parent->Friend4, &Parent->Friend5 };
+        
+        for (auto& Slot : Slots)
+        {
+            if (*Slot == nullptr)
+            {
+                *Slot = Child;
+                return;
+            }
+        }
+    }
+
+    std::cout << "[GcTester] No free slots for link\n";
 }
 
 QTestObject* QGcTester::PickRandom(const std::vector<QTestObject*>& From, std::mt19937& Rng)
@@ -40,6 +58,48 @@ QTestObject* QGcTester::PickRandom(const std::vector<QTestObject*>& From, std::m
     if (From.empty()) return nullptr;
     std::uniform_int_distribution<size_t> dist(0, From.size() - 1);
     return From[dist(Rng)];
+}
+
+void QGcTester::GatherChildren(QTestObject* Node, std::vector<QTestObject*>& Out) const
+{
+    Out.clear();
+    if (!Node) return;
+    
+    if (bUseVector)
+    {
+        Out.insert(Out.end(), Node->Children.begin(), Node->Children.end());
+    }
+    else
+    {
+        if (Node->Friend1) Out.push_back(Node->Friend1);
+        if (Node->Friend2) Out.push_back(Node->Friend2);
+        if (Node->Friend3) Out.push_back(Node->Friend3);
+        if (Node->Friend4) Out.push_back(Node->Friend4);
+        if (Node->Friend5) Out.push_back(Node->Friend5);
+    }
+}
+
+size_t QGcTester::GetChildCount(const QTestObject* Node) const
+{
+    if (!Node)
+    {
+        return 0;
+    }
+    
+    if (bUseVector)
+    {
+        return Node->Children.size();
+    }
+    
+    size_t Count = 0;
+    
+    if (Node->Friend1) ++Count;
+    if (Node->Friend2) ++Count;
+    if (Node->Friend3) ++Count;
+    if (Node->Friend4) ++Count;
+    if (Node->Friend5) ++Count;
+    
+    return Count;
 }
 
 void QGcTester::BuildLayers(QTestObject* Root, bool bClearExisting = false)
@@ -75,7 +135,11 @@ void QGcTester::BuildLayers(QTestObject* Root, bool bClearExisting = false)
         auto* CurObj = Queue.front(); Queue.pop();
         int Depth = ObjectDepthMap[CurObj];
         MaxD = std::max(MaxD, Depth);
-        for (auto* NextObj : CurObj->Children)
+
+        std::vector<QTestObject*> Nexts;
+        GatherChildren(CurObj, Nexts);
+        
+        for (auto* NextObj : Nexts)
         {
             if (!NextObj) continue;
             if (ObjectDepthMap.find(NextObj) == ObjectDepthMap.end())
@@ -110,6 +174,7 @@ std::vector<QTestObject*> QGcTester::GetReachable() const
         Vis.insert(RootCasted);
         Queue.push(RootCasted);
     }
+    
     while (!Queue.empty())
     {
         auto* u = Queue.front(); Queue.pop();
@@ -141,12 +206,39 @@ void QGcTester::CollectEdgesReachable(std::vector<EdgeRef>& Out) const
     while (!q.empty())
     {
         auto* u = q.front(); q.pop();
-        // vector children
-        for (size_t i = 0; i < u->Children.size(); ++i)
+
+        if (bUseVector)
         {
-            QTestObject* v = u->Children[i];
-            if (v) Out.push_back({u, v, i});
-            if (v && !vis.count(v)) { vis.insert(v); q.push(v); }
+            // vector children
+            for (size_t i = 0; i < u->Children.size(); ++i)
+            {
+                QTestObject* Reached = u->Children[i];
+                if (Reached)
+                {
+                    Out.push_back({u, Reached, i});  
+                }
+                
+                if (Reached && !vis.count(Reached))
+                {
+                    vis.insert(Reached); q.push(Reached);
+                }
+            }   
+        }
+        else
+        {
+            QTestObject* Slots[5] = { u->Friend1, u->Friend2, u->Friend3, u->Friend4, u->Friend5 };
+            for (size_t i = 0; i < 5; ++i)
+            {
+                auto* v = Slots[i];
+                if (v)
+                {
+                    Out.push_back({u, v, i}); // ChildIndex = friend slot (0..4)   
+                }
+                if (v && !vis.count(v))
+                {
+                    vis.insert(v); q.push(v);
+                }
+            }
         }
     }
 }
@@ -157,19 +249,42 @@ bool QGcTester::RemoveEdge(QTestObject* Parent, QTestObject* Child)
     {
         return false;
     }
-    
-    auto& vec = Parent->Children;
-    for (size_t i = 0; i < vec.size(); ++i)
-    {
-        if (vec[i] == Child)
-        {
-            vec[i] = vec.back();
-            vec.pop_back();
-            return true;
-        }
-    }
 
-    return false;
+    if (bUseVector)
+    {
+        auto& Vec = Parent->Children;
+        for (size_t i = 0; i < Vec.size(); ++i)
+        {
+            if (Vec[i] == Child)
+            {
+                Vec[i] = Vec.back();
+                Vec.pop_back();
+                return true;
+            }
+        }
+
+        return false;
+    }
+    else
+    {
+        QTestObject** Slots[5] = { &Parent->Friend1, &Parent->Friend2, &Parent->Friend3, &Parent->Friend4, &Parent->Friend5 };
+        for (auto& Slot : Slots)
+        {
+            if (*Slot == Child)
+            {
+                *Slot = nullptr;
+                return true;
+            }
+        }
+        
+        return false;
+    }
+}
+
+void QGcTester::SetUseVector(bool bUse)
+{
+    bUseVector = bUse;
+    std::cout << "[GcTester] Use vector: " << (bUseVector ? "true" : "false") << "\n";
 }
 
 // ---------------- Pattern builders ----------------
@@ -260,11 +375,11 @@ void QGcTester::PatternGrid(int Width, int Height, int Seed)
     std::cout << "[GcTester] Grid built: " << Width << "x" << Height << " total=" << AllNodes.size() << "\n";
 }
 
-void QGcTester::PatternRandom(int Nodes, int AvgOut, int Seed)
+void QGcTester::PatternRandom(int Nodes, int BranchCount, int Seed)
 {
-    if (Nodes <= 0 || AvgOut < 0)
+    if (Nodes <= 0 || BranchCount < 0)
     {
-        std::cout << "[GcTester] nodes>0, avgOut>=0\n";
+        std::cout << "[GcTester] nodes>0, branchCount>=0\n";
         return;
     }
     
@@ -287,8 +402,7 @@ void QGcTester::PatternRandom(int Nodes, int AvgOut, int Seed)
     for (int i = 0; i < Nodes; ++i)
     {
         auto* Parent = AllNodes[(size_t)i];
-        int deg = AvgOut;
-        for (int k = 0; k < deg; ++k)
+        for (int k = 0; k < BranchCount; ++k)
         {
             auto* Child = AllNodes[(size_t)Pick(Rng)];
             if (Child == Parent) continue;
@@ -297,7 +411,7 @@ void QGcTester::PatternRandom(int Nodes, int AvgOut, int Seed)
     }
     
     BuildLayers(Head, false);
-    std::cout << "[GcTester] Random graph: nodes=" << Nodes << " avgOut=" << AvgOut << " total=" << AllNodes.size() << "\n";
+    std::cout << "[GcTester] Random graph: nodes=" << Nodes << " branchCount=" << BranchCount << " total=" << AllNodes.size() << "\n";
 }
 
 void QGcTester::PatternRings(int Rings, int RingSize, int Seed)
@@ -472,7 +586,7 @@ int QGcTester::BreakAtDepth(int TargetDepth, int Count, int Seed)
     return cut;
 }
 
-int QGcTester::BreakPercent(double Percent, int Depth, int Seed)
+int QGcTester::BreakPercent(double Percent, int Depth, int Seed, bool bSilient)
 {
     Percent = std::clamp(Percent, 0.0, 100.0);
     if (Percent <= 0.0)
@@ -485,40 +599,55 @@ int QGcTester::BreakPercent(double Percent, int Depth, int Seed)
         std::cout << "[GcTester] Depth layer is empty.\n";
         return 0;
     }
-    std::mt19937 rng(static_cast<uint32_t>(Seed));
-    std::uniform_real_distribution<double> roll(0.0, 100.0);
+    std::mt19937 Rng(static_cast<uint32_t>(Seed));
+    std::uniform_real_distribution<double> Roll(0.0, 100.0);
 
-    std::vector<QTestObject*> targets;
+    std::vector<QTestObject*> Targets;
     if (Depth < 0)
     {
-        auto reach = GetReachable();
-        targets = std::move(reach);
+        auto Reach = GetReachable();
+        Targets = std::move(Reach);
     }
     else
     {
         if (Depth >= (int)DepthLayers.size()) { std::cout << "[GcTester] Invalid depth\n"; return 0; }
-        targets = DepthLayers[(size_t)Depth];
+        Targets = DepthLayers[(size_t)Depth];
     }
 
-    int cut = 0;
-    for (auto* p : targets)
+    int Cut = 0;
+    for (auto* p : Targets)
     {
-        // vector children
-        auto& vec = p->Children;
-        for (size_t i = 0; i < vec.size(); )
+        if (bUseVector)
         {
-            if (roll(rng) < Percent)
+            // vector children
+            auto& Vec = p->Children;
+            for (size_t i = 0; i < Vec.size(); )
             {
-                vec[i] = vec.back();
-                vec.pop_back();
-                ++cut;
+                if (Roll(Rng) < Percent)
+                {
+                    Vec[i] = Vec.back();
+                    Vec.pop_back();
+                    ++Cut;
+                }
+                else ++i;
+            }   
+        }
+        else
+        {
+            QTestObject** Slots[5] = { &p->Friend1, &p->Friend2, &p->Friend3, &p->Friend4, &p->Friend5 };
+            for (auto& Slot : Slots)
+            {
+                if (*Slot && Roll(Rng) < Percent)
+                {
+                    *Slot = nullptr;
+                    ++Cut;
+                }
             }
-            else ++i;
         }
     }
-    std::cout << "[GcTester] BreakPercent depth=" << Depth
-              << " percent=" << Percent << " cut=" << cut << "\n";
-    return cut;
+    
+    std::cout << "[GcTester] BreakPercent depth=" << Depth << " percent=" << Percent << " cut=" << Cut << "\n";
+    return Cut;
 }
 
 int QGcTester::BreakRandomEdges(int EdgeCount, int Seed)
@@ -581,7 +710,7 @@ void QGcTester::PrintDepthStats(int TargetDepth) const
 
     for (auto* Node : L)
     {
-        size_t c = Node ? Node->Children.size() : 0;
+        size_t c = Node ? GetChildCount(Node) : 0;
         minC = std::min(minC, c);
         maxC = std::max(maxC, c);
         sumC += c;
@@ -621,32 +750,50 @@ void QGcTester::MeasureGc(int Repeats)
 
 void QGcTester::Churn(int Steps, int AllocPerStep, double BreakPct, int GcEveryN, int Seed)
 {
-    if (Steps <= 0 || AllocPerStep < 0) { std::cout << "[GcTester] invalid params\n"; return; }
+    if (Steps <= 0 || AllocPerStep < 0)
+    {
+        std::cout << "[GcTester] invalid params\n"; return;
+    }
+    
     std::mt19937 Rng(static_cast<uint32_t>(Seed));
 
+    int CutCountBetweenGc = 0;
+    
     for (int s = 1; s <= Steps; ++s)
     {
         // 1) allocate and attach to random reachable parents
-        auto reach = GetReachable();
-        if (reach.empty() && !Roots.empty())
+        auto Reached = GetReachable();
+        if (Reached.empty() && !Roots.empty())
         {
             // ensure at least root exists
-            auto* r = static_cast<QTestObject*>(Roots[0]);
-            reach.push_back(r);
+            auto* Root = static_cast<QTestObject*>(Roots[0]);
+            Reached.push_back(Root);
         }
         for (int i = 0; i < AllocPerStep; ++i)
         {
-            auto* p = PickRandom(reach, Rng);
-            auto* n = MakeNode();
-            if (p) LinkChild(p, n);
+            auto* Picked = PickRandom(Reached, Rng);
+            auto* NewNode = MakeNode();
+            if (Picked)
+            {
+                LinkChild(Picked, NewNode);   
+            }
         }
 
         // 2) random break by percent across all depths
-        if (BreakPct > 0.0) BreakPercent(BreakPct, -1, Rng());
+        if (BreakPct > 0.0)
+        {
+            CutCountBetweenGc += BreakPercent(BreakPct, -1, Rng(), true);   
+        }
 
         // 3) optional GC
-        if (GcEveryN > 0 && (s % GcEveryN == 0)) GarbageCollector::Get().Collect();
+        if (GcEveryN > 0 && (s % GcEveryN == 0))
+        {
+            std::cout << "[GcTester] Cut " << CutCountBetweenGc << "objects during " << GcEveryN << " steps" << "\n";
+            CutCountBetweenGc = 0;
+            GarbageCollector::Get().Collect();   
+        }
     }
+    
     BuildLayers(nullptr, true);
     std::cout << "[GcTester] Churn done: steps=" << Steps
               << " alloc/step=" << AllocPerStep
