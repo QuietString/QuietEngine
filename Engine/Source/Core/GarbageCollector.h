@@ -33,27 +33,26 @@ public:
     void ListPropertiesByDebugName(const std::string& Name) const;
     void ListFunctionsByDebugName(const std::string& Name) const;
     
-    bool Link(uint64_t OwnerId, const std::string& Property, uint64_t TargetId);
     bool Unlink(QObject* Object, const std::string& Property);
-    bool UnlinkById(uint64_t Id, const std::string& Property);
+    //bool UnlinkById(uint64_t Id, const std::string& Property);
     bool UnlinkByName(const std::string& Name, const std::string& Property);
-    bool UnlinkAllById(uint64_t OwnerId);
+    //bool UnlinkAllById(uint64_t OwnerId);
     bool UnlinkAllByName(const std::string& Name);
     bool SetProperty(QObject* Obj, const std::string& Property, const std::string& Value);
-    bool SetPropertyById(uint64_t Id, const std::string& Property, const std::string& Value);
+    //bool SetPropertyById(uint64_t Id, const std::string& Property, const std::string& Value);
     bool SetPropertyByName(const std::string& Name, const std::string& Property, const std::string& Value);
 
     qmeta::Variant Call(QObject* Obj, const std::string& FuncName, const std::vector<qmeta::Variant>& Args);
-    qmeta::Variant CallById(uint64_t Id, const std::string& Function, const std::vector<qmeta::Variant>& Args);
+    //qmeta::Variant CallById(uint64_t Id, const std::string& Function, const std::vector<qmeta::Variant>& Args);
     qmeta::Variant CallByName(const std::string& Name, const std::string& Function, const std::vector<qmeta::Variant>& Args);
 
     // Asset IO
     
-    bool Save(uint64_t Id, const std::string& FileNameIfAny);
-    bool Load(uint64_t Id, const std::string& FileNameIfAny);
+    //bool Save(uint64_t Id, const std::string& FileNameIfAny);
+    //bool Load(uint64_t Id, const std::string& FileNameIfAny);
     
     // Lookup
-    QObject* FindById(uint64_t Id) const;
+    //QObject* FindById(uint64_t Id) const;
     QObject* FindByDebugName(const std::string& DebugName) const;
     
     // Access stored TypeInfo for an object
@@ -78,7 +77,7 @@ private:
     
 private:
     std::unordered_map<QObject*, Node> Objects;
-    std::unordered_map<uint64_t, QObject*> ById;
+    //std::unordered_map<uint64_t, QObject*> ById;
     std::unordered_map<std::string, QObject*> NameToObjectMap;
     
     std::vector<QObject*> Roots;

@@ -37,8 +37,8 @@ public:
 
         //Demo::GenerateSimpleTest();
 
-        //Demo::RunTester();
-        Demo::SpawnPlayer();
+        Demo::RunTester();
+        //Demo::SpawnPlayer();
     }
     
     virtual void Tick(double DeltaSeconds) override

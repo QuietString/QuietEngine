@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <algorithm>
+#include <deque>
 
 #include "Asset.h"
 
@@ -33,7 +34,7 @@ void GarbageCollector::RegisterInternal(QObject* Obj, const TypeInfo& Ti, const 
     N.Id = Id;
     Objects.emplace(Obj, N);
 
-    ById[Id] = Obj;
+    //ById[Id] = Obj;
     NameToObjectMap[Name] = Obj;
 }
 
@@ -206,7 +207,7 @@ double GarbageCollector::Collect(bool bSilent)
         Mark(R);
     }
 
-    // 3) Build a list of dead objects
+    // 3) Build a list of dead objects (no mark)
     std::vector<QObject*> Dead;
     Dead.reserve(Objects.size());
     
@@ -259,19 +260,12 @@ double GarbageCollector::Collect(bool bSilent)
         }
     }
 
-    // 5) Delete dead and remove from maps
+    // 5) Delete the dead and remove from maps
     for (QObject* D : Dead)
     {
         auto It = Objects.find(D);
         if (It != Objects.end())
         {
-            const uint64_t ID = It->second.Id;
-            auto IterId = ById.find(ID);
-            if (IterId != ById.end() && IterId->second == D)
-            {
-                ById.erase(IterId);
-            }
-
             delete It->second.Ptr;
             Objects.erase(It);
         }
@@ -409,11 +403,11 @@ void GarbageCollector::ListFunctionsByDebugName(const std::string& Name) const
     });
 }
 
-QObject* GarbageCollector::FindById(uint64_t Id) const
-{
-    auto It = ById.find(Id);
-    return (It == ById.end()) ? nullptr : It->second;  
-}
+// QObject* GarbageCollector::FindById(uint64_t Id) const
+// {
+//     auto It = ById.find(Id);
+//     return (It == ById.end()) ? nullptr : It->second;  
+// }
 
 QObject* GarbageCollector::FindByDebugName(const std::string& DebugName) const
 {
@@ -425,27 +419,6 @@ const TypeInfo* GarbageCollector::GetTypeInfo(const QObject* Obj) const
 {
     auto It = Objects.find(const_cast<QObject*>(Obj));
     return It == Objects.end() ? nullptr : It->second.Ti;
-}
-
-bool GarbageCollector::Link(uint64_t OwnerId, const std::string& Property, uint64_t TargetId)
-{
-    QObject* Owner = FindById(OwnerId);
-    QObject* Target = FindById(TargetId);
-    if (!Owner || !Target) return false;
-
-    auto ito = Objects.find(Owner);
-    unsigned char* Base = BytePtr(Owner);
-    for (auto& p : ito->second.Ti->properties)
-    {
-        if (p.name == Property && IsRawQObjectPtr(p.type))
-        {
-            auto* Slot = reinterpret_cast<QObject**>(Base + p.offset);
-            *Slot = Target;
-            std::cout << "[Link] id=" << OwnerId << "." << Property << " -> id=" << TargetId << "\n";
-            return true;
-        }
-    }
-    return false;
 }
 
 bool GarbageCollector::Unlink(QObject* Object, const std::string& Property)
@@ -487,17 +460,17 @@ bool GarbageCollector::Unlink(QObject* Object, const std::string& Property)
     return false;
 }
 
-bool GarbageCollector::UnlinkById(uint64_t Id, const std::string& Property)
-{
-    QObject* Obj = FindById(Id);
-    if (!Obj)
-    {
-        std::cout << "[Unlink] Object not found by Id: " << Id << "\n";
-        return false;
-    }
-
-    return Unlink(Obj, Property);
-}
+// bool GarbageCollector::UnlinkById(uint64_t Id, const std::string& Property)
+// {
+//     QObject* Obj = FindById(Id);
+//     if (!Obj)
+//     {
+//         std::cout << "[Unlink] Object not found by Id: " << Id << "\n";
+//         return false;
+//     }
+//
+//     return Unlink(Obj, Property);
+// }
 
 bool GarbageCollector::UnlinkByName(const std::string& Name, const std::string& Property)
 { 
@@ -512,20 +485,20 @@ bool GarbageCollector::UnlinkByName(const std::string& Name, const std::string& 
     return Unlink(Obj, Property);
 }
 
-bool GarbageCollector::UnlinkAllById(uint64_t OwnerId)
-{
-    QObject* Owner = FindById(OwnerId);
-    if (!Owner) return false;
-
-    auto ObjectIter = Objects.find(Owner);
-    unsigned char* Base = BytePtr(Owner);
-    for (auto& MetaProp : ObjectIter->second.Ti->properties)
-    {
-        Unlink(Owner, MetaProp.name);
-    }
-    
-    return true;
-}
+// bool GarbageCollector::UnlinkAllById(uint64_t OwnerId)
+// {
+//     QObject* Owner = FindById(OwnerId);
+//     if (!Owner) return false;
+//
+//     auto ObjectIter = Objects.find(Owner);
+//     unsigned char* Base = BytePtr(Owner);
+//     for (auto& MetaProp : ObjectIter->second.Ti->properties)
+//     {
+//         Unlink(Owner, MetaProp.name);
+//     }
+//     
+//     return true;
+// }
 
 bool GarbageCollector::UnlinkAllByName(const std::string& Name)
 {
@@ -582,13 +555,13 @@ bool GarbageCollector::SetProperty(QObject* Obj, const std::string& Property, co
     return false;
 }
 
-bool GarbageCollector::SetPropertyById(uint64_t Id, const std::string& Property, const std::string& Value)
-{
-    QObject* Obj = FindById(Id);
-    if (!Obj) return false;
-
-    return SetProperty(Obj, Property, Value);
-}
+// bool GarbageCollector::SetPropertyById(uint64_t Id, const std::string& Property, const std::string& Value)
+// {
+//     QObject* Obj = FindById(Id);
+//     if (!Obj) return false;
+//
+//     return SetProperty(Obj, Property, Value);
+// }
 
 bool GarbageCollector::SetPropertyByName(const std::string& Name, const std::string& Property, const std::string& Value)
 {
@@ -606,13 +579,13 @@ qmeta::Variant GarbageCollector::Call(QObject* Obj, const std::string& FuncName,
     return qmeta::CallByName(Obj, *It->second.Ti, FuncName, Args);
 }
 
-qmeta::Variant GarbageCollector::CallById(uint64_t Id, const std::string& Function, const std::vector<qmeta::Variant>& Args)
-{
-    QObject* Obj = FindById(Id);
-    if (!Obj) throw std::runtime_error("Object not found by Id");
-
-    return Call(Obj, Function, Args);
-}
+// qmeta::Variant GarbageCollector::CallById(uint64_t Id, const std::string& Function, const std::vector<qmeta::Variant>& Args)
+// {
+//     QObject* Obj = FindById(Id);
+//     if (!Obj) throw std::runtime_error("Object not found by Id");
+//
+//     return Call(Obj, Function, Args);
+// }
 
 qmeta::Variant GarbageCollector::CallByName(const std::string& Name, const std::string& Function, const std::vector<qmeta::Variant>& Args)
 {
@@ -622,30 +595,30 @@ qmeta::Variant GarbageCollector::CallByName(const std::string& Name, const std::
     return Call(Obj, Function, Args);
 }
 
-bool GarbageCollector::Save(uint64_t Id, const std::string& FileNameIfAny)
-{
-    QObject* Obj = FindById(Id);
-    if (!Obj) return false;
-    auto It = Objects.find(Obj);
-    if (It == Objects.end()) return false;
-
-    auto Dir = qasset::DefaultAssetDirFor(*It->second.Ti);
-    const std::string Fn = FileNameIfAny.empty() ? (It->second.Ti->name + ".qasset") : FileNameIfAny;
-    qasset::SaveOrThrow(Obj, *It->second.Ti, Dir, Fn);
-    std::cout << "[Save] Id=" << Id << " -> " << (Dir / Fn).string() << "\n";
-    return true;
-}
-
-bool GarbageCollector::Load(uint64_t Id, const std::string& FileNameIfAny)
-{
-    QObject* Obj = FindById(Id);
-    if (!Obj) return false;
-    auto It = Objects.find(Obj);
-    if (It == Objects.end()) return false;
-
-    auto Dir = qasset::DefaultAssetDirFor(*It->second.Ti);
-    const std::string Fn = FileNameIfAny.empty() ? (It->second.Ti->name + ".qasset") : FileNameIfAny;
-    qasset::LoadOrThrow(Obj, *It->second.Ti, Dir / Fn);
-    std::cout << "[Load] Id=" << Id << " <- " << (Dir / Fn).string() << "\n";
-    return true;
-}
+// bool GarbageCollector::Save(uint64_t Id, const std::string& FileNameIfAny)
+// {
+//     QObject* Obj = FindById(Id);
+//     if (!Obj) return false;
+//     auto It = Objects.find(Obj);
+//     if (It == Objects.end()) return false;
+//
+//     auto Dir = qasset::DefaultAssetDirFor(*It->second.Ti);
+//     const std::string Fn = FileNameIfAny.empty() ? (It->second.Ti->name + ".qasset") : FileNameIfAny;
+//     qasset::SaveOrThrow(Obj, *It->second.Ti, Dir, Fn);
+//     std::cout << "[Save] Id=" << Id << " -> " << (Dir / Fn).string() << "\n";
+//     return true;
+// }
+//
+// bool GarbageCollector::Load(uint64_t Id, const std::string& FileNameIfAny)
+// {
+//     QObject* Obj = FindById(Id);
+//     if (!Obj) return false;
+//     auto It = Objects.find(Obj);
+//     if (It == Objects.end()) return false;
+//
+//     auto Dir = qasset::DefaultAssetDirFor(*It->second.Ti);
+//     const std::string Fn = FileNameIfAny.empty() ? (It->second.Ti->name + ".qasset") : FileNameIfAny;
+//     qasset::LoadOrThrow(Obj, *It->second.Ti, Dir / Fn);
+//     std::cout << "[Load] Id=" << Id << " <- " << (Dir / Fn).string() << "\n";
+//     return true;
+// }
