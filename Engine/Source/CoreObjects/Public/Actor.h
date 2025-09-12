@@ -8,9 +8,15 @@ public:
     QPROPERTY()
     int ActorInteger;
 
-    QPROPERTY()
-    QActor* Owner = nullptr;
-    
     QFUNCTION()
     void SetActorInteger(int InValue) { ActorInteger = InValue; }
+    
+    QPROPERTY()
+    QActor* Owner = nullptr;
+
+    QFUNCTION()
+    QActor* GetOwner() { return Owner; }
+    
+    QFUNCTION()
+    void SetOwner(QActor* InOwner) { Owner = InOwner; }
 };

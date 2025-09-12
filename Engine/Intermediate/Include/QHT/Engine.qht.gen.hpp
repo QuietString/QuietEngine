@@ -22,6 +22,20 @@ static Variant _qmeta_invoke_QActor_SetActorInteger(void* Self, const Variant* a
     return Variant();
 }
 
+static Variant _qmeta_invoke_QActor_GetOwner(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QActor*>(Self);
+    auto _ret = self->GetOwner();
+    return Variant(_ret);
+}
+
+static Variant _qmeta_invoke_QActor_SetOwner(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QActor*>(Self);
+    if (argc < 1) throw std::runtime_error("QActor::SetOwner requires 1 args");
+    auto _a0 = args[0].as<QActor*>();
+    self->SetOwner(_a0);
+    return Variant();
+}
+
 static Variant _qmeta_invoke_QWorld_AddObject(void* Self, const Variant* args, size_t argc) {
     (void)argc; auto* self = static_cast<QWorld*>(Self);
     if (argc < 1) throw std::runtime_error("QWorld::AddObject requires 1 args");
@@ -43,12 +57,31 @@ inline void QHT_Register_Engine(Registry& R) {
     T_QActor.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
     T_QActor.base_name = "QObject";
     T_QActor.properties.push_back(MetaProperty{"ActorInteger", "int", offsetof(QActor, ActorInteger), MetaMap{} });
+    T_QActor.properties.push_back(MetaProperty{"Owner", "QActor*", offsetof(QActor, Owner), MetaMap{} });
     {
         MetaFunction F;
         F.name = "SetActorInteger";
         F.return_type = "void";
         F.invoker = &_qmeta_invoke_QActor_SetActorInteger;
         F.params = std::vector<MetaParam>{ MetaParam{"InValue", "int"} };
+        F.meta = MetaMap{};
+        T_QActor.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "GetOwner";
+        F.return_type = "QActor*";
+        F.invoker = &_qmeta_invoke_QActor_GetOwner;
+        F.params = std::vector<MetaParam>{  };
+        F.meta = MetaMap{};
+        T_QActor.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "SetOwner";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QActor_SetOwner;
+        F.params = std::vector<MetaParam>{ MetaParam{"InOwner", "QActor*"} };
         F.meta = MetaMap{};
         T_QActor.functions.push_back(std::move(F));
     }

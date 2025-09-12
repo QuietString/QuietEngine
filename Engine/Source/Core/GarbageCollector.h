@@ -18,14 +18,13 @@ public:
     QObject* GetRoot() const { return Roots.empty() ? nullptr : Roots[0]; }
     void AddRoot(QObject* Obj);
     void RemoveRoot(QObject* Obj);
-
+    
     // GC steps
     void Tick(double DeltaSeconds);
 
     // Return execution time(ms).
     double Collect(bool bSilent = false);
 
-public:
     void SetAutoInterval(double Seconds);
 
     // Debug utilities

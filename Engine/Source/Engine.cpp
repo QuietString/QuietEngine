@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "EngineGlobals.h"
+#include "EngineUtils.h"
 #include "GarbageCollector.h"
 #include "Module.h"
 #include "Runtime.h"

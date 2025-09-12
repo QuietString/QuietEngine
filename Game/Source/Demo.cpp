@@ -120,7 +120,7 @@ void Demo::RunTester()
               << " (use commands: gctest ...  or  call " << Tester->GetDebugName() << " <Func> ...)" << std::endl;
 }
 
-void Demo::SpawnPlayer()
+void Demo::RunPlayerTest()
 {
     QWorld* World = GetWorld();
     if (!World)
@@ -128,6 +128,12 @@ void Demo::SpawnPlayer()
         return;
     }
 
-    QPlayer* P = NewObject<QPlayer>();
-    World->Objects.push_back(P);
+    QPlayer* Player1 = NewObject<QPlayer>();
+    World->Objects.push_back(Player1);
+    
+
+    QPlayer* Player2 = NewObject<QPlayer>();
+    World->Objects.push_back(Player2);
+
+    Player1->SetOwner(Player2);
 }

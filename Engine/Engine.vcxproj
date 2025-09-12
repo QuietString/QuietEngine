@@ -259,6 +259,7 @@
           <LibCompiled>true</LibCompiled>
         </ClCompile>
         <ClCompile Include="Source\CoreObjects\Private\World.cpp" />
+        <ClCompile Include="Source\Core\EngineUtils.cpp" />
         <ClCompile Include="Source\Core\GarbageCollector.cpp" />
         <ClCompile Include="Source\Engine.cpp" />
         <ClCompile Include="Source\Private\Asset.cpp" />
@@ -277,6 +278,7 @@
         <ClInclude Include="Source\CoreObjects\Public\Object.h" />
         <ClInclude Include="Source\CoreObjects\Public\ObjectBase.h" />
         <ClInclude Include="Source\CoreObjects\Public\World.h" />
+        <ClInclude Include="Source\Core\EngineUtils.h" />
         <ClInclude Include="Source\Core\GarbageCollector.h" />
         <ClInclude Include="Source\Public\Asset.h" />
         <ClInclude Include="Source\Public\CoreMinimal.h" />

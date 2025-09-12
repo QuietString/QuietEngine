@@ -12,5 +12,5 @@ namespace Demo
 
     void RunTester();
 
-    void SpawnPlayer();
+    void RunPlayerTest();
 }
