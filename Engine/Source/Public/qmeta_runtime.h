@@ -1,15 +1,10 @@
 ﻿#pragma once
-#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>
 #include <vector>
 #include <unordered_map>
-#include <functional>
-#include <typeindex>
 #include <format>
-#include <iostream>
-#include <ostream>
 #include <type_traits>
 #include <stdexcept>
 
