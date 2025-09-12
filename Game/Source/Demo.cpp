@@ -119,5 +119,5 @@ void Demo::RunReflectionTest()
     QMonster* Monster = NewObject<QMonster>();
     World->Objects.push_back(Monster);
 
-    std::cout << "[Demo] Created reflection test instances: " << Monster->GetDebugName() << ", " << Player1->GetDebugName() << ", " << Player2->GetDebugName() << std::endl;
+    std::cout << "[Demo] Created reflection test instances: " << Player1->GetDebugName() << ", " << Player2->GetDebugName() << ", " << Monster->GetDebugName() << std::endl;
 }

@@ -2,139 +2,13 @@
 
 #include <iostream>
 
+#include "ConsoleUtil.h"
 #include "EngineUtils.h"
 #include "GarbageCollector.h"
 #include "Runtime.h"
 #include "CoreObjects/Public/World.h"
 
-// ---- helpers for type-aware argument parsing ----
-static std::string Trim(std::string s) {
-    auto is_space = [](unsigned char c){ return std::isspace(c); };
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [&](char c){ return !is_space((unsigned char)c); }));
-    s.erase(std::find_if(s.rbegin(), s.rend(), [&](char c){ return !is_space((unsigned char)c); }).base(), s.end());
-    return s;
-}
-
-
-static void StripPrefix(std::string& s, const char* pref) {
-    if (s.rfind(pref, 0) == 0) s.erase(0, std::strlen(pref));
-}
-
-static std::string NormalizeType(std::string t) {
-    t = Trim(t);
-    // strip common qualifiers and MSVC tags
-    StripPrefix(t, "const ");
-    StripPrefix(t, "class ");
-    StripPrefix(t, "struct ");
-    // drop trailing refs
-    if (!t.empty() && t.back() == '&') t.pop_back();
-    // collapse spaces around '*'
-    t.erase(std::remove(t.begin(), t.end(), ' '), t.end());
-    return t; // e.g. "QPlayer*", "QObject*", "int", "std::string", "double"
-}
-
-static bool IsPointerType(const std::string& normType) {
-    return !normType.empty() && normType.back() == '*';
-}
-
-static bool IsBoolType(const std::string& t) {
-    return t == "bool";
-}
-
-static bool IsStringType(const std::string& t) {
-    return (t == "std::string" || t == "string");
-}
-
-static bool IsFloatType(const std::string& t) {
-    return (t == "float" || t == "double");
-}
-
-static bool IsSignedIntType(const std::string& t) {
-    return (t == "int" || t == "int32_t" || t == "int64_t" || t == "long" || t == "longlong");
-}
-
-static bool IsUnsignedIntType(const std::string& t) {
-    return (t == "unsigned" || t == "unsignedint" || t == "uint32_t" || t == "uint64_t" || t == "unsignedlonglong" || t == "size_t");
-}
-
-// Parse one token to Variant using expected param type. Returns true on success.
-static bool ParseTokenByType(const std::string& token, const std::string& expectedTypeRaw, GarbageCollector& GC, qmeta::Variant& outVar)
-{
-    using qmeta::Variant;
-
-    const std::string T = NormalizeType(expectedTypeRaw);
-    const std::string Tok = Trim(token);
-
-    // Pointers (QObject* and subclasses)
-    if (IsPointerType(T)) {
-        if (Tok == "null" || Tok == "nullptr" || Tok == "0") {
-            outVar = Variant((void*)nullptr);
-            return true;
-        }
-        // try resolve object by debug name
-        if (QObject* Obj = GC.FindByDebugName(Tok)) {
-            outVar = Variant(static_cast<void*>(Obj));
-            return true;
-        }
-        // as a last resort, allow hex address like 0x1234
-        if (Tok.rfind("0x", 0) == 0) {
-            void* p = reinterpret_cast<void*>(std::strtoull(Tok.c_str(), nullptr, 16));
-            outVar = Variant(p);
-            return true;
-        }
-        return false; // pointer expected but not resolvable
-    }
-
-    if (IsBoolType(T)) {
-        if (Tok == "true" || Tok == "1")  { outVar = Variant(true);  return true; }
-        if (Tok == "false"|| Tok == "0")  { outVar = Variant(false); return true; }
-        return false;
-    }
-
-    if (IsStringType(T)) {
-        // Allow quotes but not required
-        if (!Tok.empty() && ((Tok.front()=='"' && Tok.back()=='"') || (Tok.front()=='\'' && Tok.back()=='\''))) {
-            outVar = Variant(Tok.substr(1, Tok.size()-2));
-        } else {
-            outVar = Variant(Tok);
-        }
-        return true;
-    }
-
-    if (IsFloatType(T)) {
-        try { outVar = Variant(std::stod(Tok)); return true; } catch (...) { return false; }
-    }
-
-    if (IsSignedIntType(T)) {
-        try { outVar = Variant((long long)std::stoll(Tok)); return true; } catch (...) { return false; }
-    }
-
-    if (IsUnsignedIntType(T)) {
-        try { outVar = Variant((unsigned long long)std::stoull(Tok)); return true; } catch (...) { return false; }
-    }
-
-    // Fallback: try int -> double -> bool -> string
-    try { outVar = Variant((long long)std::stoll(Tok)); return true; } catch (...) {}
-    try { outVar = Variant(std::stod(Tok)); return true; } catch (...) {}
-    if (Tok == "true" || Tok == "false") { outVar = Variant(Tok == "true"); return true; }
-    outVar = Variant(Tok);
-    return true;
-}
-
-// Lenient parse when no meta signature is available: object-name -> QObject*, else old rules
-static qmeta::Variant ParseTokenLenient(const std::string& token, GarbageCollector& GC)
-{
-    using qmeta::Variant;
-    if (QObject* Obj = GC.FindByDebugName(token)) {
-        return Variant(static_cast<void*>(Obj));
-    }
-    if (token == "true" || token == "false") {
-        return Variant(token == "true");
-    }
-    try { return Variant((long long)std::stoll(token)); } catch (...) {}
-    try { return Variant(std::stod(token)); } catch (...) {}
-    return Variant(token);
-}
+using namespace ConsoleUtil;
 
 std::vector<std::string> ConsoleManager::Tokenize(const std::string& s)
 {
@@ -446,6 +320,72 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             GC.ListFunctionsByDebugName(Tokens[1]);
             return true;
         }
+        else if (Cmd == "info" && Tokens.size() >= 2)
+        {
+            GarbageCollector& GC = GarbageCollector::Get();
+
+            const std::string& ObjName = Tokens[1];
+            QObject* Obj = GC.FindByDebugName(ObjName);
+            if (!Obj)
+            {
+                std::cout << "[Info] Not found: " << ObjName << std::endl;
+                return true;
+            }
+
+            const qmeta::TypeInfo* Ti = GC.GetTypeInfo(Obj);
+            if (!Ti)
+            {
+                std::cout << "[Info] No TypeInfo for: " << ObjName << std::endl;
+                return true;
+            }
+
+            // 1) Build class chain (most-derived -> base)
+            std::vector<const qmeta::TypeInfo*> ClassChain;
+            ClassChain.reserve(8);
+            BuildClassChain(Ti, ClassChain);
+
+            // 2) Header
+            std::cout << "[Info]\n";
+            const std::string& DispName = Obj->GetDebugName();
+            std::cout << "Name: " << (DispName.empty() ? "(Unnamed)" : DispName) << "\n";
+            std::cout << "Class: " << JoinClassChain(ClassChain) << "\n";
+
+            // 3) Properties (per class in chain order)
+            std::cout << "Properties:\n";
+            for (const qmeta::TypeInfo* ClassType : ClassChain)
+            {
+                if (ClassType->properties.empty()) continue;
+                std::cout << "  [" << ClassType->name << "]\n";
+                for (const auto& P : ClassType->properties)
+                {
+                    // Pretty-print value using reflection-aware formatter
+                    std::string Val = EngineUtils::FormatPropertyValue(Obj, P);
+                    std::cout << "    - " << P.type << " " << P.name << " = " << Val << "\n";
+                }
+            }
+
+            // 4) Functions (per class in chain order)
+            std::cout << "Functions:\n";
+            for (const qmeta::TypeInfo* CT : ClassChain)
+            {
+                if (CT->functions.empty()) continue;
+                std::cout << "  [" << CT->name << "]\n";
+                for (const auto& F : CT->functions)
+                {
+                    std::ostringstream sig;
+                    sig << "    - " << F.return_type << " " << F.name << "(";
+                    for (size_t i = 0; i < F.params.size(); ++i)
+                    {
+                        if (i) sig << ", ";
+                        sig << F.params[i].type << " " << F.params[i].name;
+                    }
+                    sig << ")";
+                    std::cout << sig.str() << "\n";
+                }
+            }
+
+            return true;
+        }
         else if (Cmd == "new" && Tokens.size() >= 3)
         {
             std::cout << "[new] not implemented for now.\n";
@@ -506,7 +446,8 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             const std::string& FuncName = Tokens[2];
 
             QObject* Target = GC.FindByDebugName(ObjName);
-            if (!Target) {
+            if (!Target)
+            {
                 std::cout << "[Call] Object not found: " << ObjName << std::endl;
                 return true;
             }
@@ -514,20 +455,26 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             const qmeta::TypeInfo* Ti = GC.GetTypeInfo(Target);
 
             // Try to locate function meta (name match)
-            const qmeta::MetaFunction* MF = nullptr;
-            if (Ti) {
-                for (const auto& F : Ti->functions) {
-                    if (F.name == FuncName) { MF = &F; break; }
+            const qmeta::MetaFunction* MetaFunc = nullptr;
+            if (Ti)
+            {
+                for (const auto& F : Ti->functions)
+                {
+                    if (F.name == FuncName)
+                    {
+                        MetaFunc = &F; break;
+                    }
                 }
             }
 
             std::vector<qmeta::Variant> Args;
             Args.reserve(Tokens.size() - 3);
 
-            bool typedOk = false;
+            bool TypedOk = false;
 
-            if (MF) {
-                const size_t ParamCount = MF->params.size();
+            if (MetaFunc)
+            {
+                const size_t ParamCount = MetaFunc->params.size();
                 const size_t Supplied   = (Tokens.size() > 3) ? (Tokens.size() - 3) : 0;
 
                 if (Supplied < ParamCount) {
@@ -535,26 +482,31 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     return true;
                 }
 
-                typedOk = true;
-                for (size_t i = 0; i < ParamCount; ++i) {
-                    const auto& P = MF->params[i]; // must have .type
-                    qmeta::Variant V;
-                    if (!ParseTokenByType(Tokens[3 + i], P.type, GC, V)) {
-                        typedOk = false;
+                TypedOk = true;
+                for (size_t i = 0; i < ParamCount; ++i)
+                {
+                    const auto& MetaParam = MetaFunc->params[i]; // must have .type
+                    qmeta::Variant ArgsVariant;
+                    if (!ParseTokenByType(Tokens[3 + i], MetaParam.type, GC, ArgsVariant))
+                    {
+                        TypedOk = false;
                         break;
                     }
-                    Args.emplace_back(std::move(V));
+                    Args.emplace_back(std::move(ArgsVariant));
                 }
 
                 // If more tokens than parameters, push remaining as lenient (variadic-like or ignored by callee)
-                for (size_t i = ParamCount; i < Supplied; ++i) {
+                for (size_t i = ParamCount; i < Supplied; ++i)
+                {
                     Args.emplace_back(ParseTokenLenient(Tokens[3 + i], GC));
                 }
             }
 
-            if (!typedOk) {
+            if (!TypedOk)
+            {
                 // Fallback: lenient parsing (object names -> QObject*, else numeric/bool/string)
-                for (size_t i = 3; i < Tokens.size(); ++i) {
+                for (size_t i = 3; i < Tokens.size(); ++i)
+                {
                     Args.emplace_back(ParseTokenLenient(Tokens[i], GC));
                 }
             }
