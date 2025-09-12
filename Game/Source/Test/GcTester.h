@@ -2,121 +2,101 @@
 
 #include <vector>
 #include <random>
+#include <string>
 #include "CoreMinimal.h"
-
-class QTestObject;
+#include "TestObjectFactory.h"
 
 // GC performance and functionality test harness.
+// Now generic for any QObject-derived test type.
 class QGcTester : public QObject
 {
 public:
-
     QPROPERTY()
     std::vector<QObject*> Roots;
 
-    QPROPERTY()
-    bool bUseVector = true;
-
+    // Config flags (exposed to console via QFUNCTIONs below)
     // 0: own-only, 1: parents-only, 2: random between available sides
-    QPROPERTY()
-    int AssignMode = 0;
+    QPROPERTY() int AssignMode = 2;
 
-    QPROPERTY()
-    int GetAssignMode() const { return AssignMode; }
+    QPROPERTY() bool bUseVector = true;
+
+    // ---------------- Console-facing API ----------------
+    QFUNCTION()
+    void PatternChain(int Length, int Seed);
 
     QFUNCTION()
-    void SetAssignMode(int InMode);
-    
-    QFUNCTION()
-    void SetUseVector(bool bUse);
-    
-    // Working sets (non-reflected)
-    std::vector<QTestObject*> AllNodes;
-    std::vector<std::vector<QTestObject*>> DepthLayers; // BFS layers from Roots
-    
-    // ---------- General graph patterns ----------
-    QFUNCTION()
-    void PatternChain(int Length, int Seed = 1);
-    
-    QFUNCTION()
-    void PatternGrid(int Width, int Height, int Seed = 1);
-    
-    QFUNCTION()
-    void PatternRandom(int Nodes, int BranchCount, int Seed = 1337);
-    
-    QFUNCTION()
-    void PatternRings(int Rings, int RingSize, int Seed = 7);
+    void PatternGrid(int W, int H, int Seed);
 
-    /**
-     *   Example shape  *
-     * L0:              A
-     *                 /|\
-     * L1:           B  C  D
-     *             /|\ /|\ /|\
-     * L2:        E..G H..J K..M
-     *             \|/  \|/  \|/
-     * L3:          N    O    P
-     *              \    |    /
-     * L4:               Q
-     */
     QFUNCTION()
-    void PatternDiamond(int Layers, int Breadth, int Seed = 3);
+    void PatternRandom(int Nodes, int AvgOut, int Seed);
+
+    QFUNCTION()
+    void PatternRings(int Rings, int RingSize, int Seed);
+
+    QFUNCTION()
+    void BreakRandomEdges(int Count, int Seed);
+
+    // Break at specific depth: remove up to Count outgoing edges per node at TargetDepth
+    QFUNCTION()
+    int BreakAtDepth(int TargetDepth, int Count, int Seed);
+
+    // Break by percent; Depth=-1 means whole reachable graph
+    QFUNCTION()
+    int BreakPercent(double Percent, int Depth, int Seed, bool bOnlyRoots);
+
+    QFUNCTION()
+    void DetachRoots(int Count, double Percent);
 
     QFUNCTION()
     void ClearAll(bool bSilent);
 
-    // ---------- Mutations / breaks ----------
-    // Break all links of selected parents at depth (existing).
-    QFUNCTION()
-    int BreakAtDepth(int TargetDepth, int Count /* -1 == ALL */, int Seed = 42);
-
-    // Remove a percentage of outgoing edges. If depth<0 => all depths.
-    QFUNCTION()
-    int BreakPercent(double Percent, int Depth /* -1 == all */, int Seed = 24, bool bSilient = false);
-
-    // Remove N random edges from reachable set.
-    QFUNCTION()
-    int BreakRandomEdges(int EdgeCount, int Seed = 99);
-
-    // Detach some roots
-    QFUNCTION()
-    int DetachRoots(int Count, double Ratio /* 0...1 */);
-
-    // ---------- Stats / measure ----------
-    QFUNCTION() void PrintDepthStats(int TargetDepth) const;
-    QFUNCTION() void MeasureGc(int Repeats);
-
-    // ---------- Dynamic churn ----------
-    // steps: iteration count
-    // allocPerStep: number of new nodes allocated at each step
-    // breakPct: percentage of edges randomly removed after allocation at each step
-    // gcEveryN: run GC every N steps (<=0 to disable, 1 to run every step)
-    QFUNCTION()
-    void Churn(int Steps, int AllocPerStep, double BreakPct, int GcEveryN, int Seed = 2025);
-
+    // Requested earlier by you: run N steps of (random graph + GC collect)
     QFUNCTION()
     void RepeatRandomAndCollect(int NumSteps, int NumNodes, int NumBranches);
-    
+
+    // Config
+    QFUNCTION() void SetAssignMode(int InMode);
+    QFUNCTION() void SetUseVector(bool bUse);
+
+    // Factory control (optional helpers; you can also manage from code)
+    QFUNCTION() void FactoryClear();
+    QFUNCTION() void FactoryAddType(const std::string& TypeName);   // requires the type was registered
+    QFUNCTION() void FactoryUseTypes(const std::vector<std::string>& TypeNames);
+
 private:
+    // ---------- Generic internals (QObject-based) ----------
+    struct EdgeRef
+    {
+        QObject* Parent = nullptr;
+        QObject* Child = nullptr;
+        std::string Property;     // property name where edge lives
+        size_t Index = (size_t)-1; // index for vector properties; ignored for raw pointer
+        bool bVector = false;
+    };
+
+    // Node storage
+    std::vector<QObject*> AllNodes;
+    // BFS layers: [depth][i]
+    std::vector<std::vector<QObject*>> DepthLayers;
+
+    TestObjectFactory Factory;
+
+    // Build/clear graph scaffolding
     void ClearGraph();
-    void LinkChild(QTestObject* Parent, QTestObject* Child, std::mt19937* RngOpt);
+    void BuildLayers(QObject* Head, bool bFromRootsOnly = false);
 
-    // Build helpers
-    void BuildLayers(QTestObject* Root, bool bClearExisting);
-    std::vector<QTestObject*> GetReachable() const;
+    // Creation & linking
+    QObject* MakeNode();
+    void LinkChild(QObject* Parent, QObject* Child, std::mt19937* RngOpt);
 
-    // Edge helpers
-    struct EdgeRef { QTestObject* Parent; QTestObject* Child; size_t ChildIndex; };
+    // Reflection helpers
+    void GatherChildren(QObject* Node, std::vector<QObject*>& Out) const;
+    size_t GetChildCount(const QObject* Node) const;
+
+    // Edge ops
     void CollectEdgesReachable(std::vector<EdgeRef>& Out) const;
-    bool RemoveEdge(QTestObject* Parent, QTestObject* Child);
+    bool RemoveEdge(QObject* Parent, QObject* Child);
 
-    // Utility
-    QTestObject* MakeNode();
-    QTestObject* PickRandom(const std::vector<QTestObject*>& From, std::mt19937& Rng);
-
-    // Returns non-null children respecting the current storage mode.
-    void GatherChildren(QTestObject* Node, std::vector<QTestObject*>& Out) const;
-
-    // Count of non-null children in current mode.
-    size_t GetChildCount(const QTestObject* Node) const;
+    // Helpers
+    QObject* PickRandom(const std::vector<QObject*>& From, std::mt19937& Rng);
 };
