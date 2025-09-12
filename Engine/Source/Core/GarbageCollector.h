@@ -20,7 +20,6 @@ public:
     void RemoveRoot(QObject* Obj);
     
     // GC steps
-    void Tick(double DeltaSeconds);
 
     // Return execution time(ms).
     double Collect(bool bSilent = false);
