@@ -54,6 +54,8 @@ void QGcTester::LinkChild(QTestObject* Parent, QTestObject* Child, std::mt19937*
 
     };
 
+    // @TODO: it should work with general QObject types, not only QObject* and QTestObject*.
+    // it should be fixed with the func args and other functions too.
     auto TryAssignInProps = [&](auto&& Enum)->bool
     {
         bool bLinked = false;
