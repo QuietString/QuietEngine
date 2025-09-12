@@ -1,10 +1,10 @@
 ﻿#pragma once
 #include <vector>
 
-#include "Object.h"
 #include "qmeta_macros.h"
+#include "TestObject_Parent.h"
 
-class QTestObject : public QObject
+class QTestObject : public QTestObject_Parent
 {
 public:
     QPROPERTY()

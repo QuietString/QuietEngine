@@ -20,7 +20,6 @@ public:
     void RemoveRoot(QObject* Obj);
     
     // GC steps
-    void Tick(double DeltaSeconds);
 
     // Return execution time(ms).
     double Collect(bool bSilent = false);
@@ -31,6 +30,8 @@ public:
     void ListObjects() const;
     void ListPropertiesByDebugName(const std::string& Name) const;
     void ListFunctionsByDebugName(const std::string& Name) const;
+
+    bool Link(QObject* Owner, QObject* Target, bool bForceUseNonVector = false);
     
     bool Unlink(QObject* Object, const std::string& Property);
     //bool UnlinkById(uint64_t Id, const std::string& Property);
@@ -87,9 +88,7 @@ private:
 public:
     static bool IsPointerType(const std::string& Type);
     static bool IsVectorOfPointer(const std::string& Type);
-    
-    static bool IsRawQObjectPtr(const std::string& type);
-    static bool IsVectorOfQObjectPtr(const std::string& type);
+
     static unsigned char* BytePtr(void* p) { return static_cast<unsigned char*>(p); }
 
     // Whether a pointer is tracked by GC (safe check for console formatting etc.)
