@@ -110,21 +110,6 @@ bool GarbageCollector::IsVectorOfPointer(const std::string& Type)
     return !inner.empty() && inner.back() == '*';
 }
 
-bool GarbageCollector::IsRawQObjectPtr(const std::string& type)
-{
-    // e.g., "QObject*"
-    return type.find("QObject") != std::string::npos
-        && type.find("std::vector") == std::string::npos
-        && EndsWithStar(type);
-}
-
-bool GarbageCollector::IsVectorOfQObjectPtr(const std::string& type)
-{
-    // e.g., "std::vector<QObject*>"
-    return type.find("std::vector") != std::string::npos
-        && type.find("QObject*") != std::string::npos;
-}
-
 bool GarbageCollector::IsManaged(const QObject* Obj) const
 {
     if (!Obj) return false;
@@ -135,7 +120,9 @@ void GarbageCollector::TraversePointers(QObject* Obj, const TypeInfo& Ti, std::v
 {
     OutChildren.clear();
     unsigned char* Base = BytePtr(Obj);
-    for (const MetaProperty& P : Ti.properties)
+
+    // Traverse including parents
+    Ti.ForEachProperty([&](const qmeta::MetaProperty& P)
     {
         if (IsPointerType(P.type))
         {
@@ -160,7 +147,7 @@ void GarbageCollector::TraversePointers(QObject* Obj, const TypeInfo& Ti, std::v
                     OutChildren.push_back(Child);
             }
         }
-    }
+    });
 }
 
 void GarbageCollector::Mark(QObject* Root)
@@ -239,9 +226,9 @@ double GarbageCollector::Collect(bool bSilent)
         unsigned char* Base = BytePtr(Owner);
         const TypeInfo& Ti = *Pair.second.Ti;
 
-        for (const MetaProperty& P : Ti.properties)
+        Ti.ForEachProperty([&](const qmeta::MetaProperty& P)
         {
-            if (IsRawQObjectPtr(P.type))
+            if (IsPointerType(P.type))
             {
                 QObject** Slot = reinterpret_cast<QObject**>(Base + P.offset);
                 if (Slot && *Slot)
@@ -253,7 +240,7 @@ double GarbageCollector::Collect(bool bSilent)
                     }
                 }
             }
-            else if (IsVectorOfQObjectPtr(P.type))
+            else if (IsVectorOfPointer(P.type))
             {
                 auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Base + P.offset);
                 for (QObject*& Child : *Vec)
@@ -262,11 +249,11 @@ double GarbageCollector::Collect(bool bSilent)
                     auto It = Objects.find(Child);
                     if (It != Objects.end() && !It->second.Marked)
                     {
-                        Child = nullptr; // or erase later if you prefer
+                        Child = nullptr;
                     }
                 }
             }
-        }
+        });
     }
     const auto TFix1 = Clock::now();
 
@@ -423,6 +410,25 @@ void GarbageCollector::ListFunctionsByDebugName(const std::string& Name) const
         }
         std::cout << ")\n";
     });
+}
+
+bool GarbageCollector::Link(QObject* Owner, QObject* Target, bool bForceUseNonVector)
+{
+    if (!Owner || !Target)
+    {
+        return false;   
+    }
+
+    auto IterObj = Objects.find(Owner);
+    const TypeInfo* OwnerTi = IterObj->second.Ti;
+    const TypeInfo* TargetTi = GetTypeInfo(Target);
+    
+    OwnerTi->ForEachProperty([&](const MetaProperty& p)
+    {
+        
+    });
+    
+    return false;
 }
 
 // QObject* GarbageCollector::FindById(uint64_t Id) const
