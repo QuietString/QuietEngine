@@ -59,7 +59,11 @@ void QGcTester::LinkChild(QTestObject* Parent, QTestObject* Child, std::mt19937*
         bool bLinked = false;
         Enum([&](const MetaProperty& p)
         {
-            if (bLinked) return;
+            if (bLinked)
+            {
+                return;   
+            }
+            
             if (bUseVector && IsVecPtr(p.type))
             {
                 std::string elem = VecElem(p.type);
@@ -91,51 +95,97 @@ void QGcTester::LinkChild(QTestObject* Parent, QTestObject* Child, std::mt19937*
         return bLinked;
     };
 
-    auto enumerate_local = [&](auto&& F){ for (auto& p : Ti->properties) F(p); };
-    auto enumerate_base  = [&](auto&& F){ if (Ti->base) Ti->base->ForEachProperty(F); };
+    auto EnumerateLocal = [&](auto&& F)
+    {
+        for (auto& p : Ti->properties)
+        {
+            F(p);   
+        }
+    };
+    
+    auto EnumerateBase  = [&](auto&& F)
+    {
+        if (Ti->base)
+        {
+            Ti->base->ForEachProperty(F);   
+        }
+    };
 
-    bool has_local = false, has_base = false;
-    enumerate_local([&](const MetaProperty& p){
+    bool bHasLocal = false;
+    bool bHasBase = false;
+
+    // Check the owner has local assignable props.
+    EnumerateLocal([&](const MetaProperty& p){
         if (bUseVector ? IsVecPtr(p.type) : IsRawPtr(p.type))
         {
-            if (bUseVector) has_local = true;
-            else { auto** s = reinterpret_cast<QObject**>(Base + p.offset); if (*s == nullptr) has_local = true; }
+            if (bUseVector)
+            {
+                bHasLocal = true;   
+            }
+            else
+            {
+                auto** s = reinterpret_cast<QObject**>(Base + p.offset);
+                if (*s == nullptr)
+                {
+                    bHasLocal = true;  
+                }
+            }
         }
     });
-    enumerate_base([&](const MetaProperty& p){
+
+    // Check the parents have local assignable props.
+    EnumerateBase([&](const MetaProperty& p){
         if (bUseVector ? IsVecPtr(p.type) : IsRawPtr(p.type))
         {
-            if (bUseVector) has_base = true;
-            else { auto** s = reinterpret_cast<QObject**>(Base + p.offset); if (*s == nullptr) has_base = true; }
+            if (bUseVector)
+            {
+                bHasBase = true;   
+            }
+            else
+            {
+                auto** s = reinterpret_cast<QObject**>(Base + p.offset);
+                if (*s == nullptr)
+                {
+                    bHasBase = true;
+                }
+            }
         }
     });
 
     // 0: own-only, 1: parents-only, 2: random between available sides
     int Origin = 0;
-    if (AssignMode == 0) Origin = 0;
-    else if (AssignMode == 1) Origin = 1;
+    
+    if (AssignMode == 0)
+    {
+        Origin = 0;   
+    }
+    else if (AssignMode == 1)
+    {
+        Origin = 1;   
+    }
     else
     {
-        if (has_local && has_base)
+        // Pick a random origin
+        if (bHasLocal && bHasBase)
         {
             if (!RngOpt) { static std::mt19937 Tmp(1337); RngOpt = &Tmp; }
-            std::uniform_int_distribution<int> pick01(0, 1);
-            Origin = pick01(*RngOpt);
+            std::uniform_int_distribution<int> Pick01(0, 1);
+            Origin = Pick01(*RngOpt);
         }
-        else if (has_base) Origin = 1;
+        else if (bHasBase) Origin = 1;
         else Origin = 0;
     }
     
     bool bLinked = false;
     if (Origin == 0)
     {
-        bLinked = TryAssignInProps(enumerate_local);
-        if (!bLinked && has_base) bLinked = TryAssignInProps(enumerate_base);
+        bLinked = TryAssignInProps(EnumerateLocal);
+        if (!bLinked && bHasBase) bLinked = TryAssignInProps(EnumerateBase);
     }
     else
     {
-        bLinked = TryAssignInProps(enumerate_base);
-        if (!bLinked && has_local) bLinked = TryAssignInProps(enumerate_local);
+        bLinked = TryAssignInProps(EnumerateBase);
+        if (!bLinked && bHasLocal) bLinked = TryAssignInProps(EnumerateLocal);
     }
         
     if (!bLinked)
