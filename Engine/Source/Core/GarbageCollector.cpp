@@ -131,18 +131,16 @@ bool GarbageCollector::IsManaged(const QObject* Obj) const
     return Objects.find(const_cast<QObject*>(Obj)) != Objects.end();
 }
 
-void GarbageCollector::TraversePointers(QObject* Obj, const qmeta::TypeInfo& Ti,
-                                        std::vector<QObject*>& OutChildren) const
+void GarbageCollector::TraversePointers(QObject* Obj, const TypeInfo& Ti, std::vector<QObject*>& OutChildren) const
 {
     OutChildren.clear();
     unsigned char* Base = BytePtr(Obj);
-    const Plan& plan = GetPlan(Ti); // NEW
-
-    for (const FieldSlot& s : plan)
+    for (const MetaProperty& P : Ti.properties)
     {
-        if (s.kind == SlotKind::RawQObjectPtr)
+        if (IsPointerType(P.type))
         {
-            QObject* const* Slot = reinterpret_cast<QObject* const*>(Base + s.offset);
+            // any raw pointer T*
+            QObject* const* Slot = reinterpret_cast<QObject* const*>(Base + P.offset);
             if (Slot && *Slot)
             {
                 auto It = Objects.find(*Slot);
@@ -150,9 +148,10 @@ void GarbageCollector::TraversePointers(QObject* Obj, const qmeta::TypeInfo& Ti,
                     OutChildren.push_back(*Slot);
             }
         }
-        else // VectorOfQObjectPtr
+        else if (IsVectorOfPointer(P.type))
         {
-            const auto* Vec = reinterpret_cast<const std::vector<QObject*>*>(Base + s.offset);
+            // any std::vector<T*>, treat as vector<QObject*>
+            auto* Vec = reinterpret_cast<const std::vector<QObject*>*>(Base + P.offset);
             for (QObject* Child : *Vec)
             {
                 if (!Child) continue;
@@ -164,53 +163,29 @@ void GarbageCollector::TraversePointers(QObject* Obj, const qmeta::TypeInfo& Ti,
     }
 }
 
-const GarbageCollector::Plan& GarbageCollector::GetPlan(const qmeta::TypeInfo& Ti) const
-{
-    auto it = PlanCache.find(&Ti);
-    if (it != PlanCache.end())
-        return it->second;
-
-    Plan plan;
-    plan.reserve(Ti.properties.size());
-
-    // 부모 포함 순회
-    Ti.ForEachProperty([&](const qmeta::MetaProperty& P)
-    {
-        if (IsRawQObjectPtr(P.type))
-        {
-            plan.push_back(FieldSlot{ static_cast<uint32_t>(P.offset), SlotKind::RawQObjectPtr });
-        }
-        else if (IsVectorOfQObjectPtr(P.type))
-        {
-            plan.push_back(FieldSlot{ static_cast<uint32_t>(P.offset), SlotKind::VectorOfQObjectPtr });
-        }
-        // 그 외 타입은 GC 그래프에서 제외
-    });
-
-    auto [pos, ok] = PlanCache.emplace(&Ti, std::move(plan));
-    return pos->second;
-}
-
 void GarbageCollector::Mark(QObject* Root)
 {
-    ScratchStack.clear();         // NEW
-    ScratchStack.push_back(Root); // NEW
+    std::vector<QObject*> Stack;
+    Stack.push_back(Root);
 
-    while (!ScratchStack.empty())
+    while (!Stack.empty())
     {
-        QObject* Cur = ScratchStack.back();
-        ScratchStack.pop_back();
+        QObject* Cur = Stack.back();
+        Stack.pop_back();
 
         auto It = Objects.find(Cur);
         if (It == Objects.end()) continue;
-
         Node& N = It->second;
-        if (N.MarkEpoch == CurrentEpoch) continue; // NEW (기존 Marked 체크 대체)
-        N.MarkEpoch = CurrentEpoch;                // NEW
+        if (N.Marked) continue;
 
-        TraversePointers(Cur, *N.Ti, ScratchChildren); // NEW: 재사용 버퍼
-        for (QObject* C : ScratchChildren)
-            ScratchStack.push_back(C);
+        N.Marked = true;
+
+        std::vector<QObject*> Children;
+        TraversePointers(Cur, *N.Ti, Children);
+        for (QObject* C : Children)
+        {
+            Stack.push_back(C);
+        }
     }
 }
 
@@ -224,114 +199,101 @@ double GarbageCollector::Collect(bool bSilent)
 
     const auto TTotal0 = Clock::now();
 
-    // (1) Clear 제거: epoch 증가만 수행 --------------- // NEW
+    // 1) Clear marks
     const auto TClear0 = Clock::now();
-    ++CurrentEpoch;
+    for (auto& Pair : Objects)
+    {
+        Pair.second.Marked = false;
+    }
     const auto TClear1 = Clock::now();
 
-    // (2) Mark ---------------------------------------
+    // 2) Mark from roots
     const auto TMark0 = Clock::now();
     for (QObject* R : Roots)
-        if (R) Mark(R);
+    {
+        Mark(R);
+    }
     const auto TMark1 = Clock::now();
 
-    // (3) Build dead ---------------------------------
+    // 3) Build a list of dead objects (no mark)
     const auto TDead0 = Clock::now();
     std::vector<QObject*> Dead;
     Dead.reserve(Objects.size());
+
     for (auto& Pair : Objects)
     {
-        if (Pair.second.MarkEpoch != CurrentEpoch) // NEW
+        if (!Pair.second.Marked)
+        {
             Dead.push_back(Pair.first);
+        }
     }
     const auto TDead1 = Clock::now();
-
-    // (fast path) 아무 것도 안 죽었다면 조기 종료 ------- // NEW
-    if (Dead.empty())
-    {
-        const auto TTotal1 = Clock::now();
-        if (!bSilent)
-        {
-            const double MsClear = ms(TClear1, TClear0);
-            const double MsMark  = ms(TMark1, TMark0);
-            const double MsBuild = ms(TDead1, TDead0);
-            const double MsFixup = 0.0;
-            const double MsSweep = 0.0;
-            const double MsTotal = ms(TTotal1, TTotal0);
-
-            std::cout << "[GC] Collected 0 objects, alive=" << Objects.size()
-                      << ". Total " << MsTotal << " ms.\n";
-            std::cout << "[GC] Phase timings (ms) - "
-                      << "clear=" << MsClear << ", "
-                      << "mark="  << MsMark  << ", "
-                      << "buildDead=" << MsBuild << ", "
-                      << "fixup=" << MsFixup << ", "
-                      << "sweep=" << MsSweep << "\n";
-        }
-        return ms(TTotal1, TTotal0);
-    }
-
-    // (4) Fixup: 생존자에서 죽은 참조 null 처리 --------
+    
+    // 4) Null-out references to dead objects in survivors to avoid dangling pointers
     const auto TFix0 = Clock::now();
     for (auto& Pair : Objects)
     {
-        if (Pair.second.MarkEpoch != CurrentEpoch) continue; // 생존자만
+        if (!Pair.second.Marked) continue;
 
         QObject* Owner = Pair.first;
         unsigned char* Base = BytePtr(Owner);
-        const qmeta::TypeInfo& Ti = *Pair.second.Ti;
-        const Plan& plan = GetPlan(Ti); // NEW
+        const TypeInfo& Ti = *Pair.second.Ti;
 
-        for (const FieldSlot& s : plan)
+        for (const MetaProperty& P : Ti.properties)
         {
-            if (s.kind == SlotKind::RawQObjectPtr)
+            if (IsRawQObjectPtr(P.type))
             {
-                QObject** Slot = reinterpret_cast<QObject**>(Base + s.offset);
+                QObject** Slot = reinterpret_cast<QObject**>(Base + P.offset);
                 if (Slot && *Slot)
                 {
                     auto It = Objects.find(*Slot);
-                    if (It != Objects.end() && It->second.MarkEpoch != CurrentEpoch) // NEW
+                    if (It != Objects.end() && !It->second.Marked)
+                    {
                         *Slot = nullptr;
+                    }
                 }
             }
-            else // VectorOfQObjectPtr
+            else if (IsVectorOfQObjectPtr(P.type))
             {
-                auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Base + s.offset);
+                auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Base + P.offset);
                 for (QObject*& Child : *Vec)
                 {
                     if (!Child) continue;
                     auto It = Objects.find(Child);
-                    if (It != Objects.end() && It->second.MarkEpoch != CurrentEpoch) // NEW
-                        Child = nullptr; // 필요시 추후 erase로 압축
+                    if (It != Objects.end() && !It->second.Marked)
+                    {
+                        Child = nullptr; // or erase later if you prefer
+                    }
                 }
             }
         }
     }
     const auto TFix1 = Clock::now();
 
-    // (5) Sweep --------------------------------------
+    // 5) Delete the dead and remove from maps (sweep)
     const auto TSweep0 = Clock::now();
     for (QObject* D : Dead)
     {
         auto It = Objects.find(D);
         if (It != Objects.end())
         {
-            QObject* Obj = It->first;
-            Objects.erase(It);  // 먼저 registry 제거
-            delete Obj;         // 그 다음 메모리 해제
+            QObject* Obj = It->first;     // keep pointer
+            Objects.erase(It);            // remove from registry first
+            delete Obj;                   // then destroy memory
         }
     }
-    const auto TSweep1 = Clock::now();
 
     // perf logs
+    const auto TSweep1 = Clock::now();
+
     const auto TTotal1 = Clock::now();
 
-    const double MsClear = ms(TClear1, TClear0);
-    const double MsMark  = ms(TMark1, TMark0);
-    const double MsBuild = ms(TDead1, TDead0);
-    const double MsFixup = ms(TFix1,  TFix0);
-    const double MsSweep = ms(TSweep1, TSweep0);
-    const double MsTotal = ms(TTotal1, TTotal0);
+    const double MsClear    = ms(TClear1, TClear0);
+    const double MsMark     = ms(TMark1, TMark0);
+    const double MsBuild    = ms(TDead1, TDead0);
+    const double MsFixup    = ms(TFix1,  TFix0);
+    const double MsSweep    = ms(TSweep1, TSweep0);
+    const double MsTotal    = ms(TTotal1, TTotal0);
 
     if (!bSilent)
     {

@@ -61,33 +61,12 @@ public:
     void RegisterInternal(QObject* Obj, const qmeta::TypeInfo& Ti, const std::string& Name, uint64_t Id);
 
 private:
-    
-    enum class SlotKind : uint8_t { RawQObjectPtr, VectorOfQObjectPtr };
-
-    struct FieldSlot {
-        uint32_t offset = 0;
-        SlotKind kind;
-    };
-
-    using Plan = std::vector<FieldSlot>;
-    
-    mutable std::unordered_map<const qmeta::TypeInfo*, Plan> PlanCache;
-
-    uint32_t CurrentEpoch = 1;
-
-    mutable std::vector<QObject*> ScratchStack;
-    mutable std::vector<QObject*> ScratchChildren;
-    
     struct Node
     {
         const qmeta::TypeInfo* Ti = nullptr;
         uint64_t Id = 0;
         bool Marked = false;
-        uint32_t MarkEpoch = 0;
     };
-
-private:
-    const Plan& GetPlan(const qmeta::TypeInfo& Ti) const;
     
     // Marks all objects from a root to kill by BFS 
     void Mark(QObject* Root);
