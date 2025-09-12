@@ -20,6 +20,13 @@ public:
 
     QPROPERTY() bool bUseVector = true;
 
+    template<class T>
+    void FactoryRegisterType()
+    {
+        // Register T into factory (NewObject<T>())
+        Factory.Register<T>();
+    }
+    
     // ---------------- Console-facing API ----------------
     QFUNCTION()
     void PatternChain(int Length, int Seed);

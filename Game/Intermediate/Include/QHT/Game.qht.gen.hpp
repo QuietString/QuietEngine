@@ -65,22 +65,6 @@ static Variant _qmeta_invoke_QPlayer_SetWalkSpeed(void* Self, const Variant* arg
     return Variant();
 }
 
-static Variant _qmeta_invoke_QGcTester_SetAssignMode(void* Self, const Variant* args, size_t argc) {
-    (void)argc; auto* self = static_cast<QGcTester*>(Self);
-    if (argc < 1) throw std::runtime_error("QGcTester::SetAssignMode requires 1 args");
-    auto _a0 = args[0].as<int>();
-    self->SetAssignMode(_a0);
-    return Variant();
-}
-
-static Variant _qmeta_invoke_QGcTester_SetUseVector(void* Self, const Variant* args, size_t argc) {
-    (void)argc; auto* self = static_cast<QGcTester*>(Self);
-    if (argc < 1) throw std::runtime_error("QGcTester::SetUseVector requires 1 args");
-    auto _a0 = args[0].as<bool>();
-    self->SetUseVector(_a0);
-    return Variant();
-}
-
 static Variant _qmeta_invoke_QGcTester_PatternChain(void* Self, const Variant* args, size_t argc) {
     (void)argc; auto* self = static_cast<QGcTester*>(Self);
     if (argc < 2) throw std::runtime_error("QGcTester::PatternChain requires 2 args");
@@ -120,21 +104,12 @@ static Variant _qmeta_invoke_QGcTester_PatternRings(void* Self, const Variant* a
     return Variant();
 }
 
-static Variant _qmeta_invoke_QGcTester_PatternDiamond(void* Self, const Variant* args, size_t argc) {
+static Variant _qmeta_invoke_QGcTester_BreakRandomEdges(void* Self, const Variant* args, size_t argc) {
     (void)argc; auto* self = static_cast<QGcTester*>(Self);
-    if (argc < 3) throw std::runtime_error("QGcTester::PatternDiamond requires 3 args");
+    if (argc < 2) throw std::runtime_error("QGcTester::BreakRandomEdges requires 2 args");
     auto _a0 = args[0].as<int>();
     auto _a1 = args[1].as<int>();
-    auto _a2 = args[2].as<int>();
-    self->PatternDiamond(_a0, _a1, _a2);
-    return Variant();
-}
-
-static Variant _qmeta_invoke_QGcTester_ClearAll(void* Self, const Variant* args, size_t argc) {
-    (void)argc; auto* self = static_cast<QGcTester*>(Self);
-    if (argc < 1) throw std::runtime_error("QGcTester::ClearAll requires 1 args");
-    auto _a0 = args[0].as<bool>();
-    self->ClearAll(_a0);
+    self->BreakRandomEdges(_a0, _a1);
     return Variant();
 }
 
@@ -159,49 +134,20 @@ static Variant _qmeta_invoke_QGcTester_BreakPercent(void* Self, const Variant* a
     return Variant(_ret);
 }
 
-static Variant _qmeta_invoke_QGcTester_BreakRandomEdges(void* Self, const Variant* args, size_t argc) {
-    (void)argc; auto* self = static_cast<QGcTester*>(Self);
-    if (argc < 2) throw std::runtime_error("QGcTester::BreakRandomEdges requires 2 args");
-    auto _a0 = args[0].as<int>();
-    auto _a1 = args[1].as<int>();
-    auto _ret = self->BreakRandomEdges(_a0, _a1);
-    return Variant(_ret);
-}
-
 static Variant _qmeta_invoke_QGcTester_DetachRoots(void* Self, const Variant* args, size_t argc) {
     (void)argc; auto* self = static_cast<QGcTester*>(Self);
     if (argc < 2) throw std::runtime_error("QGcTester::DetachRoots requires 2 args");
     auto _a0 = args[0].as<int>();
     auto _a1 = args[1].as<double>();
-    auto _ret = self->DetachRoots(_a0, _a1);
-    return Variant(_ret);
-}
-
-static Variant _qmeta_invoke_QGcTester_PrintDepthStats(void* Self, const Variant* args, size_t argc) {
-    (void)argc; auto* self = static_cast<QGcTester*>(Self);
-    if (argc < 1) throw std::runtime_error("QGcTester::PrintDepthStats requires 1 args");
-    auto _a0 = args[0].as<int>();
-    self->PrintDepthStats(_a0);
+    self->DetachRoots(_a0, _a1);
     return Variant();
 }
 
-static Variant _qmeta_invoke_QGcTester_MeasureGc(void* Self, const Variant* args, size_t argc) {
+static Variant _qmeta_invoke_QGcTester_ClearAll(void* Self, const Variant* args, size_t argc) {
     (void)argc; auto* self = static_cast<QGcTester*>(Self);
-    if (argc < 1) throw std::runtime_error("QGcTester::MeasureGc requires 1 args");
-    auto _a0 = args[0].as<int>();
-    self->MeasureGc(_a0);
-    return Variant();
-}
-
-static Variant _qmeta_invoke_QGcTester_Churn(void* Self, const Variant* args, size_t argc) {
-    (void)argc; auto* self = static_cast<QGcTester*>(Self);
-    if (argc < 5) throw std::runtime_error("QGcTester::Churn requires 5 args");
-    auto _a0 = args[0].as<int>();
-    auto _a1 = args[1].as<int>();
-    auto _a2 = args[2].as<double>();
-    auto _a3 = args[3].as<int>();
-    auto _a4 = args[4].as<int>();
-    self->Churn(_a0, _a1, _a2, _a3, _a4);
+    if (argc < 1) throw std::runtime_error("QGcTester::ClearAll requires 1 args");
+    auto _a0 = args[0].as<bool>();
+    self->ClearAll(_a0);
     return Variant();
 }
 
@@ -212,6 +158,44 @@ static Variant _qmeta_invoke_QGcTester_RepeatRandomAndCollect(void* Self, const 
     auto _a1 = args[1].as<int>();
     auto _a2 = args[2].as<int>();
     self->RepeatRandomAndCollect(_a0, _a1, _a2);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QGcTester_SetAssignMode(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTester*>(Self);
+    if (argc < 1) throw std::runtime_error("QGcTester::SetAssignMode requires 1 args");
+    auto _a0 = args[0].as<int>();
+    self->SetAssignMode(_a0);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QGcTester_SetUseVector(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTester*>(Self);
+    if (argc < 1) throw std::runtime_error("QGcTester::SetUseVector requires 1 args");
+    auto _a0 = args[0].as<bool>();
+    self->SetUseVector(_a0);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QGcTester_FactoryClear(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTester*>(Self);
+    self->FactoryClear();
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QGcTester_FactoryAddType(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTester*>(Self);
+    if (argc < 1) throw std::runtime_error("QGcTester::FactoryAddType requires 1 args");
+    auto _a0 = args[0].as<std::string>();
+    self->FactoryAddType(_a0);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QGcTester_FactoryUseTypes(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTester*>(Self);
+    if (argc < 1) throw std::runtime_error("QGcTester::FactoryUseTypes requires 1 args");
+    auto _a0 = args[0].as<std::vector<std::string>>();
+    self->FactoryUseTypes(_a0);
     return Variant();
 }
 
@@ -317,8 +301,98 @@ inline void QHT_Register_Game(Registry& R) {
     T_QGcTester.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
     T_QGcTester.base_name = "QObject";
     T_QGcTester.properties.push_back(MetaProperty{"Roots", "std::vector<QObject*>", offsetof(QGcTester, Roots), MetaMap{} });
-    T_QGcTester.properties.push_back(MetaProperty{"bUseVector", "bool", offsetof(QGcTester, bUseVector), MetaMap{} });
     T_QGcTester.properties.push_back(MetaProperty{"AssignMode", "int", offsetof(QGcTester, AssignMode), MetaMap{} });
+    T_QGcTester.properties.push_back(MetaProperty{"bUseVector", "bool", offsetof(QGcTester, bUseVector), MetaMap{} });
+    {
+        MetaFunction F;
+        F.name = "PatternChain";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTester_PatternChain;
+        F.params = std::vector<MetaParam>{ MetaParam{"Length", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcTester.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "PatternGrid";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTester_PatternGrid;
+        F.params = std::vector<MetaParam>{ MetaParam{"W", "int"}, MetaParam{"H", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcTester.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "PatternRandom";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTester_PatternRandom;
+        F.params = std::vector<MetaParam>{ MetaParam{"Nodes", "int"}, MetaParam{"AvgOut", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcTester.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "PatternRings";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTester_PatternRings;
+        F.params = std::vector<MetaParam>{ MetaParam{"Rings", "int"}, MetaParam{"RingSize", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcTester.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "BreakRandomEdges";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTester_BreakRandomEdges;
+        F.params = std::vector<MetaParam>{ MetaParam{"Count", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcTester.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "BreakAtDepth";
+        F.return_type = "int";
+        F.invoker = &_qmeta_invoke_QGcTester_BreakAtDepth;
+        F.params = std::vector<MetaParam>{ MetaParam{"TargetDepth", "int"}, MetaParam{"Count", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcTester.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "BreakPercent";
+        F.return_type = "int";
+        F.invoker = &_qmeta_invoke_QGcTester_BreakPercent;
+        F.params = std::vector<MetaParam>{ MetaParam{"Percent", "double"}, MetaParam{"Depth", "int"}, MetaParam{"Seed", "int"}, MetaParam{"bOnlyRoots", "bool"} };
+        F.meta = MetaMap{};
+        T_QGcTester.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "DetachRoots";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTester_DetachRoots;
+        F.params = std::vector<MetaParam>{ MetaParam{"Count", "int"}, MetaParam{"Percent", "double"} };
+        F.meta = MetaMap{};
+        T_QGcTester.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "ClearAll";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTester_ClearAll;
+        F.params = std::vector<MetaParam>{ MetaParam{"bSilent", "bool"} };
+        F.meta = MetaMap{};
+        T_QGcTester.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "RepeatRandomAndCollect";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTester_RepeatRandomAndCollect;
+        F.params = std::vector<MetaParam>{ MetaParam{"NumSteps", "int"}, MetaParam{"NumNodes", "int"}, MetaParam{"NumBranches", "int"} };
+        F.meta = MetaMap{};
+        T_QGcTester.functions.push_back(std::move(F));
+    }
     {
         MetaFunction F;
         F.name = "SetAssignMode";
@@ -339,127 +413,28 @@ inline void QHT_Register_Game(Registry& R) {
     }
     {
         MetaFunction F;
-        F.name = "PatternChain";
+        F.name = "FactoryClear";
         F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcTester_PatternChain;
-        F.params = std::vector<MetaParam>{ MetaParam{"Length", "int"}, MetaParam{"Seed", "int"} };
+        F.invoker = &_qmeta_invoke_QGcTester_FactoryClear;
+        F.params = std::vector<MetaParam>{  };
         F.meta = MetaMap{};
         T_QGcTester.functions.push_back(std::move(F));
     }
     {
         MetaFunction F;
-        F.name = "PatternGrid";
+        F.name = "FactoryAddType";
         F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcTester_PatternGrid;
-        F.params = std::vector<MetaParam>{ MetaParam{"Width", "int"}, MetaParam{"Height", "int"}, MetaParam{"Seed", "int"} };
+        F.invoker = &_qmeta_invoke_QGcTester_FactoryAddType;
+        F.params = std::vector<MetaParam>{ MetaParam{"TypeName", "const std::string&"} };
         F.meta = MetaMap{};
         T_QGcTester.functions.push_back(std::move(F));
     }
     {
         MetaFunction F;
-        F.name = "PatternRandom";
+        F.name = "FactoryUseTypes";
         F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcTester_PatternRandom;
-        F.params = std::vector<MetaParam>{ MetaParam{"Nodes", "int"}, MetaParam{"BranchCount", "int"}, MetaParam{"Seed", "int"} };
-        F.meta = MetaMap{};
-        T_QGcTester.functions.push_back(std::move(F));
-    }
-    {
-        MetaFunction F;
-        F.name = "PatternRings";
-        F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcTester_PatternRings;
-        F.params = std::vector<MetaParam>{ MetaParam{"Rings", "int"}, MetaParam{"RingSize", "int"}, MetaParam{"Seed", "int"} };
-        F.meta = MetaMap{};
-        T_QGcTester.functions.push_back(std::move(F));
-    }
-    {
-        MetaFunction F;
-        F.name = "PatternDiamond";
-        F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcTester_PatternDiamond;
-        F.params = std::vector<MetaParam>{ MetaParam{"Layers", "int"}, MetaParam{"Breadth", "int"}, MetaParam{"Seed", "int"} };
-        F.meta = MetaMap{};
-        T_QGcTester.functions.push_back(std::move(F));
-    }
-    {
-        MetaFunction F;
-        F.name = "ClearAll";
-        F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcTester_ClearAll;
-        F.params = std::vector<MetaParam>{ MetaParam{"bSilent", "bool"} };
-        F.meta = MetaMap{};
-        T_QGcTester.functions.push_back(std::move(F));
-    }
-    {
-        MetaFunction F;
-        F.name = "BreakAtDepth";
-        F.return_type = "int";
-        F.invoker = &_qmeta_invoke_QGcTester_BreakAtDepth;
-        F.params = std::vector<MetaParam>{ MetaParam{"TargetDepth", "int"}, MetaParam{"Count", "int"}, MetaParam{"Seed", "int"} };
-        F.meta = MetaMap{};
-        T_QGcTester.functions.push_back(std::move(F));
-    }
-    {
-        MetaFunction F;
-        F.name = "BreakPercent";
-        F.return_type = "int";
-        F.invoker = &_qmeta_invoke_QGcTester_BreakPercent;
-        F.params = std::vector<MetaParam>{ MetaParam{"Percent", "double"}, MetaParam{"Depth", "int"}, MetaParam{"Seed", "int"}, MetaParam{"bSilient", "bool"} };
-        F.meta = MetaMap{};
-        T_QGcTester.functions.push_back(std::move(F));
-    }
-    {
-        MetaFunction F;
-        F.name = "BreakRandomEdges";
-        F.return_type = "int";
-        F.invoker = &_qmeta_invoke_QGcTester_BreakRandomEdges;
-        F.params = std::vector<MetaParam>{ MetaParam{"EdgeCount", "int"}, MetaParam{"Seed", "int"} };
-        F.meta = MetaMap{};
-        T_QGcTester.functions.push_back(std::move(F));
-    }
-    {
-        MetaFunction F;
-        F.name = "DetachRoots";
-        F.return_type = "int";
-        F.invoker = &_qmeta_invoke_QGcTester_DetachRoots;
-        F.params = std::vector<MetaParam>{ MetaParam{"Count", "int"}, MetaParam{"Ratio", "double"} };
-        F.meta = MetaMap{};
-        T_QGcTester.functions.push_back(std::move(F));
-    }
-    {
-        MetaFunction F;
-        F.name = "PrintDepthStats";
-        F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcTester_PrintDepthStats;
-        F.params = std::vector<MetaParam>{ MetaParam{"TargetDepth", "int"} };
-        F.meta = MetaMap{};
-        T_QGcTester.functions.push_back(std::move(F));
-    }
-    {
-        MetaFunction F;
-        F.name = "MeasureGc";
-        F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcTester_MeasureGc;
-        F.params = std::vector<MetaParam>{ MetaParam{"Repeats", "int"} };
-        F.meta = MetaMap{};
-        T_QGcTester.functions.push_back(std::move(F));
-    }
-    {
-        MetaFunction F;
-        F.name = "Churn";
-        F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcTester_Churn;
-        F.params = std::vector<MetaParam>{ MetaParam{"Steps", "int"}, MetaParam{"AllocPerStep", "int"}, MetaParam{"BreakPct", "double"}, MetaParam{"GcEveryN", "int"}, MetaParam{"Seed", "int"} };
-        F.meta = MetaMap{};
-        T_QGcTester.functions.push_back(std::move(F));
-    }
-    {
-        MetaFunction F;
-        F.name = "RepeatRandomAndCollect";
-        F.return_type = "void";
-        F.invoker = &_qmeta_invoke_QGcTester_RepeatRandomAndCollect;
-        F.params = std::vector<MetaParam>{ MetaParam{"NumSteps", "int"}, MetaParam{"NumNodes", "int"}, MetaParam{"NumBranches", "int"} };
+        F.invoker = &_qmeta_invoke_QGcTester_FactoryUseTypes;
+        F.params = std::vector<MetaParam>{ MetaParam{"TypeNames", "const std::vector<std::string>&"} };
         F.meta = MetaMap{};
         T_QGcTester.functions.push_back(std::move(F));
     }
