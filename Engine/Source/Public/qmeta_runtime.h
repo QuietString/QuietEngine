@@ -18,9 +18,9 @@ namespace qmeta {
 // -------- Variant --------
 // Simple type-erased value for RPC arguments and return values.
 struct Variant {
-    enum class Kind { Empty, Int, UInt, Float, Double, Bool, String, Pointer };
+    enum class EBaseType { Empty, Int, UInt, Float, Double, Bool, String, Pointer };
 
-    Kind kind = Kind::Empty;
+    EBaseType BaseType = EBaseType::Empty;
     union {
         int64_t     i64;
         uint64_t    u64;
@@ -30,47 +30,47 @@ struct Variant {
     std::string str;
 
     Variant() = default;
-    Variant(int v)              { kind = Kind::Int;   data.i64 = v; }
-    Variant(int64_t v)          { kind = Kind::Int;   data.i64 = v; }
-    Variant(unsigned v)         { kind = Kind::UInt;  data.u64 = v; }
-    Variant(uint64_t v)         { kind = Kind::UInt;  data.u64 = v; }
-    Variant(float v)            { kind = Kind::Double; data.f64 = static_cast<double>(v); }
-    Variant(double v)           { kind = Kind::Double; data.f64 = v; }
-    Variant(bool v)             { kind = Kind::Bool;  data.u64 = v ? 1u : 0u; }
-    Variant(const char* s)      { kind = Kind::String; str = s; }
-    Variant(std::string s)      { kind = Kind::String; str = std::move(s); }
-    Variant(void* p)            { kind = Kind::Pointer; data.ptr = p; }
+    Variant(int v)              { BaseType = EBaseType::Int;   data.i64 = v; }
+    Variant(int64_t v)          { BaseType = EBaseType::Int;   data.i64 = v; }
+    Variant(unsigned v)         { BaseType = EBaseType::UInt;  data.u64 = v; }
+    Variant(uint64_t v)         { BaseType = EBaseType::UInt;  data.u64 = v; }
+    Variant(float v)            { BaseType = EBaseType::Double; data.f64 = static_cast<double>(v); }
+    Variant(double v)           { BaseType = EBaseType::Double; data.f64 = v; }
+    Variant(bool v)             { BaseType = EBaseType::Bool;  data.u64 = v ? 1u : 0u; }
+    Variant(const char* s)      { BaseType = EBaseType::String; str = s; }
+    Variant(std::string s)      { BaseType = EBaseType::String; str = std::move(s); }
+    Variant(void* p)            { BaseType = EBaseType::Pointer; data.ptr = p; }
 
     template<class T>
     T as() const {
         if constexpr (std::is_same_v<T, int> || std::is_same_v<T,int32_t>) {
-            if (kind == Kind::Int) return static_cast<int>(data.i64);
-            if (kind == Kind::UInt) return static_cast<int>(data.u64);
+            if (BaseType == EBaseType::Int) return static_cast<int>(data.i64);
+            if (BaseType == EBaseType::UInt) return static_cast<int>(data.u64);
         } else if constexpr (std::is_same_v<T, int64_t>) {
-            if (kind == Kind::Int) return data.i64;
-            if (kind == Kind::UInt) return static_cast<int64_t>(data.u64);
+            if (BaseType == EBaseType::Int) return data.i64;
+            if (BaseType == EBaseType::UInt) return static_cast<int64_t>(data.u64);
         } else if constexpr (std::is_same_v<T, unsigned> || std::is_same_v<T,uint32_t>) {
-            if (kind == Kind::UInt) return static_cast<unsigned>(data.u64);
-            if (kind == Kind::Int)  return static_cast<unsigned>(data.i64);
+            if (BaseType == EBaseType::UInt) return static_cast<unsigned>(data.u64);
+            if (BaseType == EBaseType::Int)  return static_cast<unsigned>(data.i64);
         } else if constexpr (std::is_same_v<T, uint64_t>) {
-            if (kind == Kind::UInt) return data.u64;
-            if (kind == Kind::Int)  return static_cast<uint64_t>(data.i64);
+            if (BaseType == EBaseType::UInt) return data.u64;
+            if (BaseType == EBaseType::Int)  return static_cast<uint64_t>(data.i64);
         } else if constexpr (std::is_same_v<T, float>) {
-            if (kind == Kind::Double) return static_cast<float>(data.f64);
-            if (kind == Kind::Int)    return static_cast<float>(data.i64);
-            if (kind == Kind::UInt)   return static_cast<float>(data.u64);
+            if (BaseType == EBaseType::Double) return static_cast<float>(data.f64);
+            if (BaseType == EBaseType::Int)    return static_cast<float>(data.i64);
+            if (BaseType == EBaseType::UInt)   return static_cast<float>(data.u64);
         } else if constexpr (std::is_same_v<T, double>) {
-            if (kind == Kind::Double) return data.f64;
-            if (kind == Kind::Int)    return static_cast<double>(data.i64);
-            if (kind == Kind::UInt)   return static_cast<double>(data.u64);
+            if (BaseType == EBaseType::Double) return data.f64;
+            if (BaseType == EBaseType::Int)    return static_cast<double>(data.i64);
+            if (BaseType == EBaseType::UInt)   return static_cast<double>(data.u64);
         } else if constexpr (std::is_same_v<T, bool>) {
-            if (kind == Kind::Bool) return data.u64 != 0;
-            if (kind == Kind::Int)  return data.i64 != 0;
-            if (kind == Kind::UInt) return data.u64 != 0;
+            if (BaseType == EBaseType::Bool) return data.u64 != 0;
+            if (BaseType == EBaseType::Int)  return data.i64 != 0;
+            if (BaseType == EBaseType::UInt) return data.u64 != 0;
         } else if constexpr (std::is_same_v<T, std::string>) {
-            if (kind == Kind::String) return str;
+            if (BaseType == EBaseType::String) return str;
         } else if constexpr (std::is_pointer_v<T>) {
-            if (kind == Kind::Pointer) return static_cast<T>(data.ptr);
+            if (BaseType == EBaseType::Pointer) return static_cast<T>(data.ptr);
         }
         throw std::runtime_error("qmeta::Variant: bad cast");
     }

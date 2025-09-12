@@ -9,16 +9,51 @@
 using namespace qmeta;
 // Unit: Game
 
+#include "Classes/Monster.h"
 #include "Classes/Player.h"
 #include "Test/GcTester.h"
 #include "Test/TestObject.h"
 
-static Variant _qmeta_invoke_QPlayer_AddHealth(void* Self, const Variant* args, size_t argc) {
-    (void)argc; auto* self = static_cast<QPlayer*>(Self);
-    if (argc < 1) throw std::runtime_error("QPlayer::AddHealth requires 1 args");
-    auto _a0 = args[0].as<int>();
-    auto _ret = self->AddHealth(_a0);
+static Variant _qmeta_invoke_QMonster_GetHealth(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QMonster*>(Self);
+    auto _ret = self->GetHealth();
     return Variant(_ret);
+}
+
+static Variant _qmeta_invoke_QMonster_SetHealth(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QMonster*>(Self);
+    if (argc < 1) throw std::runtime_error("QMonster::SetHealth requires 1 args");
+    auto _a0 = args[0].as<int>();
+    self->SetHealth(_a0);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QMonster_IsDead(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QMonster*>(Self);
+    auto _ret = self->IsDead();
+    return Variant(_ret);
+}
+
+static Variant _qmeta_invoke_QMonster_TakeDamage(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QMonster*>(Self);
+    if (argc < 1) throw std::runtime_error("QMonster::TakeDamage requires 1 args");
+    auto _a0 = args[0].as<int>();
+    self->TakeDamage(_a0);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QMonster_GetTarget(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QMonster*>(Self);
+    auto _ret = self->GetTarget();
+    return Variant(_ret);
+}
+
+static Variant _qmeta_invoke_QMonster_SetTarget(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QMonster*>(Self);
+    if (argc < 1) throw std::runtime_error("QMonster::SetTarget requires 1 args");
+    auto _a0 = args[0].as<QActor*>();
+    self->SetTarget(_a0);
+    return Variant();
 }
 
 static Variant _qmeta_invoke_QPlayer_SetWalkSpeed(void* Self, const Variant* args, size_t argc) {
@@ -182,23 +217,72 @@ static Variant _qmeta_invoke_QTestObject_RemoveChildren(void* Self, const Varian
 }
 
 inline void QHT_Register_Game(Registry& R) {
+    TypeInfo& T_QMonster = R.add_type("QMonster", sizeof(QMonster));
+    T_QMonster.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
+    T_QMonster.base_name = "QActor";
+    T_QMonster.properties.push_back(MetaProperty{"Health", "int", offsetof(QMonster, Health), MetaMap{} });
+    T_QMonster.properties.push_back(MetaProperty{"Target", "QActor*", offsetof(QMonster, Target), MetaMap{} });
+    {
+        MetaFunction F;
+        F.name = "GetHealth";
+        F.return_type = "int";
+        F.invoker = &_qmeta_invoke_QMonster_GetHealth;
+        F.params = std::vector<MetaParam>{  };
+        F.meta = MetaMap{};
+        T_QMonster.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "SetHealth";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QMonster_SetHealth;
+        F.params = std::vector<MetaParam>{ MetaParam{"InHealth", "int"} };
+        F.meta = MetaMap{};
+        T_QMonster.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "IsDead";
+        F.return_type = "bool";
+        F.invoker = &_qmeta_invoke_QMonster_IsDead;
+        F.params = std::vector<MetaParam>{  };
+        F.meta = MetaMap{};
+        T_QMonster.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "TakeDamage";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QMonster_TakeDamage;
+        F.params = std::vector<MetaParam>{ MetaParam{"Damage", "int"} };
+        F.meta = MetaMap{};
+        T_QMonster.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "GetTarget";
+        F.return_type = "QActor*";
+        F.invoker = &_qmeta_invoke_QMonster_GetTarget;
+        F.params = std::vector<MetaParam>{  };
+        F.meta = MetaMap{};
+        T_QMonster.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "SetTarget";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QMonster_SetTarget;
+        F.params = std::vector<MetaParam>{ MetaParam{"InTarget", "QActor*"} };
+        F.meta = MetaMap{};
+        T_QMonster.functions.push_back(std::move(F));
+    }
     TypeInfo& T_QPlayer = R.add_type("QPlayer", sizeof(QPlayer));
     T_QPlayer.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
     T_QPlayer.base_name = "QActor";
-    T_QPlayer.properties.push_back(MetaProperty{"Health", "int", offsetof(QPlayer, Health), MetaMap{} });
     T_QPlayer.properties.push_back(MetaProperty{"WalkSpeed", "float", offsetof(QPlayer, WalkSpeed), MetaMap{} });
     T_QPlayer.properties.push_back(MetaProperty{"Name", "std::string", offsetof(QPlayer, Name), MetaMap{} });
     T_QPlayer.properties.push_back(MetaProperty{"Friend", "QPlayer*", offsetof(QPlayer, Friend), MetaMap{} });
     T_QPlayer.properties.push_back(MetaProperty{"Friends", "std::vector<QPlayer*>", offsetof(QPlayer, Friends), MetaMap{} });
-    {
-        MetaFunction F;
-        F.name = "AddHealth";
-        F.return_type = "int";
-        F.invoker = &_qmeta_invoke_QPlayer_AddHealth;
-        F.params = std::vector<MetaParam>{ MetaParam{"Amount", "int"} };
-        F.meta = MetaMap{};
-        T_QPlayer.functions.push_back(std::move(F));
-    }
     {
         MetaFunction F;
         F.name = "SetWalkSpeed";

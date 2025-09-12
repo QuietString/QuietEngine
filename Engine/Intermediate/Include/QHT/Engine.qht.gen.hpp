@@ -31,7 +31,7 @@ static Variant _qmeta_invoke_QActor_GetOwner(void* Self, const Variant* args, si
 static Variant _qmeta_invoke_QActor_SetOwner(void* Self, const Variant* args, size_t argc) {
     (void)argc; auto* self = static_cast<QActor*>(Self);
     if (argc < 1) throw std::runtime_error("QActor::SetOwner requires 1 args");
-    auto _a0 = args[0].as<QActor*>();
+    auto _a0 = args[0].as<QObject*>();
     self->SetOwner(_a0);
     return Variant();
 }
@@ -57,7 +57,7 @@ inline void QHT_Register_Engine(Registry& R) {
     T_QActor.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
     T_QActor.base_name = "QObject";
     T_QActor.properties.push_back(MetaProperty{"ActorInteger", "int", offsetof(QActor, ActorInteger), MetaMap{} });
-    T_QActor.properties.push_back(MetaProperty{"Owner", "QActor*", offsetof(QActor, Owner), MetaMap{} });
+    T_QActor.properties.push_back(MetaProperty{"Owner", "QObject*", offsetof(QActor, Owner), MetaMap{} });
     {
         MetaFunction F;
         F.name = "SetActorInteger";
@@ -70,7 +70,7 @@ inline void QHT_Register_Engine(Registry& R) {
     {
         MetaFunction F;
         F.name = "GetOwner";
-        F.return_type = "QActor*";
+        F.return_type = "QObject*";
         F.invoker = &_qmeta_invoke_QActor_GetOwner;
         F.params = std::vector<MetaParam>{  };
         F.meta = MetaMap{};
@@ -81,7 +81,7 @@ inline void QHT_Register_Engine(Registry& R) {
         F.name = "SetOwner";
         F.return_type = "void";
         F.invoker = &_qmeta_invoke_QActor_SetOwner;
-        F.params = std::vector<MetaParam>{ MetaParam{"InOwner", "QActor*"} };
+        F.params = std::vector<MetaParam>{ MetaParam{"InOwner", "QObject*"} };
         F.meta = MetaMap{};
         T_QActor.functions.push_back(std::move(F));
     }

@@ -12,11 +12,11 @@ public:
     void SetActorInteger(int InValue) { ActorInteger = InValue; }
     
     QPROPERTY()
-    QActor* Owner = nullptr;
+    QObject* Owner = nullptr;
 
     QFUNCTION()
-    QActor* GetOwner() { return Owner; }
+    QObject* GetOwner() { return Owner; }
     
     QFUNCTION()
-    void SetOwner(QActor* InOwner) { Owner = InOwner; }
+    void SetOwner(QObject* InOwner) { Owner = InOwner; }
 };

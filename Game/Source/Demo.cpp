@@ -6,6 +6,7 @@
 #include "qmeta_runtime.h"
 #include "World.h"
 #include "GarbageCollector.h"
+#include "Classes/Monster.h"
 #include "Classes/Player.h"
 #include "Test/GcTester.h"
 
@@ -83,27 +84,6 @@ void Demo::RunSaveLoad()
     // printf("Loaded ID: %d\n", Loaded2.ControllerID);
 }
 
-void Demo::GenerateSimpleTest()
-{
-    auto& GC = GarbageCollector::Get();
-
-    auto* A = NewObject<QPlayer>();
-    auto* B = NewObject<QPlayer>();
-    auto* C = NewObject<QPlayer>();
-    auto* D = NewObject<QPlayer>();
-    QWorld* World = static_cast<QWorld*>(GC.GetRoot());
-    if (!World) return;
-
-    World->Objects.push_back(A);
-    
-    A->Friend = C;
-    A->Health = 45;
-    
-    A->Friend = B;
-    B->Friend = C;
-    C->Friend = D;
-}
-
 void Demo::RunTester()
 {
     QWorld* World = GetWorld();
@@ -120,7 +100,7 @@ void Demo::RunTester()
               << " (use commands: gctest ...  or  call " << Tester->GetDebugName() << " <Func> ...)" << std::endl;
 }
 
-void Demo::RunPlayerTest()
+void Demo::RunReflectionTest()
 {
     QWorld* World = GetWorld();
     if (!World)
@@ -131,9 +111,13 @@ void Demo::RunPlayerTest()
     QPlayer* Player1 = NewObject<QPlayer>();
     World->Objects.push_back(Player1);
     
-
     QPlayer* Player2 = NewObject<QPlayer>();
     World->Objects.push_back(Player2);
 
-    Player1->SetOwner(Player2);
+    //Player1->SetOwner(Player2);
+
+    QMonster* Monster = NewObject<QMonster>();
+    World->Objects.push_back(Monster);
+
+    std::cout << "[Demo] Created reflection test instances: " << Monster->GetDebugName() << ", " << Player1->GetDebugName() << ", " << Player2->GetDebugName() << std::endl;
 }

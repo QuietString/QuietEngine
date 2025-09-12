@@ -155,3 +155,58 @@ std::string EngineUtils::FormatPropertyValue(QObject* Owner, const qmeta::MetaPr
     OutputStream << "<unhandled type: " << T << ">";
     return OutputStream.str();
 }
+
+std::string EngineUtils::FormatPropertyValue(const qmeta::Variant& V)
+{
+    using qmeta::Variant;
+    std::ostringstream os;
+
+    switch (V.BaseType)
+    {
+    case Variant::EBaseType::Empty:
+        // Treat 'void' result
+        return "(void)";
+
+    case Variant::EBaseType::Int:
+        os << static_cast<long long>(V.data.i64);
+        return os.str();
+
+    case Variant::EBaseType::UInt:
+        os << static_cast<unsigned long long>(V.data.u64);
+        return os.str();
+
+    case Variant::EBaseType::Float:     // fallthrough
+    case Variant::EBaseType::Double:
+        os << V.data.f64;
+        return os.str();
+
+    case Variant::EBaseType::Bool:
+        return (V.data.u64 != 0) ? "true" : "false";
+
+    case Variant::EBaseType::String:
+        os << '"' << V.str << '"';
+        return os.str();
+
+    case Variant::EBaseType::Pointer:
+        {
+            void* p = V.data.ptr; // same as V.as<void*>() in this codebase
+            if (!p) return "null";
+
+            // Try to interpret as QObject* for nicer printing
+            auto* Obj = reinterpret_cast<QObject*>(p);
+            GarbageCollector& GC = GarbageCollector::Get();
+            if (GC.IsManaged(Obj))
+            {
+                const std::string& Nm = Obj->GetDebugName();
+                return Nm.empty() ? "(Unnamed)" : Nm;
+            }
+
+            // Unknown pointer type: print raw address
+            os << "0x" << std::hex << std::uppercase << static_cast<std::uintptr_t>(reinterpret_cast<std::uintptr_t>(p));
+            return os.str();
+        }
+    }
+
+    // Fallback (should not happen)
+    return "<unknown>";
+}

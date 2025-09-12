@@ -7,6 +7,135 @@
 #include "Runtime.h"
 #include "CoreObjects/Public/World.h"
 
+// ---- helpers for type-aware argument parsing ----
+static std::string Trim(std::string s) {
+    auto is_space = [](unsigned char c){ return std::isspace(c); };
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [&](char c){ return !is_space((unsigned char)c); }));
+    s.erase(std::find_if(s.rbegin(), s.rend(), [&](char c){ return !is_space((unsigned char)c); }).base(), s.end());
+    return s;
+}
+
+
+static void StripPrefix(std::string& s, const char* pref) {
+    if (s.rfind(pref, 0) == 0) s.erase(0, std::strlen(pref));
+}
+
+static std::string NormalizeType(std::string t) {
+    t = Trim(t);
+    // strip common qualifiers and MSVC tags
+    StripPrefix(t, "const ");
+    StripPrefix(t, "class ");
+    StripPrefix(t, "struct ");
+    // drop trailing refs
+    if (!t.empty() && t.back() == '&') t.pop_back();
+    // collapse spaces around '*'
+    t.erase(std::remove(t.begin(), t.end(), ' '), t.end());
+    return t; // e.g. "QPlayer*", "QObject*", "int", "std::string", "double"
+}
+
+static bool IsPointerType(const std::string& normType) {
+    return !normType.empty() && normType.back() == '*';
+}
+
+static bool IsBoolType(const std::string& t) {
+    return t == "bool";
+}
+
+static bool IsStringType(const std::string& t) {
+    return (t == "std::string" || t == "string");
+}
+
+static bool IsFloatType(const std::string& t) {
+    return (t == "float" || t == "double");
+}
+
+static bool IsSignedIntType(const std::string& t) {
+    return (t == "int" || t == "int32_t" || t == "int64_t" || t == "long" || t == "longlong");
+}
+
+static bool IsUnsignedIntType(const std::string& t) {
+    return (t == "unsigned" || t == "unsignedint" || t == "uint32_t" || t == "uint64_t" || t == "unsignedlonglong" || t == "size_t");
+}
+
+// Parse one token to Variant using expected param type. Returns true on success.
+static bool ParseTokenByType(const std::string& token, const std::string& expectedTypeRaw, GarbageCollector& GC, qmeta::Variant& outVar)
+{
+    using qmeta::Variant;
+
+    const std::string T = NormalizeType(expectedTypeRaw);
+    const std::string Tok = Trim(token);
+
+    // Pointers (QObject* and subclasses)
+    if (IsPointerType(T)) {
+        if (Tok == "null" || Tok == "nullptr" || Tok == "0") {
+            outVar = Variant((void*)nullptr);
+            return true;
+        }
+        // try resolve object by debug name
+        if (QObject* Obj = GC.FindByDebugName(Tok)) {
+            outVar = Variant(static_cast<void*>(Obj));
+            return true;
+        }
+        // as a last resort, allow hex address like 0x1234
+        if (Tok.rfind("0x", 0) == 0) {
+            void* p = reinterpret_cast<void*>(std::strtoull(Tok.c_str(), nullptr, 16));
+            outVar = Variant(p);
+            return true;
+        }
+        return false; // pointer expected but not resolvable
+    }
+
+    if (IsBoolType(T)) {
+        if (Tok == "true" || Tok == "1")  { outVar = Variant(true);  return true; }
+        if (Tok == "false"|| Tok == "0")  { outVar = Variant(false); return true; }
+        return false;
+    }
+
+    if (IsStringType(T)) {
+        // Allow quotes but not required
+        if (!Tok.empty() && ((Tok.front()=='"' && Tok.back()=='"') || (Tok.front()=='\'' && Tok.back()=='\''))) {
+            outVar = Variant(Tok.substr(1, Tok.size()-2));
+        } else {
+            outVar = Variant(Tok);
+        }
+        return true;
+    }
+
+    if (IsFloatType(T)) {
+        try { outVar = Variant(std::stod(Tok)); return true; } catch (...) { return false; }
+    }
+
+    if (IsSignedIntType(T)) {
+        try { outVar = Variant((long long)std::stoll(Tok)); return true; } catch (...) { return false; }
+    }
+
+    if (IsUnsignedIntType(T)) {
+        try { outVar = Variant((unsigned long long)std::stoull(Tok)); return true; } catch (...) { return false; }
+    }
+
+    // Fallback: try int -> double -> bool -> string
+    try { outVar = Variant((long long)std::stoll(Tok)); return true; } catch (...) {}
+    try { outVar = Variant(std::stod(Tok)); return true; } catch (...) {}
+    if (Tok == "true" || Tok == "false") { outVar = Variant(Tok == "true"); return true; }
+    outVar = Variant(Tok);
+    return true;
+}
+
+// Lenient parse when no meta signature is available: object-name -> QObject*, else old rules
+static qmeta::Variant ParseTokenLenient(const std::string& token, GarbageCollector& GC)
+{
+    using qmeta::Variant;
+    if (QObject* Obj = GC.FindByDebugName(token)) {
+        return Variant(static_cast<void*>(Obj));
+    }
+    if (token == "true" || token == "false") {
+        return Variant(token == "true");
+    }
+    try { return Variant((long long)std::stoll(token)); } catch (...) {}
+    try { return Variant(std::stod(token)); } catch (...) {}
+    return Variant(token);
+}
+
 std::vector<std::string> ConsoleManager::Tokenize(const std::string& s)
 {
     std::vector<std::string> Out;
@@ -282,29 +411,29 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 return true;
             }
 
-            const std::string& Name = Tokens[1];
-            const std::string& Prop = Tokens[2];
+            const std::string& ObjName = Tokens[1];
+            const std::string& PropName = Tokens[2];
 
-            QObject* Obj = GC.FindByDebugName(Name);
+            QObject* Obj = GC.FindByDebugName(ObjName);
             if (!Obj)
             {
-                std::cout << "Not found: " << Name << "\n";
+                std::cout << "Not found: " << ObjName << "\n";
                 return true;
             }
 
             const qmeta::TypeInfo* Ti = GC.GetTypeInfo(Obj);
             if (!Ti)
             {
-                std::cout << "No TypeInfo for: " << Name << "\n";
+                std::cout << "No TypeInfo for: " << ObjName << "\n";
                 return true;
             }
 
             // Locate property meta to know its type and offset
-            const qmeta::MetaProperty* MetaProp = Ti->FindProperty(Prop);
+            const qmeta::MetaProperty* MetaProp = Ti->FindProperty(PropName);
             
             if (!MetaProp)
             {
-                std::cout << "Property not found: " << Prop << "\n";
+                std::cout << "Property not found: " << PropName << "\n";
                 return true;
             }
 
@@ -373,30 +502,69 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
         }
         else if (Cmd == "call" && Tokens.size() >= 3)
         {
-            std::vector<qmeta::Variant> Args;
-            for (size_t i = 3; i < Tokens.size(); ++i)
-            {
-                const std::string& CurToken = Tokens[i];
-                // naive parse: int/float/bool/string
-                if (CurToken == "true" || CurToken == "false")
-                {
-                    Args.emplace_back(CurToken == "true");
-                }
-                else if (CurToken.find('.') != std::string::npos)
-                {
-                    Args.emplace_back(std::stod(CurToken));
-                }
-                else
-                {
-                    // try int
-                    try { Args.emplace_back(std::stoll(CurToken)); }
-                    catch (...) { Args.emplace_back(CurToken); }
+            const std::string& ObjName  = Tokens[1];
+            const std::string& FuncName = Tokens[2];
+
+            QObject* Target = GC.FindByDebugName(ObjName);
+            if (!Target) {
+                std::cout << "[Call] Object not found: " << ObjName << std::endl;
+                return true;
+            }
+
+            const qmeta::TypeInfo* Ti = GC.GetTypeInfo(Target);
+
+            // Try to locate function meta (name match)
+            const qmeta::MetaFunction* MF = nullptr;
+            if (Ti) {
+                for (const auto& F : Ti->functions) {
+                    if (F.name == FuncName) { MF = &F; break; }
                 }
             }
-            
-            qmeta::Variant Result = GC.CallByName(Tokens[1], Tokens[2], Args);
-            //std::string FormatedResult = EngineUtils::FormatPropertyValue(Result);
-            
+
+            std::vector<qmeta::Variant> Args;
+            Args.reserve(Tokens.size() - 3);
+
+            bool typedOk = false;
+
+            if (MF) {
+                const size_t ParamCount = MF->params.size();
+                const size_t Supplied   = (Tokens.size() > 3) ? (Tokens.size() - 3) : 0;
+
+                if (Supplied < ParamCount) {
+                    std::cout << "[Call] Not enough arguments. expected=" << ParamCount << " got=" << Supplied << std::endl;
+                    return true;
+                }
+
+                typedOk = true;
+                for (size_t i = 0; i < ParamCount; ++i) {
+                    const auto& P = MF->params[i]; // must have .type
+                    qmeta::Variant V;
+                    if (!ParseTokenByType(Tokens[3 + i], P.type, GC, V)) {
+                        typedOk = false;
+                        break;
+                    }
+                    Args.emplace_back(std::move(V));
+                }
+
+                // If more tokens than parameters, push remaining as lenient (variadic-like or ignored by callee)
+                for (size_t i = ParamCount; i < Supplied; ++i) {
+                    Args.emplace_back(ParseTokenLenient(Tokens[3 + i], GC));
+                }
+            }
+
+            if (!typedOk) {
+                // Fallback: lenient parsing (object names -> QObject*, else numeric/bool/string)
+                for (size_t i = 3; i < Tokens.size(); ++i) {
+                    Args.emplace_back(ParseTokenLenient(Tokens[i], GC));
+                }
+            }
+
+            // Make the call
+            qmeta::Variant Result = GC.CallByName(ObjName, FuncName, Args);
+
+            // Pretty-print return value
+            std::string Formatted = EngineUtils::FormatPropertyValue(Result);
+            std::cout << Formatted << std::endl;
             return true;
         }
         else if (Cmd == "save" && Tokens.size() >= 2)

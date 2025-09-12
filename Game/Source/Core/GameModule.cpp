@@ -38,7 +38,7 @@ public:
         //Demo::GenerateSimpleTest();
 
         //Demo::RunTester();
-        Demo::RunPlayerTest();
+        Demo::RunReflectionTest();
     }
     
     virtual void Tick(double DeltaSeconds) override

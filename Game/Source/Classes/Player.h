@@ -10,9 +10,6 @@ class QPlayer : public QActor
 {
 public:
     QPROPERTY()
-    int Health = 100;
-    
-    QPROPERTY()
     float WalkSpeed = 600.0f;
 
     QPROPERTY()
@@ -23,10 +20,7 @@ public:
 
     QPROPERTY()
     std::vector<QPlayer*> Friends;
-    
-    QFUNCTION()
-    int AddHealth(int Amount);
-    
+
     QFUNCTION()
     void SetWalkSpeed(float Speed);
 };

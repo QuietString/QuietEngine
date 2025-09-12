@@ -8,4 +8,6 @@ class EngineUtils
 {
 public:
     static std::string FormatPropertyValue(QObject* Owner, const qmeta::MetaProperty& P);
+
+    static std::string FormatPropertyValue(const qmeta::Variant& V);
 };
