@@ -20,6 +20,7 @@ public:
     void RemoveRoot(QObject* Obj);
     
     // GC steps
+    void Tick(double DeltaSeconds);
 
     // Return execution time(ms).
     double Collect(bool bSilent = false);
@@ -31,7 +32,8 @@ public:
     void ListPropertiesByDebugName(const std::string& Name) const;
     void ListFunctionsByDebugName(const std::string& Name) const;
 
-    bool Link(QObject* Owner, QObject* Target, bool bForceUseNonVector = false);
+    void SetAllowTraverseParents(bool bEnable);
+    bool GetAllowTraverseParents() const;
     
     bool Unlink(QObject* Object, const std::string& Property);
     //bool UnlinkById(uint64_t Id, const std::string& Property);
@@ -93,4 +95,8 @@ public:
 
     // Whether a pointer is tracked by GC (safe check for console formatting etc.)
     bool IsManaged(const QObject* Obj) const;
+
+private:
+    // Debug usage only
+    bool bAllowTraverseParents = true;
 };

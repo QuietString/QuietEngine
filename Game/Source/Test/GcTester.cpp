@@ -27,30 +27,121 @@ QTestObject* QGcTester::MakeNode()
     return Node;
 }
 
-void QGcTester::LinkChild(QTestObject* Parent, QTestObject* Child)
+void QGcTester::LinkChild(QTestObject* Parent, QTestObject* Child, std::mt19937* RngOpt)
 {
     if (!Parent || !Child) return;
 
-    if (bUseVector)
+    using qmeta::TypeInfo;
+    using qmeta::MetaProperty;
+    auto& GC = GarbageCollector::Get();
+
+    const TypeInfo* Ti = GC.GetTypeInfo(Parent);
+    if (!Ti)
     {
-        Parent->Children.push_back(Child);
+        std::cout << "[GcTester] Missing TypeInfo for parent\n";
         return;
+    }
+
+    unsigned char* Base = GarbageCollector::BytePtr(Parent);
+    auto IsVecPtr = [&](const std::string& t){ return GarbageCollector::IsVectorOfPointer(t); };
+    auto IsRawPtr = [&](const std::string& t){ return GarbageCollector::IsPointerType(t); };
+    auto VecElem = [](const std::string& t)->std::string{
+    auto lt = t.find('<'); auto gt = t.rfind('>');
+    if (lt == std::string::npos || gt == std::string::npos || lt >= gt) return {};
+    std::string inner = t.substr(lt + 1, gt - lt - 1);
+    inner.erase(std::remove_if(inner.begin(), inner.end(), ::isspace), inner.end());
+    return inner;
+
+    };
+
+    auto TryAssignInProps = [&](auto&& Enum)->bool
+    {
+        bool bLinked = false;
+        Enum([&](const MetaProperty& p)
+        {
+            if (bLinked) return;
+            if (bUseVector && IsVecPtr(p.type))
+            {
+                std::string elem = VecElem(p.type);
+                if (elem == "QObject*")
+                {
+                    auto* V = reinterpret_cast<std::vector<QObject*>*>(Base + p.offset);
+                    if (std::find(V->begin(), V->end(), static_cast<QObject*>(Child)) == V->end())
+                        V->push_back(static_cast<QObject*>(Child));
+                    bLinked = true;
+                }
+                else if (elem == "QTestObject*")
+                {
+                    auto* V = reinterpret_cast<std::vector<QTestObject*>*>(Base + p.offset);
+                    if (std::find(V->begin(), V->end(), Child) == V->end())
+                        V->push_back(Child);
+                    bLinked = true;
+                }
+            }
+            else if (!bUseVector && IsRawPtr(p.type))
+            {
+                auto** Slot = reinterpret_cast<QObject**>(Base + p.offset);
+                if (*Slot == nullptr)
+                {
+                    *Slot = static_cast<QObject*>(Child);
+                    bLinked = true;
+                }
+            }
+        });
+        return bLinked;
+    };
+
+    auto enumerate_local = [&](auto&& F){ for (auto& p : Ti->properties) F(p); };
+    auto enumerate_base  = [&](auto&& F){ if (Ti->base) Ti->base->ForEachProperty(F); };
+
+    bool has_local = false, has_base = false;
+    enumerate_local([&](const MetaProperty& p){
+        if (bUseVector ? IsVecPtr(p.type) : IsRawPtr(p.type))
+        {
+            if (bUseVector) has_local = true;
+            else { auto** s = reinterpret_cast<QObject**>(Base + p.offset); if (*s == nullptr) has_local = true; }
+        }
+    });
+    enumerate_base([&](const MetaProperty& p){
+        if (bUseVector ? IsVecPtr(p.type) : IsRawPtr(p.type))
+        {
+            if (bUseVector) has_base = true;
+            else { auto** s = reinterpret_cast<QObject**>(Base + p.offset); if (*s == nullptr) has_base = true; }
+        }
+    });
+
+    // 0: own-only, 1: parents-only, 2: random between available sides
+    int Origin = 0;
+    if (AssignMode == 0) Origin = 0;
+    else if (AssignMode == 1) Origin = 1;
+    else
+    {
+        if (has_local && has_base)
+        {
+            if (!RngOpt) { static std::mt19937 Tmp(1337); RngOpt = &Tmp; }
+            std::uniform_int_distribution<int> pick01(0, 1);
+            Origin = pick01(*RngOpt);
+        }
+        else if (has_base) Origin = 1;
+        else Origin = 0;
+    }
+    
+    bool bLinked = false;
+    if (Origin == 0)
+    {
+        bLinked = TryAssignInProps(enumerate_local);
+        if (!bLinked && has_base) bLinked = TryAssignInProps(enumerate_base);
     }
     else
     {
-        QTestObject** Slots[5] = { &Parent->Friend1, &Parent->Friend2, &Parent->Friend3, &Parent->Friend4, &Parent->Friend5 };
-        
-        for (auto& Slot : Slots)
-        {
-            if (*Slot == nullptr)
-            {
-                *Slot = Child;
-                return;
-            }
-        }
+        bLinked = TryAssignInProps(enumerate_base);
+        if (!bLinked && has_local) bLinked = TryAssignInProps(enumerate_local);
     }
-
-    std::cout << "[GcTester] No free slots for link\n";
+        
+    if (!bLinked)
+    {
+        std::cout << "[GcTester] No suitable slot for link\n";
+    }
 }
 
 QTestObject* QGcTester::PickRandom(const std::vector<QTestObject*>& From, std::mt19937& Rng)
@@ -64,18 +155,31 @@ void QGcTester::GatherChildren(QTestObject* Node, std::vector<QTestObject*>& Out
 {
     Out.clear();
     if (!Node) return;
-    
+
+    auto& GC = GarbageCollector::Get();
+
     if (bUseVector)
     {
+        // This class' vector
         Out.insert(Out.end(), Node->Children.begin(), Node->Children.end());
+
+        // Optionally include base class vector (QTestObject_Parent::Children_Parent)
+        if (GC.GetAllowTraverseParents())
+        {
+            const auto* AsParent = static_cast<const QTestObject_Parent*>(Node);
+            for (QObject* Raw : AsParent->Children_Parent)
+            {
+                if (auto* T = dynamic_cast<QTestObject*>(Raw))
+                {
+                    Out.push_back(T);
+                }
+            }
+        }
     }
     else
     {
-        if (Node->Friend1) Out.push_back(Node->Friend1);
-        if (Node->Friend2) Out.push_back(Node->Friend2);
-        if (Node->Friend3) Out.push_back(Node->Friend3);
-        if (Node->Friend4) Out.push_back(Node->Friend4);
-        if (Node->Friend5) Out.push_back(Node->Friend5);
+        QTestObject* slots[5] = { Node->Friend1, Node->Friend2, Node->Friend3, Node->Friend4, Node->Friend5 };
+        for (auto* s : slots) if (s) Out.push_back(s);
     }
 }
 
@@ -85,21 +189,28 @@ size_t QGcTester::GetChildCount(const QTestObject* Node) const
     {
         return 0;
     }
+
+    auto& GC = GarbageCollector::Get();
     
     if (bUseVector)
     {
-        return Node->Children.size();
+        size_t c = Node->Children.size();
+        if (GC.GetAllowTraverseParents())
+        {
+            c += static_cast<const QTestObject_Parent*>(Node)->Children_Parent.size();
+        }
+        return c;
     }
-    
-    size_t Count = 0;
-    
-    if (Node->Friend1) ++Count;
-    if (Node->Friend2) ++Count;
-    if (Node->Friend3) ++Count;
-    if (Node->Friend4) ++Count;
-    if (Node->Friend5) ++Count;
-    
-    return Count;
+    else
+    {
+        size_t c = 0;
+        if (Node->Friend1) ++c;
+        if (Node->Friend2) ++c;
+        if (Node->Friend3) ++c;
+        if (Node->Friend4) ++c;
+        if (Node->Friend5) ++c;
+        return c;
+    }
 }
 
 void QGcTester::BuildLayers(QTestObject* Root, bool bClearExisting = false)
@@ -281,10 +392,25 @@ bool QGcTester::RemoveEdge(QTestObject* Parent, QTestObject* Child)
     }
 }
 
+void QGcTester::SetAssignMode(int InMode)
+{
+    if (InMode < 0 || InMode > 3)
+    {
+        std::cout << "[GcTester] Invalid AssignMode " << InMode << "\n";
+        return;
+    }
+
+    AssignMode = InMode;
+
+    const std::string ModeNames[] = { "OwnedOnly", "ParentsOnly", "Random"};
+    
+    std::cout << "[GcTester] AssignMode: " << ModeNames[InMode] << "\n";
+}
+
 void QGcTester::SetUseVector(bool bUse)
 {
     bUseVector = bUse;
-    std::cout << "[GcTester] Use vector: " << (bUseVector ? "true" : "false") << "\n";
+    std::cout << "[GcTester] bUseVector: " << (bUseVector ? "true" : "false") << "\n";
 }
 
 // ---------------- Pattern builders ----------------
@@ -310,7 +436,7 @@ void QGcTester::PatternChain(int Length, int Seed)
     for (int i = 1; i < Length; ++i)
     {
         auto* Nxt = MakeNode();
-        LinkChild(Cur, Nxt);
+        LinkChild(Cur, Nxt, nullptr);
         Cur = Nxt;
     }
     
@@ -350,22 +476,22 @@ void QGcTester::PatternGrid(int Width, int Height, int Seed)
         {
             if (x + 1 < Width)
             {
-                LinkChild(grid[y][x], grid[y][x+1]);
+                LinkChild(grid[y][x], grid[y][x+1], nullptr);
             }
 
             if (x - 1 >= 0)
             {
-                LinkChild(grid[y][x], grid[y][x - 1]);
+                LinkChild(grid[y][x], grid[y][x - 1], nullptr);
             }
             
             if (y + 1 < Height)
             {
-                LinkChild(grid[y][x], grid[y+1][x]);  
+                LinkChild(grid[y][x], grid[y+1][x], nullptr);  
             }
 
             if (y - 1 >= 0)
             {
-                LinkChild(grid[y][x], grid[y-1][x]);  
+                LinkChild(grid[y][x], grid[y-1][x], nullptr);  
             }
         }
     }
@@ -406,7 +532,7 @@ void QGcTester::PatternRandom(int Nodes, int BranchCount, int Seed)
         {
             auto* Child = AllNodes[(size_t)Pick(Rng)];
             if (Child == Parent) continue;
-            LinkChild(Parent, Child);
+            LinkChild(Parent, Child, &Rng);
         }
     }
     
@@ -447,13 +573,13 @@ void QGcTester::PatternRings(int Rings, int RingSize, int Seed)
         // make cycle
         for (int i = 0; i < RingSize; ++i)
         {
-            LinkChild(Ring[(size_t)i], Ring[(size_t)((i+1)%RingSize)]);
+            LinkChild(Ring[(size_t)i], Ring[(size_t)((i+1)%RingSize)], &Rng);
         }
         
         // connect the previous ring to this ring (one bridge)
         if (PrevRingFirst)
         {
-            LinkChild(PrevRingFirst, Ring[0]);
+            LinkChild(PrevRingFirst, Ring[0], &Rng);
         }
 
         if (RingIdx == 0)
@@ -501,7 +627,7 @@ void QGcTester::PatternDiamond(int Layers, int Breadth, int Seed)
             for (int i = 0; i < Breadth; ++i)
             {
                 auto* c = MakeNode();
-                LinkChild(p, c);
+                LinkChild(p, c, &Rng);
                 L[(size_t)(d+1)].push_back(c);
             }
         }
@@ -518,7 +644,7 @@ void QGcTester::PatternDiamond(int Layers, int Breadth, int Seed)
             auto* shared = MakeNode();
             Nxt.push_back(shared);
             for (size_t j = i; j < std::min(Cur.size(), i + (size_t)Breadth); ++j)
-                LinkChild(Cur[j], shared);
+                LinkChild(Cur[j], shared, &Rng);
         }
     }
     
@@ -783,7 +909,7 @@ void QGcTester::Churn(int Steps, int AllocPerStep, double BreakPct, int GcEveryN
             auto* NewNode = MakeNode();
             if (Picked)
             {
-                LinkChild(Picked, NewNode);   
+                LinkChild(Picked, NewNode, &Rng);   
             }
         }
 
@@ -813,12 +939,33 @@ void QGcTester::Churn(int Steps, int AllocPerStep, double BreakPct, int GcEveryN
 void QGcTester::RepeatRandomAndCollect(int NumSteps, int NumNodes, int NumBranches)
 {
     GarbageCollector& GC = GarbageCollector::Get();
+
+    SetAssignMode(0);
+    
     for (int i = 0; i < NumSteps; ++i)
     {
         ClearAll(true);
-        PatternRandom(NumNodes, NumBranches, i);
+        PatternRandom(NumNodes, NumBranches);
         GC.Collect();
     }
 
+    SetAssignMode(1);
+    
+    for (int i = 0; i < NumSteps; ++i)
+    {
+        ClearAll(true);
+        PatternRandom(NumNodes, NumBranches);
+        GC.Collect();
+    }
+
+    SetAssignMode(2);
+
+    for (int i = 0; i < NumSteps; ++i)
+    {
+        ClearAll(true);
+        PatternRandom(NumNodes, NumBranches);
+        GC.Collect();
+    }
+    
     ClearAll(true);
 }

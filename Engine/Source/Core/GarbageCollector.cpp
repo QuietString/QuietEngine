@@ -25,6 +25,14 @@ GarbageCollector& GarbageCollector::Get()
     return *GcSingleton;
 }
 
+static inline std::string Strip(std::string s)
+{
+    auto is_space = [](unsigned char c){ return std::isspace(c); };
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [&](unsigned char c){ return !is_space(c); }));
+    s.erase(std::find_if(s.rbegin(), s.rend(), [&](unsigned char c){ return !is_space(c); }).base(), s.end());
+    return s;
+}
+
 void GarbageCollector::RegisterInternal(QObject* Obj, const TypeInfo& Ti, const std::string& Name, uint64_t Id)
 {
     Node N;
@@ -121,8 +129,7 @@ void GarbageCollector::TraversePointers(QObject* Obj, const TypeInfo& Ti, std::v
     OutChildren.clear();
     unsigned char* Base = BytePtr(Obj);
 
-    // Traverse including parents
-    Ti.ForEachProperty([&](const qmeta::MetaProperty& P)
+    auto Visitor = [&](const qmeta::MetaProperty& P)
     {
         if (IsPointerType(P.type))
         {
@@ -147,7 +154,10 @@ void GarbageCollector::TraversePointers(QObject* Obj, const TypeInfo& Ti, std::v
                     OutChildren.push_back(Child);
             }
         }
-    });
+    };
+    
+    // Traverse including parents
+    Ti.ForEachPropertyWithOption(Visitor, bAllowTraverseParents);
 }
 
 void GarbageCollector::Mark(QObject* Root)
@@ -412,30 +422,15 @@ void GarbageCollector::ListFunctionsByDebugName(const std::string& Name) const
     });
 }
 
-bool GarbageCollector::Link(QObject* Owner, QObject* Target, bool bForceUseNonVector)
+void GarbageCollector::SetAllowTraverseParents(bool bEnable)
 {
-    if (!Owner || !Target)
-    {
-        return false;   
-    }
-
-    auto IterObj = Objects.find(Owner);
-    const TypeInfo* OwnerTi = IterObj->second.Ti;
-    const TypeInfo* TargetTi = GetTypeInfo(Target);
-    
-    OwnerTi->ForEachProperty([&](const MetaProperty& p)
-    {
-        
-    });
-    
-    return false;
+    bAllowTraverseParents = bEnable;
 }
 
-// QObject* GarbageCollector::FindById(uint64_t Id) const
-// {
-//     auto It = ById.find(Id);
-//     return (It == ById.end()) ? nullptr : It->second;  
-// }
+bool GarbageCollector::GetAllowTraverseParents() const
+{
+    return bAllowTraverseParents;
+}
 
 QObject* GarbageCollector::FindByDebugName(const std::string& DebugName) const
 {
@@ -488,18 +483,6 @@ bool GarbageCollector::Unlink(QObject* Object, const std::string& Property)
     return false;
 }
 
-// bool GarbageCollector::UnlinkById(uint64_t Id, const std::string& Property)
-// {
-//     QObject* Obj = FindById(Id);
-//     if (!Obj)
-//     {
-//         std::cout << "[Unlink] Object not found by Id: " << Id << "\n";
-//         return false;
-//     }
-//
-//     return Unlink(Obj, Property);
-// }
-
 bool GarbageCollector::UnlinkByName(const std::string& Name, const std::string& Property)
 { 
     QObject* Obj = FindByDebugName(Name);
@@ -512,21 +495,6 @@ bool GarbageCollector::UnlinkByName(const std::string& Name, const std::string& 
     
     return Unlink(Obj, Property);
 }
-
-// bool GarbageCollector::UnlinkAllById(uint64_t OwnerId)
-// {
-//     QObject* Owner = FindById(OwnerId);
-//     if (!Owner) return false;
-//
-//     auto ObjectIter = Objects.find(Owner);
-//     unsigned char* Base = BytePtr(Owner);
-//     for (auto& MetaProp : ObjectIter->second.Ti->properties)
-//     {
-//         Unlink(Owner, MetaProp.name);
-//     }
-//     
-//     return true;
-// }
 
 bool GarbageCollector::UnlinkAllByName(const std::string& Name)
 {

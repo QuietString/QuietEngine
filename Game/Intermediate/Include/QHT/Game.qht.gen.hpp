@@ -13,6 +13,7 @@ using namespace qmeta;
 #include "Classes/Player.h"
 #include "Test/GcTester.h"
 #include "Test/TestObject.h"
+#include "Test/TestObject_Parent.h"
 
 static Variant _qmeta_invoke_QMonster_GetHealth(void* Self, const Variant* args, size_t argc) {
     (void)argc; auto* self = static_cast<QMonster*>(Self);
@@ -61,6 +62,14 @@ static Variant _qmeta_invoke_QPlayer_SetWalkSpeed(void* Self, const Variant* arg
     if (argc < 1) throw std::runtime_error("QPlayer::SetWalkSpeed requires 1 args");
     auto _a0 = args[0].as<float>();
     self->SetWalkSpeed(_a0);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QGcTester_SetAssignMode(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTester*>(Self);
+    if (argc < 1) throw std::runtime_error("QGcTester::SetAssignMode requires 1 args");
+    auto _a0 = args[0].as<int>();
+    self->SetAssignMode(_a0);
     return Variant();
 }
 
@@ -309,6 +318,16 @@ inline void QHT_Register_Game(Registry& R) {
     T_QGcTester.base_name = "QObject";
     T_QGcTester.properties.push_back(MetaProperty{"Roots", "std::vector<QObject*>", offsetof(QGcTester, Roots), MetaMap{} });
     T_QGcTester.properties.push_back(MetaProperty{"bUseVector", "bool", offsetof(QGcTester, bUseVector), MetaMap{} });
+    T_QGcTester.properties.push_back(MetaProperty{"AssignMode", "int", offsetof(QGcTester, AssignMode), MetaMap{} });
+    {
+        MetaFunction F;
+        F.name = "SetAssignMode";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTester_SetAssignMode;
+        F.params = std::vector<MetaParam>{ MetaParam{"InMode", "int"} };
+        F.meta = MetaMap{};
+        T_QGcTester.functions.push_back(std::move(F));
+    }
     {
         MetaFunction F;
         F.name = "SetUseVector";
@@ -446,7 +465,7 @@ inline void QHT_Register_Game(Registry& R) {
     }
     TypeInfo& T_QTestObject = R.add_type("QTestObject", sizeof(QTestObject));
     T_QTestObject.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
-    T_QTestObject.base_name = "QObject";
+    T_QTestObject.base_name = "QTestObject_Parent";
     T_QTestObject.properties.push_back(MetaProperty{"Integer", "int", offsetof(QTestObject, Integer), MetaMap{} });
     T_QTestObject.properties.push_back(MetaProperty{"Friend1", "QTestObject*", offsetof(QTestObject, Friend1), MetaMap{} });
     T_QTestObject.properties.push_back(MetaProperty{"Friend2", "QTestObject*", offsetof(QTestObject, Friend2), MetaMap{} });
@@ -481,4 +500,8 @@ inline void QHT_Register_Game(Registry& R) {
         F.meta = MetaMap{};
         T_QTestObject.functions.push_back(std::move(F));
     }
+    TypeInfo& T_QTestObject_Parent = R.add_type("QTestObject_Parent", sizeof(QTestObject_Parent));
+    T_QTestObject_Parent.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
+    T_QTestObject_Parent.base_name = "QObject";
+    T_QTestObject_Parent.properties.push_back(MetaProperty{"Children_Parent", "std::vector<QObject*>", offsetof(QTestObject_Parent, Children_Parent), MetaMap{} });
 }

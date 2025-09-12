@@ -17,6 +17,16 @@ public:
     QPROPERTY()
     bool bUseVector = true;
 
+    // 0: own-only, 1: parents-only, 2: random between available sides
+    QPROPERTY()
+    int AssignMode = 0;
+
+    QPROPERTY()
+    int GetAssignMode() const { return AssignMode; }
+
+    QFUNCTION()
+    void SetAssignMode(int InMode);
+    
     QFUNCTION()
     void SetUseVector(bool bUse);
     
@@ -53,7 +63,7 @@ public:
     void PatternDiamond(int Layers, int Breadth, int Seed = 3);
 
     QFUNCTION()
-    void ClearAll(bool bSilent = false);
+    void ClearAll(bool bSilent);
 
     // ---------- Mutations / breaks ----------
     // Break all links of selected parents at depth (existing).
@@ -89,7 +99,7 @@ public:
     
 private:
     void ClearGraph();
-    void LinkChild(QTestObject* Parent, QTestObject* Child);
+    void LinkChild(QTestObject* Parent, QTestObject* Child, std::mt19937* RngOpt);
 
     // Build helpers
     void BuildLayers(QTestObject* Root, bool bClearExisting);

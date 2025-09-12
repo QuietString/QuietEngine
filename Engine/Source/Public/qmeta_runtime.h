@@ -119,14 +119,68 @@ struct TypeInfo {
     void ForEachProperty(F&& Func) const
     {
         if (base) base->ForEachProperty(Func);
-        for (auto& p : properties) Func(p);
+        for (auto& MetaProp : properties) Func(MetaProp);
+    }
+
+
+    // for general unlink including parent's member variables. not sure if it's usable.
+    template <class F>
+    void ForEachPropertyWithPropertyName(F&& Func, const std::string PropertyName) const
+    {
+        if (base)
+        {
+            base->ForEachPropertyWithPropertyName(Func, PropertyName);   
+        }
+        
+        for (auto& MetaProp : properties)
+        {
+            Func(MetaProp, PropertyName);   
+        }
+    }
+    
+    // 1) Local-only property iteration (no bases)
+    template <class F>
+    void ForEachPropertyLocal(F&& Func) const
+    {
+        for (auto& MetaProp : properties) Func(MetaProp);
+    }
+
+    // 2) Option to include or exclude bases
+    template <class F>
+    void ForEachPropertyWithOption(F&& Func, bool bIncludeBases) const
+    {
+        if (bIncludeBases && base) base->ForEachProperty(Func);
+        for (auto& MetaProp : properties) Func(MetaProp);
+    }
+
+    // 3) Simple runtime "is-a" check using the resolved base chain
+    bool IsA(std::string_view TypeName) const
+    {
+        if (name == TypeName) return true;
+        const TypeInfo* Cur = base;
+        while (Cur)
+        {
+            if (Cur->name == TypeName)
+            {
+                return true;   
+            }
+            Cur = Cur->base;
+        }
+        return false;
     }
     
     template <class F>
     void ForEachFunction(F&& Func) const
     {
-        if (base) base->ForEachFunction(Func);
-        for (auto& f : functions) Func(f);
+        if (base)
+        {
+            base->ForEachFunction(Func);   
+        }
+        
+        for (auto& f : functions)
+        {
+            Func(f);   
+        }
     }
     
     const MetaProperty* FindProperty(std::string_view n) const

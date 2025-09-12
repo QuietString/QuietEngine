@@ -66,6 +66,23 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 GC.Collect();
                 return true;    
             }
+            else if (Tokens.size() == 2)
+            {
+                if (Tokens[1] == "t")
+                {
+                    GC.SetAllowTraverseParents(true);
+                    std::cout << "GC parent traversal enabled.\n";
+                }
+                else if (Tokens[1] == "f")
+                {
+                    GC.SetAllowTraverseParents(false);
+                    std::cout << "GC parent traversal disabled.\n";
+                }
+                else
+                {
+                    std::cout << "Usage: gc <t|f>\n";
+                }
+            }
             else if (Tokens.size() == 4)
             {
                 if (Tokens[1] == "set" && Tokens[2] == "interval")
@@ -144,27 +161,71 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
 
                 return true;
             }
-            
+            else if (Sub == "config")
+            {
+                // Usage: gctest config <AssignMode 0~2> <t|f|true|false|0|1>
+                if (Tokens.size() < 4)
+                {
+                    std::cout << "Usage: gctest config <AssignMode 0~2> <t|f>\n";
+                    return true;
+                }
+
+                long long ModeLL = 0;
+                if (!TryParseInt(Tokens[2], ModeLL) || ModeLL < 0 || ModeLL > 2)
+                {
+                    std::cout << "[gctest] AssignMode must be 0, 1, or 2.\n";
+                    return true;
+                }
+                const int AssignMode = static_cast<int>(ModeLL);
+
+                std::string bTok = Tokens[3];
+                for (auto& c : bTok) c = (char)std::tolower((unsigned char)c);
+                bool bUseVector = false;
+                if (bTok == "t" || bTok == "true" || bTok == "1") bUseVector = true;
+                else if (bTok == "f" || bTok == "false" || bTok == "0") bUseVector = false;
+                else
+                {
+                    std::cout << "[gctest] boolean must be t|f|true|false|0|1.\n";
+                    return true;
+                }
+
+                if (!Tester)
+                {
+                    std::cout << "[gctest] failed to get/create QGcTester\n";
+                    return true;
+                }
+
+                // Call setters via reflection
+                try
+                {
+                    std::vector<qmeta::Variant> Args1;
+                    Args1.emplace_back((long long)AssignMode);
+                    GC.CallByName(Tester->GetDebugName(), "SetAssignMode", Args1);
+
+                    std::vector<qmeta::Variant> Args2;
+                    Args2.emplace_back(bUseVector);
+                    GC.CallByName(Tester->GetDebugName(), "SetUseVector", Args2);
+                }
+                catch (const std::exception& e)
+                {
+                    std::cout << "[gctest] config error: " << e.what() << std::endl;
+                    return true;
+                }
+
+                std::cout << "[gctest] config applied on "
+                          << (Tester->GetDebugName().empty() ? "(Unnamed)" : Tester->GetDebugName())
+                          << " : AssignMode=" << AssignMode
+                          << ", bUseVector=" << (bUseVector ? "true" : "false") << std::endl;
+
+                return true;
+            }
+                        
             if (Tokens.size() == 2 && Tokens[1] == "clear")
             {
                 GC.Call(Tester, "ClearAll", {false});
                 return true;
             }
-
-            if (Tokens.size() == 2)
-            {
-                if (Tokens[1] == "s")
-                {
-                    GC.Call(Tester, "SetUseVector", {false});
-                    return true;
-                }
-                else if (Tokens[1] == "v")
-                {
-                    GC.Call(Tester, "SetUseVector", {true});
-                    return true;
-                }
-            }
-
+            
             if (Tokens.size() >= 2 && Tokens[1] == "build")
             {
                 if (Tokens.size() < 5)
