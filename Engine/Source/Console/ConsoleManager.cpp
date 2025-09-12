@@ -77,6 +77,12 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
         }
         else if (Cmd == "gctest")
         {
+            if (Tokens.size() < 2)
+            {
+                std::cout << "Usage: gctest <subcmd> ...\n";
+                return true;
+            }
+            
             auto* W = GetWorld();
             if (!W) { std::cout << "World not found.\n"; return true; }
 
@@ -96,15 +102,52 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             };
 
             QObject* Tester = FindTester();
+            
             if (!Tester)
             {
                 std::cout << "QGcTester instance not found. Make sure the Game module created it in BeginPlay().\n";
                 return true;
             }
 
+            const std::string& Sub = Tokens[1];
+            
+            if (Sub == "repeat")
+            {
+                if (Tokens.size() < 5)
+                {
+                    std::cout << "Usage: gctest repeat <NumSteps> <NumNodes> <NumBranches>\n";
+                    return true;
+                }
+
+                long long NumSteps = 0, NumNodes = 0, NumBranches = 0;
+                if (!TryParseInt(Tokens[2], NumSteps) ||
+                    !TryParseInt(Tokens[3], NumNodes) ||
+                    !TryParseInt(Tokens[4], NumBranches))
+                {
+                    std::cout << "[gctest] invalid args. expected integers.\n";
+                    return true;
+                }
+                
+                if (!Tester)
+                {
+                    std::cout << "[gctest] failed to get/create QGcTester\n";
+                    return true;
+                }
+
+                // Call by reflection to avoid direct header dependency
+                std::vector<qmeta::Variant> Args;
+                Args.emplace_back(NumSteps);
+                Args.emplace_back(NumNodes);
+                Args.emplace_back(NumBranches);
+
+                qmeta::Variant Ret = GC.CallByName(Tester->GetDebugName(), "RepeatRandomAndCollect", Args);
+
+                return true;
+            }
+            
             if (Tokens.size() == 2 && Tokens[1] == "clear")
             {
-                GC.Call(Tester, "ClearAll", {});
+                GC.Call(Tester, "ClearAll", {false});
                 return true;
             }
 
@@ -156,7 +199,11 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 }
                 else if (Mode == "grid")
                 {
-                    if (Tokens.size() < 5) { std::cout << "gctest pattern grid <w> <h> [seed]\n"; return true; }
+                    if (Tokens.size() < 5)
+                    {
+                        std::cout << "gctest pattern grid <w> <h> [seed]\n";
+                        return true;
+                    }
                     int w = std::stoi(Tokens[3]);
                     int h = std::stoi(Tokens[4]);
                     int seed = (Tokens.size() >= 6) ? std::stoi(Tokens[5]) : 1;

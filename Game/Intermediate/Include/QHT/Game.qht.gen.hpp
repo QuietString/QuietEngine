@@ -123,7 +123,9 @@ static Variant _qmeta_invoke_QGcTester_PatternDiamond(void* Self, const Variant*
 
 static Variant _qmeta_invoke_QGcTester_ClearAll(void* Self, const Variant* args, size_t argc) {
     (void)argc; auto* self = static_cast<QGcTester*>(Self);
-    self->ClearAll();
+    if (argc < 1) throw std::runtime_error("QGcTester::ClearAll requires 1 args");
+    auto _a0 = args[0].as<bool>();
+    self->ClearAll(_a0);
     return Variant();
 }
 
@@ -191,6 +193,16 @@ static Variant _qmeta_invoke_QGcTester_Churn(void* Self, const Variant* args, si
     auto _a3 = args[3].as<int>();
     auto _a4 = args[4].as<int>();
     self->Churn(_a0, _a1, _a2, _a3, _a4);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QGcTester_RepeatRandomAndCollect(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTester*>(Self);
+    if (argc < 3) throw std::runtime_error("QGcTester::RepeatRandomAndCollect requires 3 args");
+    auto _a0 = args[0].as<int>();
+    auto _a1 = args[1].as<int>();
+    auto _a2 = args[2].as<int>();
+    self->RepeatRandomAndCollect(_a0, _a1, _a2);
     return Variant();
 }
 
@@ -356,7 +368,7 @@ inline void QHT_Register_Game(Registry& R) {
         F.name = "ClearAll";
         F.return_type = "void";
         F.invoker = &_qmeta_invoke_QGcTester_ClearAll;
-        F.params = std::vector<MetaParam>{  };
+        F.params = std::vector<MetaParam>{ MetaParam{"bSilent", "bool"} };
         F.meta = MetaMap{};
         T_QGcTester.functions.push_back(std::move(F));
     }
@@ -420,6 +432,15 @@ inline void QHT_Register_Game(Registry& R) {
         F.return_type = "void";
         F.invoker = &_qmeta_invoke_QGcTester_Churn;
         F.params = std::vector<MetaParam>{ MetaParam{"Steps", "int"}, MetaParam{"AllocPerStep", "int"}, MetaParam{"BreakPct", "double"}, MetaParam{"GcEveryN", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcTester.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "RepeatRandomAndCollect";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTester_RepeatRandomAndCollect;
+        F.params = std::vector<MetaParam>{ MetaParam{"NumSteps", "int"}, MetaParam{"NumNodes", "int"}, MetaParam{"NumBranches", "int"} };
         F.meta = MetaMap{};
         T_QGcTester.functions.push_back(std::move(F));
     }

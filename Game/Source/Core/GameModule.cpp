@@ -35,10 +35,8 @@ public:
     {
         std::cout << "Game begin play" << std::endl;
 
-        //Demo::GenerateSimpleTest();
-
-        //Demo::RunTester();
-        Demo::RunReflectionTest();
+        Demo::RunTester();
+        //Demo::RunReflectionTest();
     }
     
     virtual void Tick(double DeltaSeconds) override

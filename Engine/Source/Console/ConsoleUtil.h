@@ -9,6 +9,9 @@ namespace ConsoleUtil
 
     std::string JoinClassChain(const std::vector<const qmeta::TypeInfo*>& Chain);
 
+    // Parse int with error handling
+    bool TryParseInt(const std::string& s, long long& Out);
+    
     // ---- helpers for type-aware argument parsing ----
     std::string Trim(std::string s);
     
@@ -24,10 +27,10 @@ namespace ConsoleUtil
 
     bool IsFloatType(const std::string& t);
 
-    bool IsSignedIntType(const std::string& Token);
+    bool IsSignedIntType(const std::string& Type);
 
-    bool IsUnsignedIntType(const std::string& Token);
-
+    bool IsUnsignedIntType(const std::string& Type);
+    
     // Parse one token to Variant using expected param type. Returns true on success.
     bool ParseTokenByType(const std::string& Token, const std::string& ExpectedTypeRaw, GarbageCollector& GC, qmeta::Variant& OutVar);
 

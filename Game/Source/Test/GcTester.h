@@ -53,7 +53,7 @@ public:
     void PatternDiamond(int Layers, int Breadth, int Seed = 3);
 
     QFUNCTION()
-    void ClearAll();
+    void ClearAll(bool bSilent = false);
 
     // ---------- Mutations / breaks ----------
     // Break all links of selected parents at depth (existing).
@@ -84,6 +84,9 @@ public:
     QFUNCTION()
     void Churn(int Steps, int AllocPerStep, double BreakPct, int GcEveryN, int Seed = 2025);
 
+    QFUNCTION()
+    void RepeatRandomAndCollect(int NumSteps, int NumNodes, int NumBranches);
+    
 private:
     void ClearGraph();
     void LinkChild(QTestObject* Parent, QTestObject* Child);

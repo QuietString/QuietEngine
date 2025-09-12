@@ -25,6 +25,19 @@ std::string ConsoleUtil::JoinClassChain(const std::vector<const qmeta::TypeInfo*
     return os.str();
 }
 
+bool ConsoleUtil::TryParseInt(const std::string& s, long long& Out)
+{
+    try
+    {
+        Out = std::stoll(s);
+        return true;
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
 std::string ConsoleUtil::Trim(std::string s)
 {
     auto is_space = [](unsigned char c){ return std::isspace(c); };
@@ -72,14 +85,14 @@ bool ConsoleUtil::IsFloatType(const std::string& t)
     return (t == "float" || t == "double");
 }
 
-bool ConsoleUtil::IsSignedIntType(const std::string& Token)
+bool ConsoleUtil::IsSignedIntType(const std::string& Type)
 {
-    return (Token == "int" || Token == "int32_t" || Token == "int64_t" || Token == "long" || Token == "longlong");
+    return (Type == "int" || Type == "int32_t" || Type == "int64_t" || Type == "long" || Type == "longlong");
 }
 
-bool ConsoleUtil::IsUnsignedIntType(const std::string& Token)
+bool ConsoleUtil::IsUnsignedIntType(const std::string& Type)
 {
-    return (Token == "unsigned" || Token == "unsignedint" || Token == "uint32_t" || Token == "uint64_t" || Token == "unsignedlonglong" || Token == "size_t");
+    return (Type == "unsigned" || Type == "unsignedint" || Type == "uint32_t" || Type == "uint64_t" || Type == "unsignedlonglong" || Type == "size_t");
 }
 
 bool ConsoleUtil::ParseTokenByType(const std::string& Token, const std::string& ExpectedTypeRaw, GarbageCollector& GC, qmeta::Variant& OutVar)

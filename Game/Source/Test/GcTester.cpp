@@ -526,12 +526,15 @@ void QGcTester::PatternDiamond(int Layers, int Breadth, int Seed)
     std::cout << "[GcTester] Diamond: layers=" << Layers << " breadth=" << Breadth << " total=" << AllNodes.size() << "\n";
 }
 
-void QGcTester::ClearAll()
+void QGcTester::ClearAll(bool bSilient)
 {
     ClearGraph();
     GarbageCollector::Get().Collect(true);
-    
-    std::cout << "[GcTester] Cleared all test objects. \n";
+
+    if (!bSilient)
+    {
+        std::cout << "[GcTester] Cleared all test objects. \n";   
+    }
 }
 
 // ---------------- Break / mutate ----------------
@@ -805,4 +808,17 @@ void QGcTester::Churn(int Steps, int AllocPerStep, double BreakPct, int GcEveryN
               << " alloc/step=" << AllocPerStep
               << " breakPct=" << BreakPct
               << " gcEveryN=" << GcEveryN << "\n";
+}
+
+void QGcTester::RepeatRandomAndCollect(int NumSteps, int NumNodes, int NumBranches)
+{
+    GarbageCollector& GC = GarbageCollector::Get();
+    for (int i = 0; i < NumSteps; ++i)
+    {
+        ClearAll(true);
+        PatternRandom(NumNodes, NumBranches, i);
+        GC.Collect();
+    }
+
+    ClearAll(true);
 }
