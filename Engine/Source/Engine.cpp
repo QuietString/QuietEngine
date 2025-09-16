@@ -64,7 +64,14 @@ int main(int argc, char* argv[])
 
     // BeginPlay() all modules.
     M.BeginPlayAll();
-    
+
+    // Start background console input
+    qruntime::StartConsoleInput();
+
+    // Run the main loop (fixed 16ms ~60Hz)
+    std::chrono::milliseconds TimeStep(16);
+    qruntime::RunMainLoop(TimeStep,5);
+
     // Bind game tick if the primary implements ITickableModule
     qmod::ITickableModule* Tickable = dynamic_cast<qmod::ITickableModule*>(Primary);
     qruntime::SetExternalTick([Tickable](double Dt)
@@ -74,14 +81,7 @@ int main(int argc, char* argv[])
             Tickable->Tick(Dt);
         }
     });
-
-    // Start background console input
-    qruntime::StartConsoleInput();
-
-    // Run the main loop (fixed 16ms ~60Hz)
-    std::chrono::milliseconds TimeStep(16);
-    qruntime::RunMainLoop(TimeStep,5);
-
+    
     // Cleanup
     qruntime::StopConsoleInput();
     M.ShutdownAll();

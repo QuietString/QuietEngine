@@ -68,12 +68,12 @@ private:
     {
         const qmeta::TypeInfo* Ti = nullptr;
         uint64_t Id = 0;
-        bool Marked = false;
         uint32_t MarkEpoch = 0; 
     };
 
     // --- GC fast paths ---
-    struct FPtrOffsetLayout {
+    struct FPtrOffsetLayout
+    {
         std::vector<std::size_t> RawOffsets; // T*: QObject*
         std::vector<std::size_t> VecOffsets; // std::vector<T*>
     };

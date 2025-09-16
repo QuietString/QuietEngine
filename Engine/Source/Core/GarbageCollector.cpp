@@ -270,7 +270,7 @@ double GarbageCollector::Collect(bool bSilent)
     CurrentEpoch++;
     if (CurrentEpoch == 0)
     {
-        // wrap-around
+        // wrap-around (when overflow)
         for (auto& [Obj, Node] : Objects)
         {
             Node.MarkEpoch = 0;   
@@ -309,9 +309,12 @@ double GarbageCollector::Collect(bool bSilent)
 
     for (auto& [Obj, Node] : Objects)
     {
-        if (Node.MarkEpoch != CurrentEpoch) continue;
-        QObject* Owner = Obj;
-        unsigned char* Base = BytePtr(Owner);
+        if (Node.MarkEpoch != CurrentEpoch)
+        {
+            continue;
+        }
+        
+        unsigned char* Base = BytePtr(Obj);
         const FPtrOffsetLayout& Layout = GetPtrLayout(*Node.Ti);
 
         for (size_t Offset : Layout.RawOffsets)
@@ -324,17 +327,15 @@ double GarbageCollector::Collect(bool bSilent)
         }
         for (size_t Offset : Layout.VecOffsets)
         {
-            auto* vec = reinterpret_cast<std::vector<QObject*>*>(Base + Offset);
-            vec->erase(std::remove_if(vec->begin(), vec->end(),
-                                      [&](QObject* p){ return p && DeadSet.count(p); }),
-                       vec->end());
+            auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Base + Offset);
+            std::erase_if(*Vec,[&](QObject* p){ return p && DeadSet.count(p); });
         }
     }
     
     const auto TFix1 = Clock::now();
     const double MsFixup = ms(TFix1, TFix0);
 
-    // 5) Sweep (delete the dead and remove from maps)
+    // 5) Sweep (Delete the dead and remove from maps)
     const auto TSweep0 = Clock::now();
     for (QObject* D : Dead)
     {
@@ -616,14 +617,6 @@ bool GarbageCollector::SetProperty(QObject* Obj, const std::string& Property, co
     return false;
 }
 
-// bool GarbageCollector::SetPropertyById(uint64_t Id, const std::string& Property, const std::string& Value)
-// {
-//     QObject* Obj = FindById(Id);
-//     if (!Obj) return false;
-//
-//     return SetProperty(Obj, Property, Value);
-// }
-
 bool GarbageCollector::SetPropertyByName(const std::string& Name, const std::string& Property, const std::string& Value)
 {
     QObject* Obj = FindByDebugName(Name);
@@ -640,14 +633,6 @@ qmeta::Variant GarbageCollector::Call(QObject* Obj, const std::string& FuncName,
     return qmeta::CallByName(Obj, *It->second.Ti, FuncName, Args);
 }
 
-// qmeta::Variant GarbageCollector::CallById(uint64_t Id, const std::string& Function, const std::vector<qmeta::Variant>& Args)
-// {
-//     QObject* Obj = FindById(Id);
-//     if (!Obj) throw std::runtime_error("Object not found by Id");
-//
-//     return Call(Obj, Function, Args);
-// }
-
 qmeta::Variant GarbageCollector::CallByName(const std::string& Name, const std::string& Function, const std::vector<qmeta::Variant>& Args)
 {
     QObject* Obj = FindByDebugName(Name);
@@ -655,31 +640,3 @@ qmeta::Variant GarbageCollector::CallByName(const std::string& Name, const std::
 
     return Call(Obj, Function, Args);
 }
-
-// bool GarbageCollector::Save(uint64_t Id, const std::string& FileNameIfAny)
-// {
-//     QObject* Obj = FindById(Id);
-//     if (!Obj) return false;
-//     auto It = Objects.find(Obj);
-//     if (It == Objects.end()) return false;
-//
-//     auto Dir = qasset::DefaultAssetDirFor(*It->second.Ti);
-//     const std::string Fn = FileNameIfAny.empty() ? (It->second.Ti->name + ".qasset") : FileNameIfAny;
-//     qasset::SaveOrThrow(Obj, *It->second.Ti, Dir, Fn);
-//     std::cout << "[Save] Id=" << Id << " -> " << (Dir / Fn).string() << "\n";
-//     return true;
-// }
-//
-// bool GarbageCollector::Load(uint64_t Id, const std::string& FileNameIfAny)
-// {
-//     QObject* Obj = FindById(Id);
-//     if (!Obj) return false;
-//     auto It = Objects.find(Obj);
-//     if (It == Objects.end()) return false;
-//
-//     auto Dir = qasset::DefaultAssetDirFor(*It->second.Ti);
-//     const std::string Fn = FileNameIfAny.empty() ? (It->second.Ti->name + ".qasset") : FileNameIfAny;
-//     qasset::LoadOrThrow(Obj, *It->second.Ti, Dir / Fn);
-//     std::cout << "[Load] Id=" << Id << " <- " << (Dir / Fn).string() << "\n";
-//     return true;
-// }
