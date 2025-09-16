@@ -14,6 +14,8 @@ using qmeta::MetaFunction;
 namespace 
 {
     GarbageCollector* GcSingleton;
+    // Global map: TypeName -> default-ctor factory
+    static std::unordered_map<std::string, GarbageCollector::FactoryFunc> GTypeFactories;
 }
 
 void GarbageCollector::SetGcSingleton(GarbageCollector* Gc)
@@ -45,7 +47,7 @@ void GarbageCollector::RegisterInternal(QObject* Obj, const TypeInfo& Ti, const 
     NameToObjectMap[Name] = Obj;
 }
 
-QObject* GarbageCollector::NewByTypeName(const std::string& TypeName, const std::string& Name)
+QObject* GarbageCollector::NewByTypeName(const std::string& TypeName)
 {
     const TypeInfo* Ti = qmeta::GetRegistry().find(TypeName);
     if (!Ti)
@@ -53,10 +55,32 @@ QObject* GarbageCollector::NewByTypeName(const std::string& TypeName, const std:
         throw std::runtime_error("Type not found: " + TypeName);
     }
 
-    // Allocate by name is not generally possible in C++ without factories.
-    // For demo purposes create a raw block and require user to have a default ctor via placement new.
-    // Better: you can add a factory map later.
-    throw std::runtime_error("NewByTypeName: factory not implemented for type " + TypeName);
+    auto It = GTypeFactories.find(TypeName);
+    if (It == GTypeFactories.end())
+    {
+        throw std::runtime_error("No factory registered for type: " + TypeName);
+    }
+
+    QObject* Obj = It->second(); // NewObject<T>() inside factory
+    if (!Obj)
+    {
+        throw std::runtime_error("Factory failed for type: " + TypeName);
+    }
+
+    // If a custom name is provided, override the auto name and update the index.
+    // if (!Name.empty())
+    // {
+    //     const std::string Old = Obj->GetDebugName();
+    //     Obj->SetDebugName(Name);
+    //     NameToObjectMap.erase(Old);
+    //     NameToObjectMap[Name] = Obj;
+    // }
+    return Obj;
+}
+
+void GarbageCollector::RegisterTypeFactory(const std::string& TypeName, FactoryFunc Fn)
+{
+    GTypeFactories[TypeName] = std::move(Fn);
 }
 
 void GarbageCollector::Initialize()

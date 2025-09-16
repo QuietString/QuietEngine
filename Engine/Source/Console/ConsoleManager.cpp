@@ -1,5 +1,6 @@
 ﻿#include "ConsoleManager.h"
 
+#include <iomanip>
 #include <iostream>
 
 #include "ConsoleUtil.h"
@@ -494,9 +495,29 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
 
             return true;
         }
-        else if (Cmd == "new" && Tokens.size() >= 3)
+        else if (Cmd == "new")
         {
-            std::cout << "[new] not implemented for now.\n";
+            std::string Usage = "Usage: new <Type> \n";
+            if (Tokens.size() != 2)
+            {
+                std::cout << Usage;
+                return true;
+            }
+
+            const std::string& TypeName = Tokens[1];
+            const std::string  Name     = (Tokens.size() == 3) ? Tokens[2] : std::string{};
+
+            GarbageCollector& GC = GarbageCollector::Get();
+            try
+            {
+                QObject* Obj = GC.NewByTypeName(TypeName);
+                const qmeta::TypeInfo* Ti = GC.GetTypeInfo(Obj);
+                std::cout << "[new] Created " << (Ti ? Ti->name : TypeName) << " as " << Obj->GetDebugName() << " (id=" << Obj->GetObjectId() << ")\n";
+            }
+            catch (const std::exception& e)
+            {
+                std::cout << "[new] " << e.what() << "\n";
+            }
             return true;
         }
         else if (Cmd == "unlink")

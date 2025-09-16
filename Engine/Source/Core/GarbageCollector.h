@@ -1,4 +1,6 @@
 ﻿#pragma once
+#include <functional>
+
 #include "Object.h"
 #include "qmeta_runtime.h"
 
@@ -10,8 +12,12 @@ public:
     static void SetGcSingleton(GarbageCollector* Gc);
     
     // Create by type name (for console)
-    QObject* NewByTypeName(const std::string& TypeName, const std::string& Name);
+    QObject* NewByTypeName(const std::string& TypeName);
 
+    // Type factory (registration per module)
+    using FactoryFunc = std::function<QObject*()>;
+    static void RegisterTypeFactory(const std::string& TypeName, FactoryFunc Fn);
+    
     void Initialize();
     
     // Roots
