@@ -74,11 +74,26 @@ struct Variant {
 // -------- Metadata maps --------
 using MetaMap = std::unordered_map<std::string, std::string>;
 
+// Bit flags for fast property classification for garbage collection
+enum EPropertyGcFlags : uint8_t
+{
+    PF_None                 = 0,
+    PF_RawQObjectPtr        = 1 << 0,   // T* where T : QObject (or subclass)
+    PF_VectorOfQObjectPtr   = 1 << 1,   // std::vector<T*> where T : QObject
+};
+
+inline bool Any(uint8_t f, uint8_t mask)
+{
+    return (f & mask) != 0;
+}
+    
 struct MetaProperty {
     std::string name;
     std::string type;
     std::size_t offset = 0;
     MetaMap     meta;
+
+    uint8_t GcFlags = PF_None;
 };
 
 struct MetaParam {

@@ -3,6 +3,8 @@
 # Emits a single header per module with inline invokers and a QHT_Register_<Unit>(Registry&).
 
 import argparse, re
+
+from Utils import *
 from pathlib import Path
 
 CLASS_RE = re.compile(r"\b(class|struct)\s+(?P<name>[A-Za-z_]\w*)\s*(?:\:(?P<bases>[^{]+))?\{", re.M)
@@ -227,6 +229,8 @@ using namespace qmeta;
 def emit_header(classes, out_path: Path, unit: str, bases):
     lines = [HEADER_H, f"// Unit: {unit}\n\n"]
 
+    class_map = {c.name: c for c in classes}
+
     # Unique includes
     seen = set()
     incs = []
@@ -296,8 +300,11 @@ def emit_header(classes, out_path: Path, unit: str, bases):
         for p in ci.properties:
             meta_items = ", ".join([f"std::make_pair(std::string(\"{k}\"), std::string(\"{v}\"))" for k,v in p.meta])
             meta_code = f"MetaMap{{ {meta_items} }}" if meta_items else "MetaMap{}"
+            mask = classify_gc_flags(p.type, class_map)
+            flags_code = gcflags_expr(mask)
             lines.append(
-                f"    T_{cname}.properties.push_back(MetaProperty{{\"{p.name}\", \"{p.type}\", offsetof({cname}, {p.name}), {meta_code} }});\n"
+                f"    T_{cname}.properties.push_back(MetaProperty{{\"{p.name}\", \"{p.type}\", "
+                f"offsetof({cname}, {p.name}), {meta_code}, {flags_code} }});\n"
             )
         for f in ci.functions:
             params_vec = ", ".join([f"MetaParam{{\"{pn}\", \"{pt}\"}}" for (pt,pn) in f.params])

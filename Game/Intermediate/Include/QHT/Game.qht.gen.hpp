@@ -225,8 +225,8 @@ inline void QHT_Register_Game(Registry& R) {
     TypeInfo& T_QMonster = R.add_type("QMonster", sizeof(QMonster));
     T_QMonster.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
     T_QMonster.base_name = "QActor";
-    T_QMonster.properties.push_back(MetaProperty{"Health", "int", offsetof(QMonster, Health), MetaMap{} });
-    T_QMonster.properties.push_back(MetaProperty{"Target", "QActor*", offsetof(QMonster, Target), MetaMap{} });
+    T_QMonster.properties.push_back(MetaProperty{"Health", "int", offsetof(QMonster, Health), MetaMap{}, PF_None });
+    T_QMonster.properties.push_back(MetaProperty{"Target", "QActor*", offsetof(QMonster, Target), MetaMap{}, PF_None });
     {
         MetaFunction F;
         F.name = "GetHealth";
@@ -284,10 +284,10 @@ inline void QHT_Register_Game(Registry& R) {
     TypeInfo& T_QPlayer = R.add_type("QPlayer", sizeof(QPlayer));
     T_QPlayer.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
     T_QPlayer.base_name = "QActor";
-    T_QPlayer.properties.push_back(MetaProperty{"WalkSpeed", "float", offsetof(QPlayer, WalkSpeed), MetaMap{} });
-    T_QPlayer.properties.push_back(MetaProperty{"Name", "std::string", offsetof(QPlayer, Name), MetaMap{} });
-    T_QPlayer.properties.push_back(MetaProperty{"Friend", "QPlayer*", offsetof(QPlayer, Friend), MetaMap{} });
-    T_QPlayer.properties.push_back(MetaProperty{"Friends", "std::vector<QPlayer*>", offsetof(QPlayer, Friends), MetaMap{} });
+    T_QPlayer.properties.push_back(MetaProperty{"WalkSpeed", "float", offsetof(QPlayer, WalkSpeed), MetaMap{}, PF_None });
+    T_QPlayer.properties.push_back(MetaProperty{"Name", "std::string", offsetof(QPlayer, Name), MetaMap{}, PF_None });
+    T_QPlayer.properties.push_back(MetaProperty{"Friend", "QPlayer*", offsetof(QPlayer, Friend), MetaMap{}, PF_RawQObjectPtr });
+    T_QPlayer.properties.push_back(MetaProperty{"Friends", "std::vector<QPlayer*>", offsetof(QPlayer, Friends), MetaMap{}, PF_VectorOfQObjectPtr });
     {
         MetaFunction F;
         F.name = "SetWalkSpeed";
@@ -300,9 +300,9 @@ inline void QHT_Register_Game(Registry& R) {
     TypeInfo& T_QGcTester = R.add_type("QGcTester", sizeof(QGcTester));
     T_QGcTester.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
     T_QGcTester.base_name = "QObject";
-    T_QGcTester.properties.push_back(MetaProperty{"Roots", "std::vector<QObject*>", offsetof(QGcTester, Roots), MetaMap{} });
-    T_QGcTester.properties.push_back(MetaProperty{"AssignMode", "int", offsetof(QGcTester, AssignMode), MetaMap{} });
-    T_QGcTester.properties.push_back(MetaProperty{"bUseVector", "bool", offsetof(QGcTester, bUseVector), MetaMap{} });
+    T_QGcTester.properties.push_back(MetaProperty{"Roots", "std::vector<QObject*>", offsetof(QGcTester, Roots), MetaMap{}, PF_None });
+    T_QGcTester.properties.push_back(MetaProperty{"AssignMode", "int", offsetof(QGcTester, AssignMode), MetaMap{}, PF_None });
+    T_QGcTester.properties.push_back(MetaProperty{"bUseVector", "bool", offsetof(QGcTester, bUseVector), MetaMap{}, PF_None });
     {
         MetaFunction F;
         F.name = "PatternChain";
@@ -441,13 +441,13 @@ inline void QHT_Register_Game(Registry& R) {
     TypeInfo& T_QTestObject = R.add_type("QTestObject", sizeof(QTestObject));
     T_QTestObject.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
     T_QTestObject.base_name = "QTestObject_Parent";
-    T_QTestObject.properties.push_back(MetaProperty{"Integer", "int", offsetof(QTestObject, Integer), MetaMap{} });
-    T_QTestObject.properties.push_back(MetaProperty{"Friend1", "QTestObject*", offsetof(QTestObject, Friend1), MetaMap{} });
-    T_QTestObject.properties.push_back(MetaProperty{"Friend2", "QTestObject*", offsetof(QTestObject, Friend2), MetaMap{} });
-    T_QTestObject.properties.push_back(MetaProperty{"Friend3", "QTestObject*", offsetof(QTestObject, Friend3), MetaMap{} });
-    T_QTestObject.properties.push_back(MetaProperty{"Friend4", "QTestObject*", offsetof(QTestObject, Friend4), MetaMap{} });
-    T_QTestObject.properties.push_back(MetaProperty{"Friend5", "QTestObject*", offsetof(QTestObject, Friend5), MetaMap{} });
-    T_QTestObject.properties.push_back(MetaProperty{"Children", "std::vector<QTestObject*>", offsetof(QTestObject, Children), MetaMap{} });
+    T_QTestObject.properties.push_back(MetaProperty{"Integer", "int", offsetof(QTestObject, Integer), MetaMap{}, PF_None });
+    T_QTestObject.properties.push_back(MetaProperty{"Friend1", "QTestObject*", offsetof(QTestObject, Friend1), MetaMap{}, PF_RawQObjectPtr });
+    T_QTestObject.properties.push_back(MetaProperty{"Friend2", "QTestObject*", offsetof(QTestObject, Friend2), MetaMap{}, PF_RawQObjectPtr });
+    T_QTestObject.properties.push_back(MetaProperty{"Friend3", "QTestObject*", offsetof(QTestObject, Friend3), MetaMap{}, PF_RawQObjectPtr });
+    T_QTestObject.properties.push_back(MetaProperty{"Friend4", "QTestObject*", offsetof(QTestObject, Friend4), MetaMap{}, PF_RawQObjectPtr });
+    T_QTestObject.properties.push_back(MetaProperty{"Friend5", "QTestObject*", offsetof(QTestObject, Friend5), MetaMap{}, PF_RawQObjectPtr });
+    T_QTestObject.properties.push_back(MetaProperty{"Children", "std::vector<QTestObject*>", offsetof(QTestObject, Children), MetaMap{}, PF_VectorOfQObjectPtr });
     {
         MetaFunction F;
         F.name = "SetInteger";
@@ -478,5 +478,5 @@ inline void QHT_Register_Game(Registry& R) {
     TypeInfo& T_QTestObject_Parent = R.add_type("QTestObject_Parent", sizeof(QTestObject_Parent));
     T_QTestObject_Parent.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
     T_QTestObject_Parent.base_name = "QObject";
-    T_QTestObject_Parent.properties.push_back(MetaProperty{"Children_Parent", "std::vector<QObject*>", offsetof(QTestObject_Parent, Children_Parent), MetaMap{} });
+    T_QTestObject_Parent.properties.push_back(MetaProperty{"Children_Parent", "std::vector<QObject*>", offsetof(QTestObject_Parent, Children_Parent), MetaMap{}, PF_None });
 }

@@ -56,8 +56,8 @@ inline void QHT_Register_Engine(Registry& R) {
     TypeInfo& T_QActor = R.add_type("QActor", sizeof(QActor));
     T_QActor.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
     T_QActor.base_name = "QObject";
-    T_QActor.properties.push_back(MetaProperty{"ActorInteger", "int", offsetof(QActor, ActorInteger), MetaMap{} });
-    T_QActor.properties.push_back(MetaProperty{"Owner", "QObject*", offsetof(QActor, Owner), MetaMap{} });
+    T_QActor.properties.push_back(MetaProperty{"ActorInteger", "int", offsetof(QActor, ActorInteger), MetaMap{}, PF_None });
+    T_QActor.properties.push_back(MetaProperty{"Owner", "QObject*", offsetof(QActor, Owner), MetaMap{}, PF_RawQObjectPtr });
     {
         MetaFunction F;
         F.name = "SetActorInteger";
@@ -88,15 +88,15 @@ inline void QHT_Register_Engine(Registry& R) {
     TypeInfo& T_QCharacter = R.add_type("QCharacter", sizeof(QCharacter));
     T_QCharacter.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
     T_QCharacter.base_name = "QActor";
-    T_QCharacter.properties.push_back(MetaProperty{"Health", "int", offsetof(QCharacter, Health), MetaMap{} });
-    T_QCharacter.properties.push_back(MetaProperty{"TestValue", "float", offsetof(QCharacter, TestValue), MetaMap{} });
+    T_QCharacter.properties.push_back(MetaProperty{"Health", "int", offsetof(QCharacter, Health), MetaMap{}, PF_None });
+    T_QCharacter.properties.push_back(MetaProperty{"TestValue", "float", offsetof(QCharacter, TestValue), MetaMap{}, PF_None });
     TypeInfo& T_QObject = R.add_type("QObject", sizeof(QObject));
     T_QObject.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
     T_QObject.base_name = "QObjectBase";
     TypeInfo& T_QWorld = R.add_type("QWorld", sizeof(QWorld));
     T_QWorld.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Engine")) };
     T_QWorld.base_name = "QObject";
-    T_QWorld.properties.push_back(MetaProperty{"Objects", "std::vector<QObject*>", offsetof(QWorld, Objects), MetaMap{} });
+    T_QWorld.properties.push_back(MetaProperty{"Objects", "std::vector<QObject*>", offsetof(QWorld, Objects), MetaMap{}, PF_VectorOfQObjectPtr });
     {
         MetaFunction F;
         F.name = "AddObject";

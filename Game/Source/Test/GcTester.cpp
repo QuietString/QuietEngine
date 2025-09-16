@@ -768,7 +768,7 @@ void QGcTester::RepeatRandomAndCollect(int NumSteps, int NumNodes, int NumBranch
     for (int i = 0; i < NumSteps; ++i)
     {
         PatternRandom(NumNodes, NumBranches, i + 12345);
-        GarbageCollector::Get().Collect(true);
+        GarbageCollector::Get().Collect(false);
         ClearAll(true);
     }
 

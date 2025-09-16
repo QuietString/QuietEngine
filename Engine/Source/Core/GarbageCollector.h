@@ -88,8 +88,11 @@ private:
     double Interval = 2.0;
 
 public:
+    static bool IsPointerType(const qmeta::MetaProperty& MetaProp) { return (MetaProp.GcFlags & qmeta::PF_RawQObjectPtr) != 0; }
     static bool IsPointerType(const std::string& Type);
+
     static bool IsVectorOfPointer(const std::string& Type);
+    static bool IsVectorOfPointer(const qmeta::MetaProperty& MetaProp) { return (MetaProp.GcFlags & qmeta::PF_VectorOfQObjectPtr) != 0; }
 
     static unsigned char* BytePtr(void* p) { return static_cast<unsigned char*>(p); }
 

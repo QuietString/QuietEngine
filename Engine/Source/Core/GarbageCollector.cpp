@@ -131,7 +131,7 @@ void GarbageCollector::TraversePointers(QObject* Obj, const TypeInfo& Ti, std::v
 
     auto Visitor = [&](const qmeta::MetaProperty& P)
     {
-        if (IsPointerType(P.type))
+        if (IsPointerType(P))
         {
             // any raw pointer T*
             QObject* const* Slot = reinterpret_cast<QObject* const*>(Base + P.offset);
@@ -142,7 +142,7 @@ void GarbageCollector::TraversePointers(QObject* Obj, const TypeInfo& Ti, std::v
                     OutChildren.push_back(*Slot);
             }
         }
-        else if (IsVectorOfPointer(P.type))
+        else if (IsVectorOfPointer(P))
         {
             // any std::vector<T*>, treat as vector<QObject*>
             auto* Vec = reinterpret_cast<const std::vector<QObject*>*>(Base + P.offset);
@@ -238,7 +238,7 @@ double GarbageCollector::Collect(bool bSilent)
 
         Ti.ForEachProperty([&](const qmeta::MetaProperty& P)
         {
-            if (IsPointerType(P.type))
+            if (IsPointerType(P))
             {
                 QObject** Slot = reinterpret_cast<QObject**>(Base + P.offset);
                 if (Slot && *Slot)
@@ -250,7 +250,7 @@ double GarbageCollector::Collect(bool bSilent)
                     }
                 }
             }
-            else if (IsVectorOfPointer(P.type))
+            else if (IsVectorOfPointer(P))
             {
                 auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Base + P.offset);
                 for (QObject*& Child : *Vec)
@@ -460,7 +460,7 @@ bool GarbageCollector::Unlink(QObject* Object, const std::string& Property)
         if (MetaProp.name != Property) continue;
         
         // Handle raw QObject*
-        if (IsPointerType(MetaProp.type))
+        if (IsPointerType(MetaProp))
         {
             auto* Slot = reinterpret_cast<QObject**>(Base + MetaProp.offset);
             *Slot = nullptr;
@@ -469,7 +469,7 @@ bool GarbageCollector::Unlink(QObject* Object, const std::string& Property)
         }
 
         // Handle std::vector<QObject*>
-        if (IsVectorOfPointer(MetaProp.type))
+        if (IsVectorOfPointer(MetaProp))
         {
             auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Base + MetaProp.offset);
             // Remove all references held by the vector
