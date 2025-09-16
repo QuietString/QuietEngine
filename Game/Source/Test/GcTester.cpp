@@ -752,6 +752,7 @@ void QGcTester::DetachRoots(int Count, double Percent)
 void QGcTester::ClearAll(bool bSilent)
 {
     ClearGraph();
+    Roots.clear();
     GarbageCollector::Get().Collect(true);
     if (!bSilent) std::cout << "[GcTester] Cleared all test objects.\n";
 }
@@ -767,7 +768,7 @@ void QGcTester::RepeatRandomAndCollect(int NumSteps, int NumNodes, int NumBranch
 
     for (int i = 0; i < NumSteps; ++i)
     {
-        PatternRandom(NumNodes, NumBranches, i + 12345);
+        PatternRandom(NumNodes, NumBranches, i);
         GarbageCollector::Get().Collect(false);
         ClearAll(true);
     }

@@ -36,7 +36,7 @@ std::string EngineUtils::FormatPropertyValue(QObject* Owner, const qmeta::MetaPr
     if (equals_any({"std::string","string"}))               { OutputStream << '"' << *reinterpret_cast<std::string*>(Addr) << '"'; return OutputStream.str(); }
     
     // QObject* (and any derived) -> print DebugName (or address fallback)
-    if (GC.IsPointerType(P))
+    if (GC.IsPointerType(T))
     {
         // Read raw pointer value and try to treat it as QObject* if GC-managed
         void* Raw = *reinterpret_cast<void**>(Addr);
@@ -60,7 +60,7 @@ std::string EngineUtils::FormatPropertyValue(QObject* Owner, const qmeta::MetaPr
     if (T.find("std::vector") != std::string::npos)
     {
         // any std::vector<T*> (T possibly derived from QObject)
-        if (GC.IsVectorOfPointer(P))
+        if (GC.IsVectorOfPointer(T))
         {
             auto* Vec = reinterpret_cast<const std::vector<QObject*>*>(Addr);
             const size_t Count = Vec->size();

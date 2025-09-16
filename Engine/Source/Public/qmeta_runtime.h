@@ -126,7 +126,7 @@ struct TypeInfo {
     const TypeInfo* base = nullptr;
 
     template <class F>
-    void ForEachProperty(F&& Func) const
+    void ForEachProperty(const F& Func) const
     {
         if (base) base->ForEachProperty(Func);
         for (auto& MetaProp : properties) Func(MetaProp);
@@ -135,7 +135,7 @@ struct TypeInfo {
 
     // for general unlink including parent's member variables. not sure if it's usable.
     template <class F>
-    void ForEachPropertyWithPropertyName(F&& Func, const std::string PropertyName) const
+    void ForEachPropertyWithPropertyName(const F& Func, const std::string PropertyName) const
     {
         if (base)
         {
@@ -150,14 +150,14 @@ struct TypeInfo {
     
     // 1) Local-only property iteration (no bases)
     template <class F>
-    void ForEachPropertyLocal(F&& Func) const
+    void ForEachPropertyLocal(const F& Func) const
     {
         for (auto& MetaProp : properties) Func(MetaProp);
     }
 
     // 2) Option to include or exclude bases
     template <class F>
-    void ForEachPropertyWithOption(F&& Func, bool bIncludeBases) const
+    void ForEachPropertyWithOption(const F& Func, bool bIncludeBases) const
     {
         if (bIncludeBases && base) base->ForEachProperty(Func);
         for (auto& MetaProp : properties) Func(MetaProp);
@@ -180,7 +180,7 @@ struct TypeInfo {
     }
     
     template <class F>
-    void ForEachFunction(F&& Func) const
+    void ForEachFunction(const F& Func) const
     {
         if (base)
         {

@@ -226,7 +226,7 @@ inline void QHT_Register_Game(Registry& R) {
     T_QMonster.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
     T_QMonster.base_name = "QActor";
     T_QMonster.properties.push_back(MetaProperty{"Health", "int", offsetof(QMonster, Health), MetaMap{}, PF_None });
-    T_QMonster.properties.push_back(MetaProperty{"Target", "QActor*", offsetof(QMonster, Target), MetaMap{}, PF_None });
+    T_QMonster.properties.push_back(MetaProperty{"Target", "QActor*", offsetof(QMonster, Target), MetaMap{}, PF_RawQObjectPtr });
     {
         MetaFunction F;
         F.name = "GetHealth";
@@ -300,7 +300,7 @@ inline void QHT_Register_Game(Registry& R) {
     TypeInfo& T_QGcTester = R.add_type("QGcTester", sizeof(QGcTester));
     T_QGcTester.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
     T_QGcTester.base_name = "QObject";
-    T_QGcTester.properties.push_back(MetaProperty{"Roots", "std::vector<QObject*>", offsetof(QGcTester, Roots), MetaMap{}, PF_None });
+    T_QGcTester.properties.push_back(MetaProperty{"Roots", "std::vector<QObject*>", offsetof(QGcTester, Roots), MetaMap{}, PF_VectorOfQObjectPtr });
     T_QGcTester.properties.push_back(MetaProperty{"AssignMode", "int", offsetof(QGcTester, AssignMode), MetaMap{}, PF_None });
     T_QGcTester.properties.push_back(MetaProperty{"bUseVector", "bool", offsetof(QGcTester, bUseVector), MetaMap{}, PF_None });
     {
@@ -478,5 +478,5 @@ inline void QHT_Register_Game(Registry& R) {
     TypeInfo& T_QTestObject_Parent = R.add_type("QTestObject_Parent", sizeof(QTestObject_Parent));
     T_QTestObject_Parent.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
     T_QTestObject_Parent.base_name = "QObject";
-    T_QTestObject_Parent.properties.push_back(MetaProperty{"Children_Parent", "std::vector<QObject*>", offsetof(QTestObject_Parent, Children_Parent), MetaMap{}, PF_None });
+    T_QTestObject_Parent.properties.push_back(MetaProperty{"Children_Parent", "std::vector<QObject*>", offsetof(QTestObject_Parent, Children_Parent), MetaMap{}, PF_VectorOfQObjectPtr });
 }
