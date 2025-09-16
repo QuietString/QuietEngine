@@ -69,11 +69,23 @@ private:
         const qmeta::TypeInfo* Ti = nullptr;
         uint64_t Id = 0;
         bool Marked = false;
+        uint32_t MarkEpoch = 0; 
     };
+
+    // --- GC fast paths ---
+    struct FPtrOffsetLayout {
+        std::vector<std::size_t> RawOffsets; // T*: QObject*
+        std::vector<std::size_t> VecOffsets; // std::vector<T*>
+    };
+
+    mutable std::unordered_map<const qmeta::TypeInfo*, FPtrOffsetLayout> PtrCache;
+    uint32_t CurrentEpoch = 1;
+
+    const FPtrOffsetLayout& GetPtrLayout(const qmeta::TypeInfo& Ti);
     
     // Marks all objects from a root to kill by BFS 
-    void Mark(QObject* Root);
-    
+    void Mark();
+
     void TraversePointers(QObject* Obj, const qmeta::TypeInfo& Ti, std::vector<QObject*>& OutChildren) const;
     
 private:

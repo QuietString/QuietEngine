@@ -80,6 +80,7 @@ namespace
 
 void QGcTester::ClearGraph()
 {
+    Roots.clear();
     AllNodes.clear();
     DepthLayers.clear();
 }
@@ -752,7 +753,6 @@ void QGcTester::DetachRoots(int Count, double Percent)
 void QGcTester::ClearAll(bool bSilent)
 {
     ClearGraph();
-    Roots.clear();
     GarbageCollector::Get().Collect(true);
     if (!bSilent) std::cout << "[GcTester] Cleared all test objects.\n";
 }

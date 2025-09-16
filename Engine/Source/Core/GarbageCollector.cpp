@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <algorithm>
+#include <unordered_set>
 
 #include "Asset.h"
 
@@ -120,8 +121,12 @@ bool GarbageCollector::IsVectorOfPointer(const std::string& Type)
 
 bool GarbageCollector::IsManaged(const QObject* Obj) const
 {
-    if (!Obj) return false;
-    return Objects.find(const_cast<QObject*>(Obj)) != Objects.end();
+    if (!Obj)
+    {
+        return false;
+    }
+    
+    return Objects.contains(const_cast<QObject*>(Obj));
 }
 
 void GarbageCollector::TraversePointers(QObject* Obj, const TypeInfo& Ti, std::vector<QObject*>& OutChildren) const
@@ -160,28 +165,92 @@ void GarbageCollector::TraversePointers(QObject* Obj, const TypeInfo& Ti, std::v
     Ti.ForEachPropertyWithOption(Visitor, bAllowTraverseParents);
 }
 
-void GarbageCollector::Mark(QObject* Root)
+const GarbageCollector::FPtrOffsetLayout& GarbageCollector::GetPtrLayout(const qmeta::TypeInfo& Ti)
+{
+    if (auto CacheIter = PtrCache.find(&Ti); CacheIter != PtrCache.end())
+    {
+        return CacheIter->second;
+    }
+
+    FPtrOffsetLayout L;
+    auto Acc = [&](const TypeInfo* T){
+        if (!T)
+        {
+            return;
+        }
+        
+        for (const auto& P : T->properties)
+        {
+            if ((P.GcFlags & qmeta::PF_RawQObjectPtr) != 0)
+            {
+                L.RawOffsets.push_back(P.offset);
+            } 
+            else if ((P.GcFlags & qmeta::PF_VectorOfQObjectPtr))
+            {
+                L.VecOffsets.push_back(P.offset);
+            }
+        }
+    };
+
+    // Cache at all once including base(parent class)
+    for (auto* Cur = &Ti; Cur; Cur = Cur->base)
+    {
+        Acc(Cur);
+    }
+
+    return PtrCache.emplace(&Ti, std::move(L)).first->second;
+}
+
+void GarbageCollector::Mark()
 {
     std::vector<QObject*> Stack;
-    Stack.push_back(Root);
-
+    Stack.reserve(Roots.size());
+    for (auto* Root : Roots)
+    {
+        if (Root)
+        {
+            Stack.push_back(Root);
+        }
+    }
+    
     while (!Stack.empty())
     {
-        QObject* Cur = Stack.back();
-        Stack.pop_back();
-
-        auto It = Objects.find(Cur);
-        if (It == Objects.end()) continue;
-        Node& N = It->second;
-        if (N.Marked) continue;
-
-        N.Marked = true;
-
-        std::vector<QObject*> Children;
-        TraversePointers(Cur, *N.Ti, Children);
-        for (QObject* C : Children)
+        QObject* Cur = Stack.back(); Stack.pop_back();
+        auto ObjIter = Objects.find(Cur);
+        if (ObjIter == Objects.end())
         {
-            Stack.push_back(C);
+            continue;   
+        }
+        
+        Node& n = ObjIter->second;
+        if (n.MarkEpoch == CurrentEpoch)
+        {
+            continue;   
+        }
+        n.MarkEpoch = CurrentEpoch;
+
+        const FPtrOffsetLayout& Layout = GetPtrLayout(*n.Ti);
+        unsigned char* Base = BytePtr(Cur);
+
+        for (size_t Offset : Layout.RawOffsets)
+        {
+            QObject* const* Slot = reinterpret_cast<QObject* const*>(Base + Offset);
+            if (Slot && *Slot && IsManaged(*Slot))
+            {
+                Stack.push_back(*Slot);
+            }
+        }
+        
+        for (size_t Offset : Layout.VecOffsets)
+        {
+            const auto* Vec = reinterpret_cast<const std::vector<QObject*>*>(Base + Offset);
+            for (QObject* Current : *Vec)
+            {
+                if (Current && IsManaged(Current))
+                {
+                    Stack.push_back(Current);   
+                }   
+            }
         }
     }
 }
@@ -198,84 +267,82 @@ double GarbageCollector::Collect(bool bSilent)
 
     // 1) Clear marks
     const auto TClear0 = Clock::now();
-    for (auto& Pair : Objects)
+    CurrentEpoch++;
+    if (CurrentEpoch == 0)
     {
-        Pair.second.Marked = false;
+        // wrap-around
+        for (auto& [Obj, Node] : Objects)
+        {
+            Node.MarkEpoch = 0;   
+        }
+        CurrentEpoch = 1;
     }
+    
     const auto TClear1 = Clock::now();
 
     // 2) Mark from roots
     const auto TMark0 = Clock::now();
-    for (QObject* R : Roots)
-    {
-        Mark(R);
-    }
+    Mark();
     const auto TMark1 = Clock::now();
 
     // 3) Build a list of dead objects (no mark)
-    const auto TDead0 = Clock::now();
-    std::vector<QObject*> Dead;
-    Dead.reserve(Objects.size());
-
-    for (auto& Pair : Objects)
+    const auto TBuild0 = Clock::now();
+    std::vector<QObject*> Dead; Dead.reserve(Objects.size());
+    for (auto& [Obj, Node] : Objects)
     {
-        if (!Pair.second.Marked)
+        if (Node.MarkEpoch != CurrentEpoch)
         {
-            Dead.push_back(Pair.first);
+            Dead.push_back(Obj);
+        }   
+    }
+    const auto TBuild1 = Clock::now();
+    const double MsBuild = ms(TBuild1, TBuild0);
+    
+    // 4) Fixup
+    const auto TFix0 = Clock::now();
+    std::unordered_set<QObject*> DeadSet;
+    DeadSet.reserve(Dead.size() * 2 + 1);
+    for (auto* d : Dead)
+    {
+        DeadSet.insert(d);
+    }
+
+    for (auto& [Obj, Node] : Objects)
+    {
+        if (Node.MarkEpoch != CurrentEpoch) continue;
+        QObject* Owner = Obj;
+        unsigned char* Base = BytePtr(Owner);
+        const FPtrOffsetLayout& Layout = GetPtrLayout(*Node.Ti);
+
+        for (size_t Offset : Layout.RawOffsets)
+        {
+            QObject** Slot = reinterpret_cast<QObject**>(Base + Offset);
+            if (Slot && *Slot && DeadSet.contains(*Slot))
+            {
+                *Slot = nullptr;
+            }
+        }
+        for (size_t Offset : Layout.VecOffsets)
+        {
+            auto* vec = reinterpret_cast<std::vector<QObject*>*>(Base + Offset);
+            vec->erase(std::remove_if(vec->begin(), vec->end(),
+                                      [&](QObject* p){ return p && DeadSet.count(p); }),
+                       vec->end());
         }
     }
-    const auto TDead1 = Clock::now();
     
-    // 4) Null-out references to dead objects in survivors to avoid dangling pointers
-    const auto TFix0 = Clock::now();
-    for (auto& Pair : Objects)
-    {
-        if (!Pair.second.Marked) continue;
-
-        QObject* Owner = Pair.first;
-        unsigned char* Base = BytePtr(Owner);
-        const TypeInfo& Ti = *Pair.second.Ti;
-
-        Ti.ForEachProperty([&](const qmeta::MetaProperty& P)
-        {
-            if (IsPointerType(P))
-            {
-                QObject** Slot = reinterpret_cast<QObject**>(Base + P.offset);
-                if (Slot && *Slot)
-                {
-                    auto It = Objects.find(*Slot);
-                    if (It != Objects.end() && !It->second.Marked)
-                    {
-                        *Slot = nullptr;
-                    }
-                }
-            }
-            else if (IsVectorOfPointer(P))
-            {
-                auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Base + P.offset);
-                for (QObject*& Child : *Vec)
-                {
-                    if (!Child) continue;
-                    auto It = Objects.find(Child);
-                    if (It != Objects.end() && !It->second.Marked)
-                    {
-                        Child = nullptr;
-                    }
-                }
-            }
-        });
-    }
     const auto TFix1 = Clock::now();
+    const double MsFixup = ms(TFix1, TFix0);
 
-    // 5) Delete the dead and remove from maps (sweep)
+    // 5) Sweep (delete the dead and remove from maps)
     const auto TSweep0 = Clock::now();
     for (QObject* D : Dead)
     {
         auto It = Objects.find(D);
         if (It != Objects.end())
         {
-            QObject* Obj = It->first;     // keep pointer
-            Objects.erase(It);            // remove from registry first
+            QObject* Obj = It->first;     
+            Objects.erase(It);         // remove from the list first
             delete Obj;                   // then destroy memory
         }
     }
@@ -287,8 +354,6 @@ double GarbageCollector::Collect(bool bSilent)
 
     const double MsClear    = ms(TClear1, TClear0);
     const double MsMark     = ms(TMark1, TMark0);
-    const double MsBuild    = ms(TDead1, TDead0);
-    const double MsFixup    = ms(TFix1,  TFix0);
     const double MsSweep    = ms(TSweep1, TSweep0);
     const double MsTotal    = ms(TTotal1, TTotal0);
 
