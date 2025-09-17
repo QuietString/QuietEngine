@@ -341,10 +341,10 @@ int GarbageCollector::MarkParallel()
     GlobalWork.reserve(Roots.size());
     for (QObject* r : Roots)
     {
-        auto it = Objects.find(r);
-        if (it != Objects.end())
+        auto It = Objects.find(r);
+        if (It != Objects.end())
         {
-            GlobalWork.push_back(&it->second);
+            GlobalWork.push_back(&It->second);
         }
     }
     if (GlobalWork.empty())

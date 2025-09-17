@@ -35,7 +35,13 @@ public:
     {
         std::cout << "Game begin play" << std::endl;
 
-        Demo::RunTester();
+        int NumTesters = 20;
+        for (int i = 0; i < NumTesters; ++i)
+        {
+            Demo::RunTester();    
+        }
+        std::cout << "[Demo] Created " << NumTesters << " testers" << std::endl;
+        
         //Demo::RunReflectionTest();
     }
     
