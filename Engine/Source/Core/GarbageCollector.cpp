@@ -296,7 +296,7 @@ const GarbageCollector::FPtrOffsetLayout* GarbageCollector::GetPtrLayout(const q
 //     return It->second;
 // }
 
-void GarbageCollector::Mark()
+void GarbageCollector::Mark_SingleThreaded()
 {
     std::vector<QObject*> Stack;
     Stack.reserve(Roots.size());
@@ -350,20 +350,8 @@ void GarbageCollector::Mark()
     }
 }
 
-int GarbageCollector::MarkParallel()
+bool GarbageCollector::Mark_Parallel(int Desired, int& Value)
 {
-    int Desired = MaxGcThreads;
-    if (Desired == 0)
-    {
-        unsigned hc = std::thread::hardware_concurrency();
-        Desired = (hc == 0 ? 2 : (int)hc);
-    }
-    if (Desired <= 1)
-    {
-        Mark();
-        return 1;
-    }
-
     // Seed global work with root nodes (Node*, not QObject*)
     std::vector<Node*> GlobalWork;
     GlobalWork.reserve(Roots.size());
@@ -377,7 +365,8 @@ int GarbageCollector::MarkParallel()
     }
     if (GlobalWork.empty())
     {
-        return Desired;
+        Value = Desired;
+        return true;
     }
 
     std::mutex WorkMutex;
@@ -507,8 +496,29 @@ int GarbageCollector::MarkParallel()
     {
         t.join();
     }
+    return false;
+}
+
+int GarbageCollector::Mark()
+{
+    int Desired = MaxGcThreads;
+    if (Desired == 0)
+    {
+        unsigned hc = std::thread::hardware_concurrency();
+        Desired = (hc == 0 ? 2 : (int)hc);
+    }
     
-    return Desired;
+    if (Desired <= 1)
+    {
+        Mark_SingleThreaded();
+        return 1;
+    }
+    else
+    {
+        int ThreadCount;
+        Mark_Parallel(Desired, ThreadCount);
+        return ThreadCount;
+    }
 }
 
 double GarbageCollector::Collect(bool bSilent)
@@ -539,7 +549,7 @@ double GarbageCollector::Collect(bool bSilent)
     // 2) Mark from roots
     const auto TMark0 = Clock::now();
     //Mark();
-    int NumThreads = MarkParallel();
+    int NumThreads = Mark();
     const auto TMark1 = Clock::now();
 
     // 3) Build a list of dead objects (no mark)

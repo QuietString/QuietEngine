@@ -123,10 +123,11 @@ private:
     //const FPtrOffsetLayout& GetPtrLayout(const qmeta::TypeInfo& Ti);
     
     // Marks all objects from a root to kill by BFS 
-    void Mark();
+    void Mark_SingleThreaded();
+    bool Mark_Parallel(int Desired, int& Value);
 
     // Return num threads
-    int MarkParallel();
+    int Mark();
     
     void TraversePointers(QObject* Obj, const qmeta::TypeInfo& Ti, std::vector<QObject*>& OutChildren) const;
     

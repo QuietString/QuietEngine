@@ -54,16 +54,15 @@ namespace qht_factories
         }
         else
         {
-            return nullptr; // non-default-constructible or abstract
+            // non-default-constructible or abstract
+            return nullptr;
         }
     }
 
     template<class T>
     void RegisterIfCreatable(const char* Name)
     {
-        if constexpr (std::is_default_constructible_v<T> &&
-                      !std::is_abstract_v<T> &&
-                      std::is_base_of_v<QObject, T>)
+        if constexpr (std::is_default_constructible_v<T> && !std::is_abstract_v<T> && std::is_base_of_v<QObject, T>)
         {
             GarbageCollector::RegisterTypeFactory(Name, &DefaultFactoryThunk<T>);
         }

@@ -89,176 +89,8 @@
         <ClCompile Include="Source\Console\ConsoleIO.cpp" />
         <ClCompile Include="Source\Console\ConsoleManager.cpp" />
         <ClCompile Include="Source\Console\ConsoleUtil.cpp" />
-        <ClCompile Include="Source\CoreObjects\Private\Actor.cpp">
-          <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
-          <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-          <Optimization>Disabled</Optimization>
-          <SupportJustMyCode>true</SupportJustMyCode>
-          <AssemblerOutput>NoListing</AssemblerOutput>
-          <AssemblerListingLocation>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\</AssemblerListingLocation>
-          <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
-          <BrowseInformation>false</BrowseInformation>
-          <BrowseInformationFile>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\</BrowseInformationFile>
-          <CompileAs>Default</CompileAs>
-          <UseDynamicDebugging>false</UseDynamicDebugging>
-          <ConformanceMode>true</ConformanceMode>
-          <DiagnosticsFormat>Column</DiagnosticsFormat>
-          <DisableLanguageExtensions>false</DisableLanguageExtensions>
-          <ErrorReporting>Prompt</ErrorReporting>
-          <ExpandAttributedSource>false</ExpandAttributedSource>
-          <ExceptionHandling>Sync</ExceptionHandling>
-          <EnableASAN>false</EnableASAN>
-          <EnableFuzzer>false</EnableFuzzer>
-          <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
-          <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
-          <EnableVectorLength>NotSet</EnableVectorLength>
-          <FloatingPointModel>Precise</FloatingPointModel>
-          <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
-          <GenerateModuleDependencies>false</GenerateModuleDependencies>
-          <GenerateSourceDependencies>false</GenerateSourceDependencies>
-          <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
-          <InlineFunctionExpansion>Default</InlineFunctionExpansion>
-          <IntrinsicFunctions>false</IntrinsicFunctions>
-          <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
-          <LanguageStandard>stdcpp20</LanguageStandard>
-          <LanguageStandard_C>Default</LanguageStandard_C>
-          <MinimalRebuild>false</MinimalRebuild>
-          <ModuleDependenciesFile>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\</ModuleDependenciesFile>
-          <ModuleOutputFile>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\</ModuleOutputFile>
-          <OmitDefaultLibName>false</OmitDefaultLibName>
-          <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-          <WholeProgramOptimization>false</WholeProgramOptimization>
-          <ObjectFileName>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\</ObjectFileName>
-          <CallingConvention>Cdecl</CallingConvention>
-          <ProgramDataBaseFileName>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\vc143.pdb</ProgramDataBaseFileName>
-          <PrecompiledHeader>NotUsing</PrecompiledHeader>
-          <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-          <PrecompiledHeaderOutputFile>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\Engine.pch</PrecompiledHeaderOutputFile>
-          <PreprocessToFile>false</PreprocessToFile>
-          <PreprocessKeepComments>false</PreprocessKeepComments>
-          <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
-          <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
-          <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
-          <ShowIncludes>false</ShowIncludes>
-          <SourceDependenciesFile>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\</SourceDependenciesFile>
-          <SuppressStartupBanner>true</SuppressStartupBanner>
-          <BufferSecurityCheck>true</BufferSecurityCheck>
-          <SmallerTypeCheck>false</SmallerTypeCheck>
-          <SpectreMitigation>false</SpectreMitigation>
-          <StructMemberAlignment>Default</StructMemberAlignment>
-          <TrackerLogDirectory>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\Engine.tlog\</TrackerLogDirectory>
-          <TranslateIncludes>false</TranslateIncludes>
-          <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
-          <TreatWarningAsError>false</TreatWarningAsError>
-          <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
-          <UseFullPaths>true</UseFullPaths>
-          <WarningLevel>Level3</WarningLevel>
-          <XMLDocumentationFileName>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\</XMLDocumentationFileName>
-          <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-          <IntelJCCErratum>false</IntelJCCErratum>
-          <BuildStlModules>false</BuildStlModules>
-          <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
-          <ExternalWarningLevel>InheritWarningLevel</ExternalWarningLevel>
-          <TreatExternalTemplatesAsInternal>true</TreatExternalTemplatesAsInternal>
-          <DisableAnalyzeExternal>false</DisableAnalyzeExternal>
-          <PreprocessorDefinitions>_DEBUG;_CONSOLE;_UNICODE;UNICODE;</PreprocessorDefinitions>
-          <SDLCheck>true</SDLCheck>
-          <AdditionalIncludeDirectories>
-                C:\Users\quietstring\workspace\QuietEngine\Engine\Source;
-                C:\Users\quietstring\workspace\QuietEngine\Engine\Source\Public;
-                C:\Users\quietstring\workspace\QuietEngine\Engine\Source\CoreObjects\Public;
-                C:\Users\quietstring\workspace\QuietEngine\Engine\Source\Core;
-                C:\Users\quietstring\workspace\QuietEngine\Engine\Intermediate\Include\QHT;
-                
-            </AdditionalIncludeDirectories>
-          <AdditionalOptions>/FS </AdditionalOptions>
-          <LibCompiled>true</LibCompiled>
-        </ClCompile>
-        <ClCompile Include="Source\CoreObjects\Private\Character.cpp">
-          <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
-          <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-          <Optimization>Disabled</Optimization>
-          <SupportJustMyCode>true</SupportJustMyCode>
-          <AssemblerOutput>NoListing</AssemblerOutput>
-          <AssemblerListingLocation>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\</AssemblerListingLocation>
-          <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
-          <BrowseInformation>false</BrowseInformation>
-          <BrowseInformationFile>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\</BrowseInformationFile>
-          <CompileAs>Default</CompileAs>
-          <UseDynamicDebugging>false</UseDynamicDebugging>
-          <ConformanceMode>true</ConformanceMode>
-          <DiagnosticsFormat>Column</DiagnosticsFormat>
-          <DisableLanguageExtensions>false</DisableLanguageExtensions>
-          <ErrorReporting>Prompt</ErrorReporting>
-          <ExpandAttributedSource>false</ExpandAttributedSource>
-          <ExceptionHandling>Sync</ExceptionHandling>
-          <EnableASAN>false</EnableASAN>
-          <EnableFuzzer>false</EnableFuzzer>
-          <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
-          <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
-          <EnableVectorLength>NotSet</EnableVectorLength>
-          <FloatingPointModel>Precise</FloatingPointModel>
-          <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
-          <GenerateModuleDependencies>false</GenerateModuleDependencies>
-          <GenerateSourceDependencies>false</GenerateSourceDependencies>
-          <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
-          <InlineFunctionExpansion>Default</InlineFunctionExpansion>
-          <IntrinsicFunctions>false</IntrinsicFunctions>
-          <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
-          <LanguageStandard>stdcpp20</LanguageStandard>
-          <LanguageStandard_C>Default</LanguageStandard_C>
-          <MinimalRebuild>false</MinimalRebuild>
-          <ModuleDependenciesFile>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\</ModuleDependenciesFile>
-          <ModuleOutputFile>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\</ModuleOutputFile>
-          <OmitDefaultLibName>false</OmitDefaultLibName>
-          <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-          <WholeProgramOptimization>false</WholeProgramOptimization>
-          <ObjectFileName>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\</ObjectFileName>
-          <CallingConvention>Cdecl</CallingConvention>
-          <ProgramDataBaseFileName>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\vc143.pdb</ProgramDataBaseFileName>
-          <PrecompiledHeader>NotUsing</PrecompiledHeader>
-          <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-          <PrecompiledHeaderOutputFile>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\Engine.pch</PrecompiledHeaderOutputFile>
-          <PreprocessToFile>false</PreprocessToFile>
-          <PreprocessKeepComments>false</PreprocessKeepComments>
-          <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
-          <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
-          <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
-          <ShowIncludes>false</ShowIncludes>
-          <SourceDependenciesFile>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\</SourceDependenciesFile>
-          <SuppressStartupBanner>true</SuppressStartupBanner>
-          <BufferSecurityCheck>true</BufferSecurityCheck>
-          <SmallerTypeCheck>false</SmallerTypeCheck>
-          <SpectreMitigation>false</SpectreMitigation>
-          <StructMemberAlignment>Default</StructMemberAlignment>
-          <TrackerLogDirectory>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\Engine.tlog\</TrackerLogDirectory>
-          <TranslateIncludes>false</TranslateIncludes>
-          <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
-          <TreatWarningAsError>false</TreatWarningAsError>
-          <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
-          <UseFullPaths>true</UseFullPaths>
-          <WarningLevel>Level3</WarningLevel>
-          <XMLDocumentationFileName>C:\Users\quietstring\workspace\QuietEngine\Engine\Build\x64\Debug\obj\</XMLDocumentationFileName>
-          <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-          <IntelJCCErratum>false</IntelJCCErratum>
-          <BuildStlModules>false</BuildStlModules>
-          <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
-          <ExternalWarningLevel>InheritWarningLevel</ExternalWarningLevel>
-          <TreatExternalTemplatesAsInternal>true</TreatExternalTemplatesAsInternal>
-          <DisableAnalyzeExternal>false</DisableAnalyzeExternal>
-          <PreprocessorDefinitions>_DEBUG;_CONSOLE;_UNICODE;UNICODE;</PreprocessorDefinitions>
-          <SDLCheck>true</SDLCheck>
-          <AdditionalIncludeDirectories>
-                C:\Users\quietstring\workspace\QuietEngine\Engine\Source;
-                C:\Users\quietstring\workspace\QuietEngine\Engine\Source\Public;
-                C:\Users\quietstring\workspace\QuietEngine\Engine\Source\CoreObjects\Public;
-                C:\Users\quietstring\workspace\QuietEngine\Engine\Source\Core;
-                C:\Users\quietstring\workspace\QuietEngine\Engine\Intermediate\Include\QHT;
-                
-            </AdditionalIncludeDirectories>
-          <AdditionalOptions>/FS </AdditionalOptions>
-          <LibCompiled>true</LibCompiled>
-        </ClCompile>
+        <ClCompile Include="Source\CoreObjects\Private\Actor.cpp" />
+        <ClCompile Include="Source\CoreObjects\Private\Character.cpp" />
         <ClCompile Include="Source\CoreObjects\Private\World.cpp" />
         <ClCompile Include="Source\Core\EngineUtils.cpp" />
         <ClCompile Include="Source\Core\GarbageCollector.cpp" />
@@ -294,6 +126,10 @@
 
     <ItemGroup>
       <Content Include="..\.gitignore" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Source\Frameworks\" />
     </ItemGroup>
 
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
