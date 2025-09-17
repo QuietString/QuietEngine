@@ -13,6 +13,13 @@ public:
     QObject* NewByTypeName(const std::string& TypeName, const std::string& Name);
 
     void Initialize();
+
+    // === GC threading control ===
+    // 0: auto (uses std::thread::hardware_concurrency)
+    // 1: single-thread (falls back to Mark())
+    // N>=2: use N threads for MarkParallel()
+    void SetMaxGcThreads(int InThreads);
+    int  GetMaxGcThreads() const;
     
     // Roots
     QObject* GetRoot() const { return Roots.empty() ? nullptr : Roots[0]; }
@@ -75,20 +82,47 @@ private:
     {
         const qmeta::TypeInfo* Ti = nullptr;
         uint64_t Id = 0;
-        uint32_t MarkEpoch = 0;
 
-        // cached once when registered
+        // Cached layout pointer (stable heap address)
         const FPtrOffsetLayout* Layout = nullptr;
+        
+        // atomic for parallel mark
+        std::atomic<uint32_t> MarkEpoch { 0 }; 
+
+        // Back pointer to the actual object to avoid map lookup on expansion
+        QObject* Self = nullptr;
+
+        Node() = default;
+        Node(QObject* InSelf, const qmeta::TypeInfo* InTi, uint64_t InId)
+            : Ti(InTi), Id(InId), MarkEpoch{0}, Self(InSelf)
+        {}
+
+        Node(const Node&) = delete;
+        Node& operator=(const Node&) = delete;
+        Node(Node&&) noexcept = default;
+        Node& operator=(Node&&) noexcept = default;
     };
 
-    mutable std::unordered_map<const qmeta::TypeInfo*, FPtrOffsetLayout> PtrCache;
+    // Layout cache: stable addresses via unique_ptr so node Layout pointers never invalidate on rehash
+    mutable std::unordered_map<const qmeta::TypeInfo*, std::unique_ptr<FPtrOffsetLayout>> PtrCache;
+    
+    //mutable std::unordered_map<const qmeta::TypeInfo*, FPtrOffsetLayout> PtrCache;
+    // protects PtrCache build-once
+    mutable std::mutex PtrCacheMutex;
     uint32_t CurrentEpoch = 1;
 
-    const FPtrOffsetLayout& GetPtrLayout(const qmeta::TypeInfo& Ti);
+    // Threading knob (see SetMaxGcThreads)
+    int MaxGcThreads = 0;
+
+    const FPtrOffsetLayout* GetPtrLayout(const qmeta::TypeInfo& Ti);
+    //const FPtrOffsetLayout& GetPtrLayout(const qmeta::TypeInfo& Ti);
     
     // Marks all objects from a root to kill by BFS 
     void Mark();
 
+    // Return num threads
+    int MarkParallel();
+    
     void TraversePointers(QObject* Obj, const qmeta::TypeInfo& Ti, std::vector<QObject*>& OutChildren) const;
     
 private:

@@ -83,6 +83,26 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     std::cout << "Usage: gc <t|f>\n";
                 }
             }
+            else if (Tokens.size() == 3 && Tokens[1] == "threads")
+            {
+                if (Tokens[2] == "auto")
+                {
+                    GC.SetMaxGcThreads(0);
+                    std::cout << "[gc] threads = auto\n";
+                }
+                else
+                {
+                    long long n = 0;
+                    if (!TryParseInt(Tokens[2], n) || n < 0)
+                    {
+                        std::cout << "Usage: gc threads <n|auto>\n";
+                        return true;
+                    }
+                    GC.SetMaxGcThreads((int)n);
+                    std::cout << "[gc] threads = " << n << "\n";
+                }
+                return true;
+            }
             else if (Tokens.size() == 4)
             {
                 if (Tokens[1] == "set" && Tokens[2] == "interval")
@@ -90,6 +110,14 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     double Interval = std::stod(Tokens[3]);
                     GC.SetAutoInterval(Interval);
                 }
+                else
+                {
+                    std::cout << "Usage: gc set interval <seconds>\n";
+                }
+            }
+            else
+            {
+                std::cout << "Invalid gc command\n";
             }
         }
         else if (Cmd == "gctest")

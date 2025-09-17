@@ -502,7 +502,10 @@ void QGcTester::PatternRandom(int Nodes, int AvgOut, int Seed)
     std::mt19937 Rng(static_cast<uint32_t>(Seed));
 
     AllNodes.reserve((size_t)Nodes);
-    for (int i = 0; i < Nodes; ++i) MakeNode();
+    for (int i = 0; i < Nodes; ++i)
+    {
+        MakeNode();
+    }
 
     if (AllNodes.empty()) { std::cout << "[GcTester] No nodes created.\n"; return; }
 

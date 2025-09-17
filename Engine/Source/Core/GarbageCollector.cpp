@@ -36,13 +36,14 @@ static inline std::string Strip(std::string s)
 
 void GarbageCollector::RegisterInternal(QObject* Obj, const TypeInfo& Ti, const std::string& Name, uint64_t Id)
 {
-    Node N;
-    N.Ti = &Ti;
-    N.Id = Id;
-    N.Layout = &GetPtrLayout(Ti);
-    Objects.emplace(Obj, N);
+    auto [It, Inserted] = Objects.try_emplace(Obj, Obj, &Ti, Id);
+    Node& N = It->second;
 
-    //ById[Id] = Obj;
+    if (N.Layout == nullptr)
+    {
+        N.Layout = GetPtrLayout(Ti);
+    }
+    
     NameToObjectMap[Name] = Obj;
 }
 
@@ -63,6 +64,16 @@ QObject* GarbageCollector::NewByTypeName(const std::string& TypeName, const std:
 void GarbageCollector::Initialize()
 {
     
+}
+
+void GarbageCollector::SetMaxGcThreads(int InThreads)
+{
+    MaxGcThreads = std::max(0, InThreads);
+}
+
+int GarbageCollector::GetMaxGcThreads() const
+{
+    return MaxGcThreads;
 }
 
 void GarbageCollector::AddRoot(QObject* Obj)
@@ -166,41 +177,96 @@ void GarbageCollector::TraversePointers(QObject* Obj, const TypeInfo& Ti, std::v
     Ti.ForEachPropertyWithOption(Visitor, bAllowTraverseParents);
 }
 
-const GarbageCollector::FPtrOffsetLayout& GarbageCollector::GetPtrLayout(const qmeta::TypeInfo& Ti)
+const GarbageCollector::FPtrOffsetLayout* GarbageCollector::GetPtrLayout(const qmeta::TypeInfo& Ti)
 {
-    if (auto CacheIter = PtrCache.find(&Ti); CacheIter != PtrCache.end())
+    // Fast path without lock
+    if (auto it = PtrCache.find(&Ti); it != PtrCache.end())
     {
-        return CacheIter->second;
+        return it->second.get();
     }
 
-    FPtrOffsetLayout L;
-    auto Acc = [&](const TypeInfo* T){
-        if (!T)
-        {
-            return;
-        }
-        
+    std::lock_guard<std::mutex> lock(PtrCacheMutex);
+
+    if (auto it = PtrCache.find(&Ti); it != PtrCache.end())
+    {
+        return it->second.get();
+    }
+
+    // Build once (include base chain)
+    auto Layout = std::make_unique<FPtrOffsetLayout>();
+
+    auto Accumulate = [&](const qmeta::TypeInfo* T)
+    {
+        if (!T) return;
         for (const auto& P : T->properties)
         {
-            if ((P.GcFlags & qmeta::PF_RawQObjectPtr) != 0)
+            if (P.GcFlags & qmeta::PF_RawQObjectPtr)
             {
-                L.RawOffsets.push_back(P.offset);
-            } 
-            else if ((P.GcFlags & qmeta::PF_VectorOfQObjectPtr))
+                Layout->RawOffsets.push_back(P.offset);
+            }
+            else if (P.GcFlags & qmeta::PF_VectorOfQObjectPtr)
             {
-                L.VecOffsets.push_back(P.offset);
+                Layout->VecOffsets.push_back(P.offset);
             }
         }
     };
 
-    // Cache at all once including base(parent class)
-    for (auto* Cur = &Ti; Cur; Cur = Cur->base)
+    const qmeta::TypeInfo* Cur = &Ti;
+    while (Cur)
     {
-        Acc(Cur);
+        Accumulate(Cur);
+        Cur = Cur->base;
     }
 
-    return PtrCache.emplace(&Ti, std::move(L)).first->second;
+    const FPtrOffsetLayout* StablePtr = Layout.get();
+    PtrCache.emplace(&Ti, std::move(Layout));
+    return StablePtr;
 }
+
+// const GarbageCollector::FPtrOffsetLayout& GarbageCollector::GetPtrLayout(const qmeta::TypeInfo& Ti)
+// {
+//     // Fast path: optimistic check (no lock). If miss, lock and build once.
+//     if (auto CacheIter = PtrCache.find(&Ti); CacheIter != PtrCache.end())
+//     {
+//         return CacheIter->second.get();
+//     }
+//
+//     std::lock_guard<std::mutex> Lock(PtrCacheMutex);
+//
+//     if (auto CacheIter = PtrCache.find(&Ti); CacheIter != PtrCache.end())
+//     {
+//         return CacheIter->second;
+//     }
+//
+//     FPtrOffsetLayout Layout;
+//
+//     auto Accumulate = [&](const qmeta::TypeInfo* T)
+//     {
+//         if (!T) return;
+//         for (const auto& P : T->properties)
+//         {
+//             if ((P.GcFlags & qmeta::PF_RawQObjectPtr) != 0)
+//             {
+//                 Layout.RawOffsets.push_back(P.offset);
+//             }
+//             else if ((P.GcFlags & qmeta::PF_VectorOfQObjectPtr) != 0)
+//             {
+//                 Layout.VecOffsets.push_back(P.offset);
+//             }
+//         }
+//     };
+//
+//     // Include base chain if qmeta::TypeInfo has base pointer
+//     const qmeta::TypeInfo* Cur = &Ti;
+//     while (Cur)
+//     {
+//         Accumulate(Cur);
+//         Cur = Cur->base;
+//     }
+//
+//     auto [It, bNew] = PtrCache.emplace(&Ti, std::move(Layout));
+//     return It->second;
+// }
 
 void GarbageCollector::Mark()
 {
@@ -230,10 +296,10 @@ void GarbageCollector::Mark()
         }
         n.MarkEpoch = CurrentEpoch;
 
-        const FPtrOffsetLayout& Layout = GetPtrLayout(*n.Ti);
+        const FPtrOffsetLayout* Layout = GetPtrLayout(*n.Ti);
         unsigned char* Base = BytePtr(Cur);
 
-        for (size_t Offset : Layout.RawOffsets)
+        for (size_t Offset : Layout->RawOffsets)
         {
             QObject* const* Slot = reinterpret_cast<QObject* const*>(Base + Offset);
             if (Slot && *Slot && IsManaged(*Slot))
@@ -242,7 +308,7 @@ void GarbageCollector::Mark()
             }
         }
         
-        for (size_t Offset : Layout.VecOffsets)
+        for (size_t Offset : Layout->VecOffsets)
         {
             const auto* Vec = reinterpret_cast<const std::vector<QObject*>*>(Base + Offset);
             for (QObject* Current : *Vec)
@@ -254,6 +320,167 @@ void GarbageCollector::Mark()
             }
         }
     }
+}
+
+int GarbageCollector::MarkParallel()
+{
+    int Desired = MaxGcThreads;
+    if (Desired == 0)
+    {
+        unsigned hc = std::thread::hardware_concurrency();
+        Desired = (hc == 0 ? 2 : (int)hc);
+    }
+    if (Desired <= 1)
+    {
+        Mark();
+        return 1;
+    }
+
+    // Seed global work with root nodes (Node*, not QObject*)
+    std::vector<Node*> GlobalWork;
+    GlobalWork.reserve(Roots.size());
+    for (QObject* r : Roots)
+    {
+        auto it = Objects.find(r);
+        if (it != Objects.end())
+        {
+            GlobalWork.push_back(&it->second);
+        }
+    }
+    if (GlobalWork.empty())
+    {
+        return Desired;
+    }
+
+    std::mutex WorkMutex;
+
+    // Tunables: increase K, and donate when local grows large
+    constexpr size_t StealBatch = 256;
+    constexpr size_t DonateThreshold = 1024;
+    constexpr size_t DonateChunk     = 512;
+
+    auto Worker = [this, &GlobalWork, &WorkMutex]()
+    {
+        std::vector<Node*> Local;
+        Local.reserve(512);
+
+        auto Refill = [&]()
+        {
+            if (!Local.empty())
+                return;
+
+            std::lock_guard<std::mutex> Lock(WorkMutex);
+            size_t take = std::min(StealBatch, GlobalWork.size());
+            for (size_t i = 0; i < take; ++i)
+            {
+                Local.push_back(GlobalWork.back());
+                GlobalWork.pop_back();
+            }
+        };
+
+        auto Donate = [&]()
+        {
+            if (Local.size() <= DonateThreshold)
+                return;
+
+            std::lock_guard<std::mutex> lock(WorkMutex);
+            size_t Give = std::min(DonateChunk, Local.size() / 2);
+            for (size_t i = 0; i < Give; ++i)
+            {
+                GlobalWork.push_back(Local.back());
+                Local.pop_back();
+            }
+        };
+
+        while (true)
+        {
+            if (Local.empty())
+            {
+                Refill();
+                if (Local.empty())
+                    break;
+            }
+
+            Node* n = Local.back();
+            Local.pop_back();
+            if (!n) continue;
+
+            // Try to mark; only the winner expands children
+            uint32_t expected = n->MarkEpoch.load(std::memory_order_relaxed);
+            if (expected == CurrentEpoch)
+            {
+                continue;
+            }
+            if (!n->MarkEpoch.compare_exchange_strong(expected, CurrentEpoch,
+                                                      std::memory_order_relaxed,
+                                                      std::memory_order_relaxed))
+            {
+                continue;
+            }
+
+            // Expand children
+            unsigned char* Base = BytePtr(n->Self);
+            const FPtrOffsetLayout* Layout = GetPtrLayout(*n->Ti);
+
+            // Raw QObject* fields
+            for (size_t Offest : Layout->RawOffsets)
+            {
+                QObject* const* Slot = reinterpret_cast<QObject* const*>(Base + Offest);
+                if (!Slot)
+                {
+                    continue;
+                }
+                QObject* Child = *Slot;
+                if (!Child)
+                {
+                    continue;
+                }
+
+                auto It = Objects.find(Child);
+                if (It != Objects.end())
+                {
+                    Node* CurrentNode = &It->second;
+                    if (CurrentNode->MarkEpoch.load(std::memory_order_relaxed) != CurrentEpoch)
+                    {
+                        Local.push_back(CurrentNode);
+                    }
+                }
+            }
+
+            // std::vector<QObject*> fields
+            for (size_t Offset : Layout->VecOffsets)
+            {
+                const auto* Vec = reinterpret_cast<const std::vector<QObject*>*>(Base + Offset);
+                for (QObject* Child : *Vec)
+                {
+                    if (!Child) continue;
+                    auto It = Objects.find(Child);
+                    if (It != Objects.end())
+                    {
+                        Node* CurrentNode = &It->second;
+                        if (CurrentNode->MarkEpoch.load(std::memory_order_relaxed) != CurrentEpoch)
+                            Local.push_back(CurrentNode);
+                    }
+                }
+            }
+
+            Donate();
+        }
+    };
+
+    std::vector<std::thread> Threads;
+    Threads.reserve(Desired);
+    for (int i = 0; i < Desired; ++i)
+    {
+        Threads.emplace_back(Worker);   
+    }
+        
+    for (auto& t : Threads)
+    {
+        t.join();
+    }
+    
+    return Desired;
 }
 
 double GarbageCollector::Collect(bool bSilent)
@@ -283,7 +510,8 @@ double GarbageCollector::Collect(bool bSilent)
 
     // 2) Mark from roots
     const auto TMark0 = Clock::now();
-    Mark();
+    //Mark();
+    int NumThreads = MarkParallel();
     const auto TMark1 = Clock::now();
 
     // 3) Build a list of dead objects (no mark)
@@ -316,9 +544,9 @@ double GarbageCollector::Collect(bool bSilent)
         }
         
         unsigned char* Base = BytePtr(Obj);
-        const FPtrOffsetLayout& Layout = GetPtrLayout(*Node.Ti);
+        const FPtrOffsetLayout* Layout = GetPtrLayout(*Node.Ti);
 
-        for (size_t Offset : Layout.RawOffsets)
+        for (size_t Offset : Layout->RawOffsets)
         {
             QObject** Slot = reinterpret_cast<QObject**>(Base + Offset);
             if (Slot && *Slot && DeadSet.contains(*Slot))
@@ -326,7 +554,7 @@ double GarbageCollector::Collect(bool bSilent)
                 *Slot = nullptr;
             }
         }
-        for (size_t Offset : Layout.VecOffsets)
+        for (size_t Offset : Layout->VecOffsets)
         {
             auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Base + Offset);
             std::erase_if(*Vec,[&](QObject* p){ return p && DeadSet.count(p); });
@@ -361,10 +589,11 @@ double GarbageCollector::Collect(bool bSilent)
 
     if (!bSilent)
     {
-        std::cout << "[GC] Collected " << Dead.size()
-                  << " objects, alive=" << Objects.size()
-                  << ". Total " << MsTotal << " ms.\n";
-
+        std::cout << "[GC] "<<"Collected " << Dead.size()
+        << " objects, alive=" << Objects.size()
+        << ". Total " << MsTotal << " ms."
+        << " Threads: " << NumThreads << "\n"; 
+        
         std::cout << "[GC] Phase timings (ms) - "
                   << "clear="    << MsClear  << ", "
                   << "mark="     << MsMark   << ", "
