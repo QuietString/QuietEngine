@@ -517,8 +517,6 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
         }
         else if (Cmd == "info" && Tokens.size() >= 2)
         {
-            GarbageCollector& GC = GarbageCollector::Get();
-
             const std::string& ObjName = Tokens[1];
             QObject* Obj = GC.FindByDebugName(ObjName);
             if (!Obj)
@@ -581,10 +579,23 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
 
             return true;
         }
-        else if (Cmd == "new" && Tokens.size() >= 3)
+        else if (Cmd == "new")
         {
-            std::cout << "[new] not implemented for now.\n";
-            return true;
+            if (Tokens.size() == 2)
+            {
+                const std::string& ClassName = Tokens[1];
+                if (QObject* Obj = GarbageCollector::NewObjectByName(ClassName))
+                {
+                    std::cout << "New object created: " << ClassName << " " << Obj->GetDebugName() << "\n";   
+                }
+                
+                return true;    
+            }
+            else
+            {
+                std::cout << "Usage: new <ClassName>\n";
+            }
+            
         }
         else if (Cmd == "unlink")
         {

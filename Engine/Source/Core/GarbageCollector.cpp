@@ -16,6 +16,24 @@ namespace
     GarbageCollector* GcSingleton;
 }
 
+// --- (Critical) Seperated from GC instance, factory exclusive global(function static) space ---
+namespace
+{
+    using FactoryMap = std::unordered_map<std::string, GarbageCollector::FactoryFunc>;
+
+    FactoryMap& GetFactoryMap()
+    {
+        static FactoryMap* Map = new FactoryMap(); // never freed, safe at static init/teardown
+        return *Map;
+    }
+
+    std::mutex& GetFactoryMutex()
+    {
+        static std::mutex* Mtx = new std::mutex(); // same rationale
+        return *Mtx;
+    }
+}
+
 void GarbageCollector::SetGcSingleton(GarbageCollector* Gc)
 {
     GcSingleton = Gc;
@@ -47,23 +65,33 @@ void GarbageCollector::RegisterInternal(QObject* Obj, const TypeInfo& Ti, const 
     NameToObjectMap[Name] = Obj;
 }
 
-QObject* GarbageCollector::NewByTypeName(const std::string& TypeName, const std::string& Name)
-{
-    const TypeInfo* Ti = qmeta::GetRegistry().find(TypeName);
-    if (!Ti)
-    {
-        throw std::runtime_error("Type not found: " + TypeName);
-    }
-
-    // Allocate by name is not generally possible in C++ without factories.
-    // For demo purposes create a raw block and require user to have a default ctor via placement new.
-    // Better: you can add a factory map later.
-    throw std::runtime_error("NewByTypeName: factory not implemented for type " + TypeName);
-}
-
 void GarbageCollector::Initialize()
 {
     
+}
+
+void GarbageCollector::RegisterTypeFactory(const std::string& TypeName, FactoryFunc Fn)
+{
+    std::lock_guard<std::mutex> Lock(GetFactoryMutex());
+    GetFactoryMap()[TypeName] = Fn;
+}
+
+QObject* GarbageCollector::NewObjectByName(const std::string& TypeName)
+{
+    FactoryFunc Fn = nullptr;
+    {
+        std::lock_guard<std::mutex> Lock(GetFactoryMutex());
+        auto It = GetFactoryMap().find(TypeName);
+        if (It != GetFactoryMap().end())
+            Fn = It->second;
+    }
+    if (!Fn)
+    {
+        return nullptr;   
+    }
+
+    // Factory where NewObject<T>() resides.
+    return Fn();
 }
 
 void GarbageCollector::SetMaxGcThreads(int InThreads)

@@ -116,3 +116,21 @@ inline void QHT_Register_Engine(Registry& R) {
         T_QWorld.functions.push_back(std::move(F));
     }
 }
+
+// ===== Auto-generated factories (QHT) =====
+#include "Actor.h"
+#include "Character.h"
+#include "Object.h"
+#include "World.h"
+#include "EngineGlobals.h"
+#include "GarbageCollector.h"
+namespace qht_factories_gen_Engine {
+    static void RegisterFactories_Engine()
+    {
+        qht_factories::RegisterIfCreatable<QActor>("QActor");
+        qht_factories::RegisterIfCreatable<QCharacter>("QCharacter");
+        qht_factories::RegisterIfCreatable<QWorld>("QWorld");
+    }
+    struct FAutoReg_Engine { FAutoReg_Engine() { RegisterFactories_Engine(); } };
+    static FAutoReg_Engine GAutoReg_Engine;
+}

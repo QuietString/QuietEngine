@@ -480,3 +480,24 @@ inline void QHT_Register_Game(Registry& R) {
     T_QTestObject_Parent.base_name = "QObject";
     T_QTestObject_Parent.properties.push_back(MetaProperty{"Children_Parent", "std::vector<QObject*>", offsetof(QTestObject_Parent, Children_Parent), MetaMap{}, PF_VectorOfQObjectPtr });
 }
+
+// ===== Auto-generated factories (QHT) =====
+#include "Classes/Monster.h"
+#include "Classes/Player.h"
+#include "Test/GcTester.h"
+#include "Test/TestObject.h"
+#include "Test/TestObject_Parent.h"
+#include "EngineGlobals.h"
+#include "GarbageCollector.h"
+namespace qht_factories_gen_Game {
+    static void RegisterFactories_Game()
+    {
+        qht_factories::RegisterIfCreatable<QMonster>("QMonster");
+        qht_factories::RegisterIfCreatable<QPlayer>("QPlayer");
+        qht_factories::RegisterIfCreatable<QGcTester>("QGcTester");
+        qht_factories::RegisterIfCreatable<QTestObject>("QTestObject");
+        qht_factories::RegisterIfCreatable<QTestObject_Parent>("QTestObject_Parent");
+    }
+    struct FAutoReg_Game { FAutoReg_Game() { RegisterFactories_Game(); } };
+    static FAutoReg_Game GAutoReg_Game;
+}

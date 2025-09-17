@@ -8,12 +8,17 @@ public:
     static GarbageCollector& Get();
 
     static void SetGcSingleton(GarbageCollector* Gc);
-    
-    // Create by type name (for console)
-    QObject* NewByTypeName(const std::string& TypeName, const std::string& Name);
 
     void Initialize();
 
+    // Object Factory
+public:
+    using FactoryFunc = QObject*(*)();
+
+    static void RegisterTypeFactory(const std::string& TypeName, FactoryFunc Fn);
+    static QObject* NewObjectByName(const std::string& TypeName);
+
+public:
     // === GC threading control ===
     // 0: auto (uses std::thread::hardware_concurrency)
     // 1: single-thread (falls back to Mark())

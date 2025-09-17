@@ -35,14 +35,14 @@ public:
     {
         std::cout << "Game begin play" << std::endl;
 
-        int NumTesters = 20;
-        for (int i = 0; i < NumTesters; ++i)
-        {
-            Demo::RunTester();    
-        }
-        std::cout << "[Demo] Created " << NumTesters << " testers" << std::endl;
+        // int NumTesters = 20;
+        // for (int i = 0; i < NumTesters; ++i)
+        // {
+        //     Demo::RunTester();    
+        // }
+        // std::cout << "[Demo] Created " << NumTesters << " testers" << std::endl;
         
-        //Demo::RunReflectionTest();
+        Demo::RunReflectionTest();
     }
     
     virtual void Tick(double DeltaSeconds) override

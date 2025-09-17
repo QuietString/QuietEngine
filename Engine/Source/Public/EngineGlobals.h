@@ -39,3 +39,38 @@ T* NewObject(Args&&... args)
     GC.RegisterInternal(Obj, *Ti, AutoName, Id);
     return Obj;
 }
+
+// ----- Factory helpers for QHT -----
+namespace qht_factories
+{
+    template<class T>
+    QObject* DefaultFactoryThunk()
+    {
+        if constexpr (std::is_default_constructible_v<T> &&
+                      !std::is_abstract_v<T> &&
+                      std::is_base_of_v<QObject, T>)
+        {
+            return NewObject<T>();
+        }
+        else
+        {
+            return nullptr; // non-default-constructible or abstract
+        }
+    }
+
+    template<class T>
+    void RegisterIfCreatable(const char* Name)
+    {
+        if constexpr (std::is_default_constructible_v<T> &&
+                      !std::is_abstract_v<T> &&
+                      std::is_base_of_v<QObject, T>)
+        {
+            GarbageCollector::RegisterTypeFactory(Name, &DefaultFactoryThunk<T>);
+        }
+    }
+}
+
+inline QObject* NewObjectByName(const std::string& ClassName)
+{
+    return GarbageCollector::NewObjectByName(ClassName);
+}

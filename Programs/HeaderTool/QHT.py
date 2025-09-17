@@ -92,6 +92,45 @@ def _extract_base_names(bases: str):
         out.append(p.strip())
     return out
 
+def _rel_include_for(ci, bases):
+    if not ci.src_path:
+        return None
+    sp = ci.src_path.resolve()
+    for b in bases:
+        try:
+            rp = sp.relative_to(Path(b).resolve())
+            return str(rp).replace('\\', '/')
+        except Exception:
+            pass
+    return ci.src_path.name
+
+def append_factories(out_path: Path, unit: str, classes_for_factories, src_bases):
+    with out_path.open("a", encoding="utf-8") as out:
+        out.write("\n// ===== Auto-generated factories (QHT) =====\n")
+
+        seen = set()
+        for ci in classes_for_factories:
+            inc = _rel_include_for(ci, src_bases)
+            if inc and inc not in seen:
+                out.write(f'#include "{inc}"\n')
+                seen.add(inc)
+
+        out.write('#include "EngineGlobals.h"\n')
+        out.write('#include "GarbageCollector.h"\n')
+
+        ns = f"qht_factories_gen_{unit}"
+        out.write(f"namespace {ns} {{\n")
+        out.write(f"    static void RegisterFactories_{unit}()\n")
+        out.write( "    {\n")
+        for ci in classes_for_factories:
+            if ci.name in ("QObject", "QObjectBase"):
+                continue
+            out.write(f'        qht_factories::RegisterIfCreatable<{ci.name}>("{ci.name}");\n')
+        out.write( "    }\n")
+        out.write(f"    struct FAutoReg_{unit} {{ FAutoReg_{unit}() {{ RegisterFactories_{unit}(); }} }};\n")
+        out.write(f"    static FAutoReg_{unit} GAutoReg_{unit};\n")
+        out.write( "}\n")
+
 def resolve_qobject_flags(class_list):
     # Build map name -> ClassInfo
     cmap = {c.name: c for c in class_list}
@@ -366,3 +405,19 @@ if __name__ == '__main__':
 
     # 4) Emit
     emit_header(classes, Path(args.out), args.unit, bases=[str(p) for p in src_dirs], qobject_names=qobject_names)
+
+    # 5) Register object factories
+    classes_factories = []
+    for ci in classes_all:
+        if not ci.is_qobject():
+            continue
+        if emit_dirs:
+            sp = ci.src_path.resolve() if ci.src_path else None
+            if not sp:
+                continue
+            inside = any(str(sp).startswith(str(d.resolve())) for d in emit_dirs)
+            if not inside:
+                continue
+        classes_factories.append(ci)
+
+    append_factories(Path(args.out), args.unit, classes_factories, src_dirs)
