@@ -39,6 +39,7 @@ void GarbageCollector::RegisterInternal(QObject* Obj, const TypeInfo& Ti, const 
     Node N;
     N.Ti = &Ti;
     N.Id = Id;
+    N.Layout = &GetPtrLayout(Ti);
     Objects.emplace(Obj, N);
 
     //ById[Id] = Obj;

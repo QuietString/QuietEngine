@@ -64,18 +64,21 @@ public:
     void RegisterInternal(QObject* Obj, const qmeta::TypeInfo& Ti, const std::string& Name, uint64_t Id);
 
 private:
-    struct Node
-    {
-        const qmeta::TypeInfo* Ti = nullptr;
-        uint64_t Id = 0;
-        uint32_t MarkEpoch = 0; 
-    };
-
     // --- GC fast paths ---
     struct FPtrOffsetLayout
     {
         std::vector<std::size_t> RawOffsets; // T*: QObject*
         std::vector<std::size_t> VecOffsets; // std::vector<T*>
+    };
+    
+    struct Node
+    {
+        const qmeta::TypeInfo* Ti = nullptr;
+        uint64_t Id = 0;
+        uint32_t MarkEpoch = 0;
+
+        // cached once when registered
+        const FPtrOffsetLayout* Layout = nullptr;
     };
 
     mutable std::unordered_map<const qmeta::TypeInfo*, FPtrOffsetLayout> PtrCache;
