@@ -4,7 +4,10 @@
 #include <sstream>
 #include <algorithm>
 #include <unordered_set>
-
+#include <thread>
+#include <mutex>
+#include <deque> 
+#include <atomic> 
 #include "Asset.h"
 
 using qmeta::TypeInfo;
@@ -36,13 +39,11 @@ static inline std::string Strip(std::string s)
 
 void GarbageCollector::RegisterInternal(QObject* Obj, const TypeInfo& Ti, const std::string& Name, uint64_t Id)
 {
-    Node N;
-    N.Ti = &Ti;
-    N.Id = Id;
-    Objects.emplace(Obj, N);
+    auto [It, Inserted] = Objects.try_emplace(Obj, &Ti, Id);
+    // cache layout once (stable while GC runs)
+    It->second.Layout = &GetPtrLayout(Ti);
 
-    //ById[Id] = Obj;
-    NameToObjectMap[Name] = Obj;
+    NameToObjectMap.emplace(Name, Obj);
 }
 
 QObject* GarbageCollector::NewByTypeName(const std::string& TypeName, const std::string& Name)
@@ -62,6 +63,10 @@ QObject* GarbageCollector::NewByTypeName(const std::string& TypeName, const std:
 void GarbageCollector::Initialize()
 {
     
+}
+
+void GarbageCollector::SetMaxGcThreads(int InThreads)
+{
 }
 
 void GarbageCollector::AddRoot(QObject* Obj)
@@ -127,6 +132,25 @@ bool GarbageCollector::IsManaged(const QObject* Obj) const
     }
     
     return Objects.contains(const_cast<QObject*>(Obj));
+}
+
+bool GarbageCollector::TryMark(QObject* Obj)
+{
+    auto It = Objects.find(Obj);
+    if (It == Objects.end()) return false;
+
+    auto& Epoch = It->second.MarkEpoch;
+    uint32_t Expected = Epoch.load(std::memory_order_relaxed);
+    while (Expected != CurrentEpoch)
+    {
+        if (Epoch.compare_exchange_weak(Expected, CurrentEpoch, std::memory_order_relaxed))
+            // we set to CurrentEpoch: first visit
+            return true; 
+        // else: Expected reloaded, loop
+    }
+
+    // already marked this round
+    return false;
 }
 
 void GarbageCollector::TraversePointers(QObject* Obj, const TypeInfo& Ti, std::vector<QObject*>& OutChildren) const
@@ -207,51 +231,153 @@ void GarbageCollector::Mark()
     Stack.reserve(Roots.size());
     for (auto* Root : Roots)
     {
-        if (Root)
-        {
+        if (!Root) continue;
+        if (TryMark(Root))
             Stack.push_back(Root);
-        }
     }
-    
+
     while (!Stack.empty())
     {
-        QObject* Cur = Stack.back(); Stack.pop_back();
-        auto ObjIter = Objects.find(Cur);
-        if (ObjIter == Objects.end())
-        {
-            continue;   
-        }
-        
-        Node& n = ObjIter->second;
-        if (n.MarkEpoch == CurrentEpoch)
-        {
-            continue;   
-        }
-        n.MarkEpoch = CurrentEpoch;
+        QObject* Cur = Stack.back();
+        Stack.pop_back();
 
-        const FPtrOffsetLayout& Layout = GetPtrLayout(*n.Ti);
+        auto It = Objects.find(Cur);
+        if (It == Objects.end()) continue;
+
+        const Node& N = It->second;
         unsigned char* Base = BytePtr(Cur);
+        const FPtrOffsetLayout* L = N.Layout;
 
-        for (size_t Offset : Layout.RawOffsets)
+        for (size_t Off : L->RawOffsets)
         {
-            QObject* const* Slot = reinterpret_cast<QObject* const*>(Base + Offset);
-            if (Slot && *Slot && IsManaged(*Slot))
-            {
+            QObject* const* Slot = reinterpret_cast<QObject* const*>(Base + Off);
+            if (!Slot || !*Slot) continue;
+
+            auto Ct = Objects.find(*Slot);
+            if (Ct == Objects.end()) continue;
+
+            if (TryMark(*Slot))
                 Stack.push_back(*Slot);
-            }
         }
-        
-        for (size_t Offset : Layout.VecOffsets)
+        for (size_t Off : L->VecOffsets)
         {
-            const auto* Vec = reinterpret_cast<const std::vector<QObject*>*>(Base + Offset);
-            for (QObject* Current : *Vec)
+            const auto* Vec = reinterpret_cast<const std::vector<QObject*>*>(Base + Off);
+            for (QObject* C : *Vec)
             {
-                if (Current && IsManaged(Current))
-                {
-                    Stack.push_back(Current);   
-                }   
+                if (!C) continue;
+                auto Ct = Objects.find(C);
+                if (Ct == Objects.end()) continue;
+
+                if (TryMark(C))
+                    Stack.push_back(C);
             }
         }
+    }
+}
+
+void GarbageCollector::MarkParallel(int NumThreads)
+{
+    // Single thread can be faster for small graphs
+    if (Objects.size() < 20000 || NumThreads <= 1)
+    {
+        Mark();
+        return;
+    }
+
+    // 1) Configure initial frontier from roots
+    struct WorkItem { QObject* Obj; Node* Nd; };
+    std::vector<WorkItem> Frontier;
+    Frontier.reserve(Roots.size());
+
+    for (QObject* Root : Roots)
+    {
+        if (!Root) continue;
+        auto It = Objects.find(Root);
+        if (It == Objects.end()) continue;
+        if (TryMark(Root))
+            Frontier.push_back({ Root, &It->second });
+    }
+    if (Frontier.empty())
+        return;
+
+    // 2) 라운드별로 프런티어를 처리한다 (BFS 스타일)
+    constexpr size_t WorkChunk = 64;
+
+    for (;;)
+    {
+        // 스레드별 next 프런티어 버퍼
+        std::vector<std::vector<WorkItem>> NextPerThread((size_t)NumThreads);
+
+        std::atomic<size_t> Cursor{0};
+
+        auto Worker = [&](int Tid)
+        {
+            std::vector<WorkItem>& Out = NextPerThread[(size_t)Tid];
+
+            while (true)
+            {
+                size_t Begin = Cursor.fetch_add(WorkChunk, std::memory_order_relaxed);
+                if (Begin >= Frontier.size()) break;
+                size_t End = std::min(Frontier.size(), Begin + WorkChunk);
+
+                for (size_t i = Begin; i < End; ++i)
+                {
+                    WorkItem WI = Frontier[i];
+                    unsigned char* Base = BytePtr(WI.Obj);
+                    const FPtrOffsetLayout* L = WI.Nd->Layout;
+
+                    // raw QObject*
+                    for (size_t Off : L->RawOffsets)
+                    {
+                        QObject* const* Slot = reinterpret_cast<QObject* const*>(Base + Off);
+                        if (!Slot || !*Slot) continue;
+
+                        auto Ct = Objects.find(*Slot);
+                        if (Ct == Objects.end()) continue;
+
+                        if (TryMark(*Slot))
+                            Out.push_back({ *Slot, &Ct->second });
+                    }
+                    // vector<QObject*>
+                    for (size_t Off : L->VecOffsets)
+                    {
+                        const auto* Vec = reinterpret_cast<const std::vector<QObject*>*>(Base + Off);
+                        for (QObject* C : *Vec)
+                        {
+                            if (!C) continue;
+                            auto Ct = Objects.find(C);
+                            if (Ct == Objects.end()) continue;
+
+                            if (TryMark(C))
+                                Out.push_back({ C, &Ct->second });
+                        }
+                    }
+                }
+            }
+        };
+
+        // 스레드 실행
+        std::vector<std::thread> Threads;
+        Threads.reserve((size_t)NumThreads);
+        for (int t = 0; t < NumThreads; ++t)
+            Threads.emplace_back(Worker, t);
+        for (auto& th : Threads) th.join();
+
+        // 3) 다음 프런티어로 머지
+        size_t TotalNext = 0;
+        for (auto& V : NextPerThread) TotalNext += V.size();
+        if (TotalNext == 0)
+            break;
+
+        std::vector<WorkItem> Next;
+        Next.reserve(TotalNext);
+        for (auto& V : NextPerThread)
+        {
+            Next.insert(Next.end(),
+                        std::make_move_iterator(V.begin()),
+                        std::make_move_iterator(V.end()));
+        }
+        Frontier.swap(Next);
     }
 }
 
@@ -265,55 +391,52 @@ double GarbageCollector::Collect(bool bSilent)
 
     const auto TTotal0 = Clock::now();
 
-    // 1) Clear marks
+    // 1) Clear marks (epoch bump)
     const auto TClear0 = Clock::now();
     CurrentEpoch++;
     if (CurrentEpoch == 0)
     {
-        // wrap-around (when overflow)
+        // wrap-around guard: reset all marks to 0
         for (auto& [Obj, Node] : Objects)
         {
-            Node.MarkEpoch = 0;   
+            Node.MarkEpoch.store(0, std::memory_order_relaxed);
         }
         CurrentEpoch = 1;
     }
-    
     const auto TClear1 = Clock::now();
 
-    // 2) Mark from roots
+    // 2) Mark (parallel)
     const auto TMark0 = Clock::now();
-    Mark();
+    int Threads = MaxGcThreads <= 0
+        ? std::max(1u, std::thread::hardware_concurrency() - 1u)
+        : MaxGcThreads;
+    if (Threads <= 1) Mark();
+    else              MarkParallel(Threads);
     const auto TMark1 = Clock::now();
 
-    // 3) Build a list of dead objects (no mark)
+    // 3) Build dead list
     const auto TBuild0 = Clock::now();
-    std::vector<QObject*> Dead; Dead.reserve(Objects.size());
+    std::vector<QObject*> Dead;
+    Dead.reserve(Objects.size());
     for (auto& [Obj, Node] : Objects)
     {
-        if (Node.MarkEpoch != CurrentEpoch)
-        {
+        if (Node.MarkEpoch.load(std::memory_order_relaxed) != CurrentEpoch)
             Dead.push_back(Obj);
-        }   
     }
     const auto TBuild1 = Clock::now();
     const double MsBuild = ms(TBuild1, TBuild0);
-    
-    // 4) Fixup
+
+    // 4) Fixup references from survivors to dead
     const auto TFix0 = Clock::now();
     std::unordered_set<QObject*> DeadSet;
     DeadSet.reserve(Dead.size() * 2 + 1);
-    for (auto* d : Dead)
-    {
-        DeadSet.insert(d);
-    }
+    for (auto* d : Dead) DeadSet.insert(d);
 
     for (auto& [Obj, Node] : Objects)
     {
-        if (Node.MarkEpoch != CurrentEpoch)
-        {
+        if (Node.MarkEpoch.load(std::memory_order_relaxed) != CurrentEpoch)
             continue;
-        }
-        
+
         unsigned char* Base = BytePtr(Obj);
         const FPtrOffsetLayout& Layout = GetPtrLayout(*Node.Ti);
 
@@ -321,55 +444,51 @@ double GarbageCollector::Collect(bool bSilent)
         {
             QObject** Slot = reinterpret_cast<QObject**>(Base + Offset);
             if (Slot && *Slot && DeadSet.contains(*Slot))
-            {
                 *Slot = nullptr;
-            }
         }
         for (size_t Offset : Layout.VecOffsets)
         {
             auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Base + Offset);
-            std::erase_if(*Vec,[&](QObject* p){ return p && DeadSet.count(p); });
+            std::erase_if(*Vec, [&](QObject* p){ return p && DeadSet.count(p); });
         }
     }
-    
     const auto TFix1 = Clock::now();
     const double MsFixup = ms(TFix1, TFix0);
 
-    // 5) Sweep (Delete the dead and remove from maps)
+    // 5) Sweep (delete & erase)
     const auto TSweep0 = Clock::now();
     for (QObject* D : Dead)
     {
         auto It = Objects.find(D);
         if (It != Objects.end())
         {
-            QObject* Obj = It->first;     
-            Objects.erase(It);         // remove from the list first
-            delete Obj;                   // then destroy memory
+            QObject* Obj = It->first;
+            Objects.erase(It); // remove from list first
+            delete Obj;        // then destroy memory
         }
     }
-
-    // perf logs
     const auto TSweep1 = Clock::now();
 
     const auto TTotal1 = Clock::now();
 
-    const double MsClear    = ms(TClear1, TClear0);
-    const double MsMark     = ms(TMark1, TMark0);
-    const double MsSweep    = ms(TSweep1, TSweep0);
-    const double MsTotal    = ms(TTotal1, TTotal0);
+    const double MsClear = ms(TClear1, TClear0);
+    const double MsMark  = ms(TMark1, TMark0);
+    const double MsSweep = ms(TSweep1, TSweep0);
+    const double MsTotal = ms(TTotal1, TTotal0);
 
     if (!bSilent)
     {
         std::cout << "[GC] Collected " << Dead.size()
                   << " objects, alive=" << Objects.size()
                   << ". Total " << MsTotal << " ms.\n";
-
-        std::cout << "[GC] Phase timings (ms) - "
-                  << "clear="    << MsClear  << ", "
-                  << "mark="     << MsMark   << ", "
-                  << "buildDead="<< MsBuild  << ", "
-                  << "fixup="    << MsFixup  << ", "
-                  << "sweep="    << MsSweep  << "\n";
+        
+        std::cout << "ms (clear=" << MsClear
+                  << ", mark="    << MsMark
+                  << ", buildDead="<< MsBuild
+                  << ", fixup="   << MsFixup
+                  << ", sweep="   << MsSweep
+                  << ", threads=" << Threads
+                  << ")\n";
     }
 
     return MsTotal;

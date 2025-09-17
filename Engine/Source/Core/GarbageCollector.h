@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Object.h"
 #include "qmeta_runtime.h"
+#include <atomic>
 
 class GarbageCollector
 {
@@ -13,6 +14,10 @@ public:
     QObject* NewByTypeName(const std::string& TypeName, const std::string& Name);
 
     void Initialize();
+
+    // --- GC threading config ---
+    void SetMaxGcThreads(int InThreads);
+    int  GetMaxGcThreads() const { return MaxGcThreads; }
     
     // Roots
     QObject* GetRoot() const { return Roots.empty() ? nullptr : Roots[0]; }
@@ -64,20 +69,47 @@ public:
     void RegisterInternal(QObject* Obj, const qmeta::TypeInfo& Ti, const std::string& Name, uint64_t Id);
 
 private:
-    struct Node
-    {
-        const qmeta::TypeInfo* Ti = nullptr;
-        uint64_t Id = 0;
-        uint32_t MarkEpoch = 0; 
-    };
-
     // --- GC fast paths ---
     struct FPtrOffsetLayout
     {
         std::vector<std::size_t> RawOffsets; // T*: QObject*
         std::vector<std::size_t> VecOffsets; // std::vector<T*>
     };
+    
+    struct Node
+    {
+        const qmeta::TypeInfo* Ti = nullptr;
+        const FPtrOffsetLayout* Layout = nullptr; // cached once
+        uint64_t Id = 0;
+        std::atomic<uint32_t> MarkEpoch{0};
 
+        Node() = default;
+        Node(const qmeta::TypeInfo* InTi, uint64_t InId)
+            : Ti(InTi), Id(InId), MarkEpoch{0} {}
+
+        Node(const Node&) = delete;
+        Node& operator=(const Node&) = delete;
+
+        Node(Node&& Other) noexcept
+            : Ti(Other.Ti), Layout(Other.Layout), Id(Other.Id)
+        {
+            MarkEpoch.store(Other.MarkEpoch.load(std::memory_order_relaxed),
+                            std::memory_order_relaxed);
+        }
+        Node& operator=(Node&& Other) noexcept
+        {
+            if (this != &Other)
+            {
+                Ti = Other.Ti;
+                Layout = Other.Layout;
+                Id = Other.Id;
+                MarkEpoch.store(Other.MarkEpoch.load(std::memory_order_relaxed),
+                                std::memory_order_relaxed);
+            }
+            return *this;
+        }
+    };
+    
     mutable std::unordered_map<const qmeta::TypeInfo*, FPtrOffsetLayout> PtrCache;
     uint32_t CurrentEpoch = 1;
 
@@ -86,6 +118,9 @@ private:
     // Marks all objects from a root to kill by BFS 
     void Mark();
 
+    void MarkParallel(int NumThreads);
+    bool TryMark(QObject* Obj); // CAS-mark to CurrentEpoch
+    
     void TraversePointers(QObject* Obj, const qmeta::TypeInfo& Ti, std::vector<QObject*>& OutChildren) const;
     
 private:
@@ -99,6 +134,9 @@ private:
     // Auto collect time interval in seconds. Disabled when less than or equal to zero.
     double Interval = 2.0;
 
+    // Threading control (0 => auto: hardware_concurrency-1) ---
+    int MaxGcThreads = 0;
+    
 public:
     static bool IsPointerType(const qmeta::MetaProperty& MetaProp) { return (MetaProp.GcFlags & qmeta::PF_RawQObjectPtr) != 0; }
     static bool IsPointerType(const std::string& Type);

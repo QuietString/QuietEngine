@@ -27,6 +27,9 @@ namespace
 
 void qruntime::Tick(double DeltaSeconds)
 {
+    // 1. Some world tick
+
+    // 2. GC tick
     GarbageCollector::Get().Tick(DeltaSeconds);
 }
 
