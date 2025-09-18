@@ -70,7 +70,7 @@ public:
 
 private:
     // toggle for per-root-threaded marking
-    bool bParallelMarkPerRoot = false;
+    bool bParallelMarkPerRoot = true;
     
 public:
     void RegisterInternal(QObject* Obj, const qmeta::TypeInfo& Ti, const std::string& Name, uint64_t Id);
@@ -103,8 +103,8 @@ private:
     
     // Marks all objects from a root to kill by BFS 
     void Mark();
-    void MarkFromRoot(QObject* Root);  // BFS from a single root (used by both single & multi)
-    void MarkParallelPerRoot();        // one thread per root (idealized)
+    size_t MarkFromRoot(QObject* Root);  // BFS from a single root (used by both single & multi)
+    void MarkParallelPerRoot(std::vector<std::pair<std::string, size_t>>* OutStats);        // one thread per root (idealized)
     
     void TraversePointers(QObject* Obj, const qmeta::TypeInfo& Ti, std::vector<QObject*>& OutChildren) const;
     
@@ -134,4 +134,6 @@ public:
 private:
     // Debug usage only
     bool bAllowTraverseParents = true;
+
+    bool bLogMarkStats = false;
 };

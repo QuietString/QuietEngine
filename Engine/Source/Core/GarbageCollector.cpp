@@ -165,7 +165,7 @@ bool GarbageCollector::IsManaged(const QObject* Obj) const
     return Objects.contains(const_cast<QObject*>(Obj));
 }
 
-void GarbageCollector::MarkParallelPerRoot()
+void GarbageCollector::MarkParallelPerRoot(std::vector<std::pair<std::string, size_t>>* OutStats)
 {
     // Idealized model: one thread per root, isolated graphs, no synchronization.
     // Copy roots to avoid concurrent mutation issues if caller modifies Roots later.
@@ -174,19 +174,30 @@ void GarbageCollector::MarkParallelPerRoot()
     std::vector<std::thread> Threads;
     Threads.reserve(LocalRoots.size());
 
+    std::mutex StatsMutex;
+    
     for (QObject* Root : LocalRoots)
     {
         if (!Root) continue;
-        Threads.emplace_back([this, Root]()
+        Threads.emplace_back([this, Root, OutStats, &StatsMutex]()
         {
             // Each thread processes a disjoint object set by assumption.
-            MarkFromRoot(Root);
+            size_t Visited = MarkFromRoot(Root);
+            if (OutStats)
+            {
+                std::lock_guard<std::mutex> Lock(StatsMutex);
+                const std::string& Nm = Root->GetDebugName();
+                OutStats->emplace_back(Nm, Visited);
+            }
         });
     }
 
     for (auto& T : Threads)
     {
-        if (T.joinable()) T.join();
+        if (T.joinable())
+        {
+            T.join();
+        }
     }
 }
 
@@ -282,10 +293,15 @@ void GarbageCollector::Mark()
     }
 }
 
-void GarbageCollector::MarkFromRoot(QObject* Root)
+size_t GarbageCollector::MarkFromRoot(QObject* Root)
 {
-    if (!Root) return;
-
+    if (!Root)
+    {
+        return 0;
+    }
+    
+    size_t Visited = 0;
+    
     std::vector<QObject*> Stack;
     Stack.reserve(64);
     Stack.push_back(Root);
@@ -311,7 +327,8 @@ void GarbageCollector::MarkFromRoot(QObject* Root)
 
         // Mark
         N.MarkEpoch = CurrentEpoch;
-
+        ++Visited;
+        
         if (Cur->bGcIgnoredSelfAndBelow)
         {
             continue;
@@ -344,6 +361,8 @@ void GarbageCollector::MarkFromRoot(QObject* Root)
             }
         }
     }
+
+    return Visited;
 }
 
 double GarbageCollector::Collect(bool bSilent)
@@ -373,9 +392,13 @@ double GarbageCollector::Collect(bool bSilent)
 
     // 2) Mark from roots
     const auto TMark0 = Clock::now();
+
+    std::vector<std::pair<std::string, size_t>> MarkStats;
+    std::vector<std::pair<std::string, size_t>>* StatsPtr = bLogMarkStats ? &MarkStats : nullptr;
+    
     if (bParallelMarkPerRoot)
     {
-        MarkParallelPerRoot();
+        MarkParallelPerRoot(StatsPtr);
     }
     else
     {
@@ -470,6 +493,18 @@ double GarbageCollector::Collect(bool bSilent)
                   << "sweep="    << MsSweep  << "\n";
     }
 
+    if (!bSilent && bLogMarkStats)
+    {
+        std::cout << "[GC] Mark per-root stats (" << MarkStats.size() << " roots)\n";
+        for (const auto& kv : MarkStats)
+        {
+            const std::string& name = kv.first;
+            size_t visited = kv.second;
+            std::cout << " - root=" << (name.empty() ? "(Unnamed)" : name)
+                      << ", visited=" << visited << "\n";
+        }
+    }
+    
     return MsTotal;
 }
 
