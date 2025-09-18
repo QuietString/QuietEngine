@@ -1,13 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
+<?xml version='1.0' encoding='utf-8'?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
     <ItemGroup Label="ProjectConfigurations">
         <ProjectConfiguration Include="Debug|x64">
             <Configuration>Debug</Configuration>
             <Platform>x64</Platform>
         </ProjectConfiguration>
+        <ProjectConfiguration Include="Release|x64">
+            <Configuration>Release</Configuration>
+            <Platform>x64</Platform>
+        </ProjectConfiguration>
     </ItemGroup>
-
     <PropertyGroup Label="Globals">
         <VCProjectVersion>15.0</VCProjectVersion>
         <ProjectGuid>{4E6332AB-C52E-44F4-96FD-639E631C008D}</ProjectGuid>
@@ -15,12 +17,10 @@
         <RootNamespace>Game</RootNamespace>
         <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     </PropertyGroup>
-
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
     <PropertyGroup>
         <PreferredToolArchitecture>x64</PreferredToolArchitecture>
     </PropertyGroup>
-
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
         <ConfigurationType>Application</ConfigurationType>
         <UseDebugLibraries>true</UseDebugLibraries>
@@ -30,34 +30,41 @@
         <IntDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\obj\</IntDir>
     </PropertyGroup>
 
-    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-
-    <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-        <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"
-                Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')"
-                Label="LocalAppDataPlatform" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+        <ConfigurationType>Application</ConfigurationType>
+        <UseDebugLibraries>false</UseDebugLibraries>
+        <PlatformToolset>v143</PlatformToolset>
+        <CharacterSet>Unicode</CharacterSet>
+        <WholeProgramOptimization>true</WholeProgramOptimization>
+    </PropertyGroup>
+    
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+        <OutDir>$(SolutionDir)Binaries\Win64\Release\</OutDir>
+        <IntDir>$(ProjectDir)Intermediate\Win64\Release\</IntDir>
+    </PropertyGroup>
+    
+    <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+        <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     </ImportGroup>
-
+    
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+    
+    <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+        <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    </ImportGroup>
+    
     <PropertyGroup Label="UserMacros" />
-
-    <!-- QHT variables -->
     <PropertyGroup>
-        <!-- Scan both Engine and Game headers to resolve ancestry -->
         <QhtSrc>$(ProjectDir)Source;$(SolutionDir)Engine\Source\CoreObjects\Public</QhtSrc>
-        <!-- Emit only classes declared under Game -->
         <QhtEmit>$(ProjectDir)Source</QhtEmit>
-        <!-- Output generated header -->
         <QhtOut>$(ProjectDir)Intermediate\Include\QHT\Game.qht.gen.hpp</QhtOut>
     </PropertyGroup>
-
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
         <LinkIncremental>false</LinkIncremental>
         <LocalDebuggerWorkingDirectory>$(SolutionDir)</LocalDebuggerWorkingDirectory>
-        <!-- Optional: unique output/obj -->
         <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
         <IntDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\obj\</IntDir>
     </PropertyGroup>
-
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
         <ClCompile>
             <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -87,17 +94,49 @@
         </Link>
         <PreBuildEvent>
             <Message>[QHT] Game scanning...</Message>
-            <Command>cmd /c "py &quot;$(SolutionDir)Programs\HeaderTool\QHT.py&quot; --unit Game --src &quot;$(QhtSrc)&quot; --emit &quot;$(QhtEmit)&quot; --out &quot;$(QhtOut)&quot;"</Command>
+            <Command>cmd /c "py "$(SolutionDir)Programs\HeaderTool\QHT.py" --unit Game --src "$(QhtSrc)" --emit "$(QhtEmit)" --out "$(QhtOut)""</Command>
         </PreBuildEvent>
     </ItemDefinitionGroup>
 
-    <!-- Game depends on Engine (build order + link) -->
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+        <ClCompile>
+            <WarningLevel>Level3</WarningLevel>
+            <AdditionalIncludeDirectories>
+                $(ProjectDir)Source;
+                $(ProjectDir)Intermediate\Include\QHT;
+                $(SolutionDir)Engine\Source\Public;
+                $(SolutionDir)Engine\Source\Core;
+                $(SolutionDir)Engine\Source\CoreObjects\Public;
+                $(SolutionDir)Engine\Intermediate\Include\QHT;
+                %(AdditionalIncludeDirectories)
+            </AdditionalIncludeDirectories>
+            <LanguageStandard>stdcpp20</LanguageStandard>
+            <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+            <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+            <Optimization>MaxSpeed</Optimization>
+            <FunctionLevelLinking>true</FunctionLevelLinking>
+            <IntrinsicFunctions>true</IntrinsicFunctions>
+            <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+            <OmitFramePointers>true</OmitFramePointers>
+            <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+        </ClCompile>
+        <Link>
+            <SubSystem>Console</SubSystem>
+            <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+            <EnableCOMDATFolding>true</EnableCOMDATFolding>
+            <OptimizeReferences>true</OptimizeReferences>
+            <GenerateDebugInformation>false</GenerateDebugInformation>
+        </Link>
+        <PreBuildEvent>
+            <Command>cmd /c "py "$(SolutionDir)Programs\HeaderTool\QHT.py" --unit Game --src "$(QhtSrc)" --emit "$(QhtEmit)" --out "$(QhtOut)""</Command>
+        </PreBuildEvent>
+    </ItemDefinitionGroup>
+    
     <ItemGroup>
         <ProjectReference Include="..\Engine\Engine.vcxproj">
             <Project>{B0F7671E-B61A-49EC-BA74-91DDABC19D08}</Project>
         </ProjectReference>
     </ItemGroup>
-    
     <ItemGroup>
         <ClCompile Include="Source\Classes\Monster.cpp" />
         <ClCompile Include="Source\Classes\Player.cpp" />
@@ -109,13 +148,11 @@
         <ClCompile Include="Source\Test\TestObjectFactory.cpp" />
         <ClCompile Include="Source\Test\TestObject_Parent.cpp" />
     </ItemGroup>
-
     <ItemGroup>
         <ClInclude Include="Intermediate\Include\QHT\Game.qht.gen.hpp" />
         <ClInclude Include="Source\**\*.h" />
     </ItemGroup>
-
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
     <ImportGroup Label="ExtensionTargets" />
-
+    
 </Project>

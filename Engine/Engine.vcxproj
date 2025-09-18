@@ -1,13 +1,16 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
+<?xml version='1.0' encoding='utf-8'?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
     <ItemGroup Label="ProjectConfigurations">
         <ProjectConfiguration Include="Debug|x64">
             <Configuration>Debug</Configuration>
             <Platform>x64</Platform>
         </ProjectConfiguration>
+        <ProjectConfiguration Include="Release|x64">
+            <Configuration>Release</Configuration>
+            <Platform>x64</Platform>
+        </ProjectConfiguration>
     </ItemGroup>
-    
+
     <PropertyGroup Label="Globals">
         <VCProjectVersion>15.0</VCProjectVersion>
         <ProjectGuid>{B0F7671E-B61A-49EC-BA74-91DDABC19D08}</ProjectGuid>
@@ -17,6 +20,7 @@
     </PropertyGroup>
 
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
     <PropertyGroup>
         <PreferredToolArchitecture>x64</PreferredToolArchitecture>
     </PropertyGroup>
@@ -29,9 +33,23 @@
         <CharacterSet>Unicode</CharacterSet>
     </PropertyGroup>
 
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+        <ConfigurationType>StaticLibrary</ConfigurationType>
+        <UseDebugLibraries>false</UseDebugLibraries>
+        <PlatformToolset>v143</PlatformToolset>
+        <CharacterSet>Unicode</CharacterSet>
+        <WholeProgramOptimization>true</WholeProgramOptimization>
+    </PropertyGroup>
+
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
 
+    <!-- PropertySheets -->
     <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+        <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"
+                Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')"
+                Label="LocalAppDataPlatform" />
+    </ImportGroup>
+    <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
         <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"
                 Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')"
                 Label="LocalAppDataPlatform" />
@@ -39,7 +57,6 @@
 
     <PropertyGroup Label="UserMacros" />
 
-    <!-- QHT variables -->
     <PropertyGroup>
         <QhtSrc>$(ProjectDir)Source\CoreObjects\Public</QhtSrc>
         <QhtOut>$(ProjectDir)Intermediate\Include\QHT\Engine.qht.gen.hpp</QhtOut>
@@ -49,6 +66,10 @@
         <LinkIncremental>false</LinkIncremental>
         <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
         <IntDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\obj\</IntDir>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+        <OutDir>$(SolutionDir)Binaries\Win64\Release\</OutDir>
+        <IntDir>$(ProjectDir)Intermediate\Win64\Release\</IntDir>
     </PropertyGroup>
 
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -78,10 +99,41 @@
             <ProgramDatabaseFile>$(OutDir)QuietEngine.pdb</ProgramDatabaseFile>
             <AdditionalOptions>/IGNORE:4075 %(AdditionalOptions)</AdditionalOptions>
         </Link>
-        <!-- Run QHT before compiling -->
         <PreBuildEvent>
             <Message>[QHT] Engine scanning...</Message>
-            <Command>cmd /c "py &quot;$(SolutionDir)Programs\HeaderTool\QHT.py&quot; --unit Engine --src &quot;$(QhtSrc)&quot; --out &quot;$(QhtOut)&quot; || python &quot;$(SolutionDir)Programs\HeaderTool\QHT.py&quot; --unit Engine --src &quot;$(QhtSrc)&quot; --out &quot;$(QhtOut)&quot;"</Command>
+            <Command>cmd /c "py "$(SolutionDir)Programs\HeaderTool\QHT.py" --unit Engine --src "$(QhtSrc)" --out "$(QhtOut)" || python "$(SolutionDir)Programs\HeaderTool\QHT.py" --unit Engine --src "$(QhtSrc)" --out "$(QhtOut)""</Command>
+        </PreBuildEvent>
+    </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+        <ClCompile>
+            <WarningLevel>Level3</WarningLevel>
+            <AdditionalIncludeDirectories>
+                $(ProjectDir)Source;
+                $(ProjectDir)Source\Public;
+                $(ProjectDir)Source\CoreObjects\Public;
+                $(ProjectDir)Source\Core;
+                $(ProjectDir)Intermediate\Include\QHT;
+                %(AdditionalIncludeDirectories)
+            </AdditionalIncludeDirectories>
+            <LanguageStandard>stdcpp20</LanguageStandard>
+            <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+            <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+            <Optimization>MaxSpeed</Optimization>
+            <FunctionLevelLinking>true</FunctionLevelLinking>
+            <IntrinsicFunctions>true</IntrinsicFunctions>
+            <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+            <OmitFramePointers>true</OmitFramePointers>
+            <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+        </ClCompile>
+        <Link>
+            <SubSystem>Console</SubSystem>
+            <EnableCOMDATFolding>true</EnableCOMDATFolding>
+            <OptimizeReferences>true</OptimizeReferences>
+            <GenerateDebugInformation>false</GenerateDebugInformation>
+        </Link>
+        <PreBuildEvent>
+            <Command>cmd /c "py "$(SolutionDir)Programs\HeaderTool\QHT.py" --unit Engine --src "$(QhtSrc)" --out "$(QhtOut)" || python "$(SolutionDir)Programs\HeaderTool\QHT.py" --unit Engine --src "$(QhtSrc)" --out "$(QhtOut)""</Command>
         </PreBuildEvent>
     </ItemDefinitionGroup>
 
@@ -100,7 +152,6 @@
         <ClCompile Include="Source\Private\QHT_Bridge_Engine.cpp" />
         <ClCompile Include="Source\Private\Runtime.cpp" />
     </ItemGroup>
-
     <ItemGroup>
         <ClInclude Include="Intermediate\Include\QHT\Engine.qht.gen.hpp" />
         <ClInclude Include="Source\Console\ConsoleIO.h" />
@@ -123,16 +174,13 @@
         <ClInclude Include="Source\Public\Runtime.h" />
         <ClInclude Include="Source\Public\TypeName.h" />
     </ItemGroup>
-
     <ItemGroup>
-      <Content Include="..\.gitignore" />
+        <Content Include="..\.gitignore" />
     </ItemGroup>
-
     <ItemGroup>
-      <Folder Include="Source\Frameworks\" />
+        <Folder Include="Source\Frameworks\" />
     </ItemGroup>
 
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
     <ImportGroup Label="ExtensionTargets" />
-
 </Project>

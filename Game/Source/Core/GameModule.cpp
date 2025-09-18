@@ -41,7 +41,7 @@ public:
         //     Demo::RunTester();    
         // }
         // std::cout << "[Demo] Created " << NumTesters << " testers" << std::endl;
-        
+        Demo::RunTester();
         Demo::RunReflectionTest();
     }
     
