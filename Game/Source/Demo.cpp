@@ -111,9 +111,7 @@ void Demo::RunReflectionTest()
     
     QPlayer* Player2 = NewObject<QPlayer>();
     World->Objects.push_back(Player2);
-
-    //Player1->SetOwner(Player2);
-
+    
     QMonster* Monster = NewObject<QMonster>();
     World->Objects.push_back(Monster);
 

@@ -178,7 +178,10 @@ void GarbageCollector::MarkParallelPerRoot(std::vector<std::pair<std::string, si
     
     for (QObject* Root : LocalRoots)
     {
-        if (!Root) continue;
+        if (!Root)
+        {
+            continue;
+        }
         Threads.emplace_back([this, Root, OutStats, &StatsMutex]()
         {
             // Each thread processes a disjoint object set by assumption.
