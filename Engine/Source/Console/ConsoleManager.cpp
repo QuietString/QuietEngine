@@ -87,7 +87,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             {
                 if (Tokens[2] == "auto")
                 {
-                    GC.SetMaxGcThreads(0);
+                    //GC.SetMaxGcThreads(0);
                     std::cout << "[gc] threads = auto\n";
                 }
                 else
@@ -98,7 +98,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                         std::cout << "Usage: gc threads <n|auto>\n";
                         return true;
                     }
-                    GC.SetMaxGcThreads((int)n);
+                    //GC.SetMaxGcThreads((int)n);
                     std::cout << "[gc] threads = " << n << "\n";
                 }
                 return true;
@@ -138,6 +138,15 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 for (QObject* Obj : W->Objects)
                 {
                     if (!Obj) continue;
+                    Ti = GC.GetTypeInfo(Obj);
+                    if (Ti && Ti->name == "QGcTester")
+                    {
+                        Testers.emplace_back(Obj);
+                    }
+                }
+
+                for (QObject* Obj : GC.GetRoots())
+                {
                     Ti = GC.GetTypeInfo(Obj);
                     if (Ti && Ti->name == "QGcTester")
                     {

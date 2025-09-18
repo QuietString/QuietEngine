@@ -95,7 +95,11 @@ void Demo::RunTester()
 
     // Create the GC tester and make it reachable
     QGcTester* Tester = NewObject<QGcTester>();
-    World->Objects.push_back(Tester);
+
+    // for multithreaded gc testing 
+    GarbageCollector::Get().AddRoot(Tester);
+    
+    //World->Objects.push_back(Tester);
     
     // ---- Factory setup ----
     // Clear previous registrations/pool if any

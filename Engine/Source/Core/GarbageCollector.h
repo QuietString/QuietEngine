@@ -10,24 +10,16 @@ public:
     static void SetGcSingleton(GarbageCollector* Gc);
 
     void Initialize();
-
+    
     // Object Factory
 public:
     using FactoryFunc = QObject*(*)();
 
     static void RegisterTypeFactory(const std::string& TypeName, FactoryFunc Fn);
     static QObject* NewObjectByName(const std::string& TypeName);
-
-public:
-    // === GC threading control ===
-    // 0: auto (uses std::thread::hardware_concurrency)
-    // 1: single-thread (falls back to Mark())
-    // N>=2: use N threads for MarkParallel()
-    void SetMaxGcThreads(int InThreads);
-    int  GetMaxGcThreads() const;
     
     // Roots
-    QObject* GetRoot() const { return Roots.empty() ? nullptr : Roots[0]; }
+    std::vector<QObject*> GetRoots() const { return Roots; }
     void AddRoot(QObject* Obj);
     void RemoveRoot(QObject* Obj);
     
@@ -73,6 +65,14 @@ public:
     const qmeta::TypeInfo* GetTypeInfo(const QObject* Obj) const;
 
 public:
+    void SetParallelMarkPerRoot(bool bEnable) { bParallelMarkPerRoot = bEnable; }
+    bool GetParallelMarkPerRoot() const { return bParallelMarkPerRoot; }
+
+private:
+    // toggle for per-root-threaded marking
+    bool bParallelMarkPerRoot = false;
+    
+public:
     void RegisterInternal(QObject* Obj, const qmeta::TypeInfo& Ti, const std::string& Name, uint64_t Id);
 
 private:
@@ -87,47 +87,21 @@ private:
     {
         const qmeta::TypeInfo* Ti = nullptr;
         uint64_t Id = 0;
+        uint32_t MarkEpoch = 0;
 
-        // Cached layout pointer (stable heap address)
+        // cached once when registered
         const FPtrOffsetLayout* Layout = nullptr;
-        
-        // atomic for parallel mark
-        std::atomic<uint32_t> MarkEpoch { 0 }; 
-
-        // Back pointer to the actual object to avoid map lookup on expansion
-        QObject* Self = nullptr;
-
-        Node() = default;
-        Node(QObject* InSelf, const qmeta::TypeInfo* InTi, uint64_t InId)
-            : Ti(InTi), Id(InId), MarkEpoch{0}, Self(InSelf)
-        {}
-
-        Node(const Node&) = delete;
-        Node& operator=(const Node&) = delete;
-        Node(Node&&) noexcept = default;
-        Node& operator=(Node&&) noexcept = default;
     };
 
-    // Layout cache: stable addresses via unique_ptr so node Layout pointers never invalidate on rehash
-    mutable std::unordered_map<const qmeta::TypeInfo*, std::unique_ptr<FPtrOffsetLayout>> PtrCache;
-    
-    //mutable std::unordered_map<const qmeta::TypeInfo*, FPtrOffsetLayout> PtrCache;
-    // protects PtrCache build-once
-    mutable std::mutex PtrCacheMutex;
+    mutable std::unordered_map<const qmeta::TypeInfo*, FPtrOffsetLayout> PtrCache;
     uint32_t CurrentEpoch = 1;
 
-    // Threading knob (see SetMaxGcThreads)
-    int MaxGcThreads = 0;
-
-    const FPtrOffsetLayout* GetPtrLayout(const qmeta::TypeInfo& Ti);
-    //const FPtrOffsetLayout& GetPtrLayout(const qmeta::TypeInfo& Ti);
+    const FPtrOffsetLayout& GetPtrLayout(const qmeta::TypeInfo& Ti);
     
     // Marks all objects from a root to kill by BFS 
-    void Mark_SingleThreaded();
-    bool Mark_Parallel(int Desired, int& Value);
-
-    // Return num threads
-    int Mark();
+    void Mark();
+    void MarkFromRoot(QObject* Root);  // BFS from a single root (used by both single & multi)
+    void MarkParallelPerRoot();        // one thread per root (idealized)
     
     void TraversePointers(QObject* Obj, const qmeta::TypeInfo& Ti, std::vector<QObject*>& OutChildren) const;
     
