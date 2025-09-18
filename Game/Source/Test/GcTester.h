@@ -57,6 +57,8 @@ public:
     QFUNCTION()
     void ClearAll(bool bSilent);
 
+    void ClearGenerated();
+    
     // Requested earlier by you: run N steps of (random graph + GC collect)
     QFUNCTION()
     void RepeatRandomAndCollect(int NumSteps, int NumNodes, int NumBranches);

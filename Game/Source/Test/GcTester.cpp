@@ -760,6 +760,13 @@ void QGcTester::ClearAll(bool bSilent)
     if (!bSilent) std::cout << "[GcTester] Cleared all test objects.\n";
 }
 
+void QGcTester::ClearGenerated()
+{
+    // Only drop references here. The GC will reclaim unreachable objects.
+    AllNodes.clear();
+    Roots.clear();
+}
+
 // ------------- batch test -------------
 void QGcTester::RepeatRandomAndCollect(int NumSteps, int NumNodes, int NumBranches)
 {

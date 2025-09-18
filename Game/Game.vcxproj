@@ -144,6 +144,7 @@
         <ClCompile Include="Source\Core\QHT_Bridge_Game.cpp" />
         <ClCompile Include="Source\Demo.cpp" />
         <ClCompile Include="Source\Test\GcTester.cpp" />
+        <ClCompile Include="Source\Test\GcTestManager.cpp" />
         <ClCompile Include="Source\Test\TestObject.cpp" />
         <ClCompile Include="Source\Test\TestObjectFactory.cpp" />
         <ClCompile Include="Source\Test\TestObject_Parent.cpp" />

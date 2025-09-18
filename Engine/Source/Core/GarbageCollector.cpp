@@ -57,9 +57,15 @@ void GarbageCollector::RegisterInternal(QObject* Obj, const TypeInfo& Ti, const 
     Node N;
     N.Ti = &Ti;
     N.Id = Id;
-    N.Layout = &GetPtrLayout(Ti);
+    
+    // Cache the stable layout pointer (safe across rehash)
+    if (N.Layout == nullptr)
+    {
+        N.Layout = GetPtrLayout(Ti);
+    }
+    
     Objects.emplace(Obj, N);
-
+    
     //ById[Id] = Obj;
     NameToObjectMap[Name] = Obj;
 }
@@ -220,40 +226,50 @@ void GarbageCollector::TraversePointers(QObject* Obj, const TypeInfo& Ti, std::v
     Ti.ForEachPropertyWithOption(Visitor, bAllowTraverseParents);
 }
 
-const GarbageCollector::FPtrOffsetLayout& GarbageCollector::GetPtrLayout(const qmeta::TypeInfo& Ti)
+const GarbageCollector::FPtrOffsetLayout* GarbageCollector::GetPtrLayout(const qmeta::TypeInfo& Ti)
 {
-    if (auto CacheIter = PtrCache.find(&Ti); CacheIter != PtrCache.end())
+    // Fast path without lock
+    if (auto it = PtrCache.find(&Ti); it != PtrCache.end())
     {
-        return CacheIter->second;
+        return it->second.get();
     }
 
-    FPtrOffsetLayout L;
-    auto Acc = [&](const TypeInfo* T){
-        if (!T)
-        {
-            return;
-        }
-        
+    std::lock_guard<std::mutex> Lock(PtrCacheMutex);
+
+    if (auto it = PtrCache.find(&Ti); it != PtrCache.end())
+    {
+        return it->second.get();
+    }
+
+    // Build once (include base chain)
+    auto Layout = std::make_unique<FPtrOffsetLayout>();
+
+    auto Accumulate = [&](const qmeta::TypeInfo* T)
+    {
+        if (!T) return;
         for (const auto& P : T->properties)
         {
-            if ((P.GcFlags & qmeta::PF_RawQObjectPtr) != 0)
+            if (P.GcFlags & qmeta::PF_RawQObjectPtr)
             {
-                L.RawOffsets.push_back(P.offset);
-            } 
-            else if ((P.GcFlags & qmeta::PF_VectorOfQObjectPtr))
+                Layout->RawOffsets.push_back(P.offset);
+            }
+            else if (P.GcFlags & qmeta::PF_VectorOfQObjectPtr)
             {
-                L.VecOffsets.push_back(P.offset);
+                Layout->VecOffsets.push_back(P.offset);
             }
         }
     };
 
-    // Cache at all once including base(parent class)
-    for (auto* Cur = &Ti; Cur; Cur = Cur->base)
+    const qmeta::TypeInfo* Cur = &Ti;
+    while (Cur)
     {
-        Acc(Cur);
+        Accumulate(Cur);
+        Cur = Cur->base;
     }
 
-    return PtrCache.emplace(&Ti, std::move(L)).first->second;
+    const FPtrOffsetLayout* StablePtr = Layout.get();
+    PtrCache.emplace(&Ti, std::move(Layout));
+    return StablePtr;
 }
 
 void GarbageCollector::Mark()
@@ -286,7 +302,7 @@ void GarbageCollector::MarkFromRoot(QObject* Root)
         }
 
         Node& N = ObjIter->second;
-
+        
         // Already marked in this epoch?
         if (N.MarkEpoch == CurrentEpoch)
         {
@@ -296,6 +312,11 @@ void GarbageCollector::MarkFromRoot(QObject* Root)
         // Mark
         N.MarkEpoch = CurrentEpoch;
 
+        if (Cur->bGcIgnoredSelfAndBelow)
+        {
+            continue;
+        }
+        
         // Use cached layout (pre-filled in RegisterInternal), so no PtrCache contention.
         const FPtrOffsetLayout& Layout = *N.Layout;
         unsigned char* Base = BytePtr(Cur);
@@ -392,9 +413,9 @@ double GarbageCollector::Collect(bool bSilent)
         }
         
         unsigned char* Base = BytePtr(Obj);
-        const FPtrOffsetLayout& Layout = GetPtrLayout(*Node.Ti);
+        const FPtrOffsetLayout* Layout = GetPtrLayout(*Node.Ti);
 
-        for (size_t Offset : Layout.RawOffsets)
+        for (size_t Offset : Layout->RawOffsets)
         {
             QObject** Slot = reinterpret_cast<QObject**>(Base + Offset);
             if (Slot && *Slot && DeadSet.contains(*Slot))
@@ -402,7 +423,7 @@ double GarbageCollector::Collect(bool bSilent)
                 *Slot = nullptr;
             }
         }
-        for (size_t Offset : Layout.VecOffsets)
+        for (size_t Offset : Layout->VecOffsets)
         {
             auto* Vec = reinterpret_cast<std::vector<QObject*>*>(Base + Offset);
             std::erase_if(*Vec,[&](QObject* p){ return p && DeadSet.count(p); });

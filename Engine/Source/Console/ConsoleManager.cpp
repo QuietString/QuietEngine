@@ -131,37 +131,58 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
             auto* W = GetWorld();
             if (!W) { std::cout << "World not found.\n"; return true; }
             
-            auto FindTesters = [&]() -> std::vector<QObject*> {
-                std::vector<QObject*> Testers;
+            // auto FindTesters = [&]() -> std::vector<QObject*> {
+            //     std::vector<QObject*> Testers;
+            //     
+            //     const qmeta::TypeInfo* Ti = nullptr;
+            //     for (QObject* Obj : W->Objects)
+            //     {
+            //         if (!Obj) continue;
+            //         Ti = GC.GetTypeInfo(Obj);
+            //         if (Ti && Ti->name == "QGcTester")
+            //         {
+            //             Testers.emplace_back(Obj);
+            //         }
+            //     }
+            //
+            //     for (QObject* Obj : GC.GetRoots())
+            //     {
+            //         Ti = GC.GetTypeInfo(Obj);
+            //         if (Ti && Ti->name == "QGcTester")
+            //         {
+            //             Testers.emplace_back(Obj);
+            //         }
+            //     }
+            //
+            //     return Testers;
+            // };
+
+            auto FindTestManager = [&]() -> QObject* {
                 
                 const qmeta::TypeInfo* Ti = nullptr;
                 for (QObject* Obj : W->Objects)
                 {
                     if (!Obj) continue;
                     Ti = GC.GetTypeInfo(Obj);
-                    if (Ti && Ti->name == "QGcTester")
+                    if (Ti && Ti->name == "QGcTestManager")
                     {
-                        Testers.emplace_back(Obj);
+                        return Obj;
                     }
                 }
 
-                for (QObject* Obj : GC.GetRoots())
-                {
-                    Ti = GC.GetTypeInfo(Obj);
-                    if (Ti && Ti->name == "QGcTester")
-                    {
-                        Testers.emplace_back(Obj);
-                    }
-                }
-
-                return Testers;
+                return nullptr;
             };
             
-            std::vector<QObject*> Testers = FindTesters();
-            
-            if (Testers.empty())
+            //std::vector<QObject*> Testers = FindTesters();
+            QObject* TestManager = FindTestManager();
+            if (!TestManager)
             {
-                std::cout << "QGcTester instance not found. Make sure the Game module created it in BeginPlay().\n";
+                std::cout << "QGcTestManager instance not found. Make sure the Game module created it in BeginPlay().\n";
+                return true;
+            }
+            if (!TestManager)
+            {
+                std::cout << "QGcTestManager instance not found. Make sure the Game module created it in BeginPlay().\n";
                 return true;
             }
 
@@ -184,7 +205,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     return true;
                 }
                 
-                if (Testers.empty())
+                if (!TestManager)
                 {
                     std::cout << "[gctest] failed to get/create QGcTester\n";
                     return true;
@@ -196,10 +217,11 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 Args.emplace_back(NumNodes);
                 Args.emplace_back(NumBranches);
 
-                for (auto& Tester : Testers)
-                {
-                    qmeta::Variant Ret = GC.CallByName(Tester->GetDebugName(), "RepeatRandomAndCollect", Args);    
-                }
+                // for (auto& Tester : Testers)
+                // {
+                //     qmeta::Variant Ret = GC.CallByName(Tester->GetDebugName(), "RepeatRandomAndCollect", Args);    
+                // }
+                qmeta::Variant Ret = GC.CallByName(TestManager->GetDebugName(), "RepeatRandomAndCollect", Args);
                 
                 return true;
             }
@@ -231,7 +253,7 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     return true;
                 }
 
-                if (Testers.empty())
+                if (!TestManager)
                 {
                     std::cout << "[gctest] failed to get/create QGcTester\n";
                     return true;
@@ -242,17 +264,17 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 {
                     std::vector<qmeta::Variant> Args1;
                     Args1.emplace_back((long long)AssignMode);
-                    for (auto& Tester : Testers)
+                    //for (auto& Tester : Testers)
                     {
-                        GC.CallByName(Tester->GetDebugName(), "SetAssignMode", Args1);
+                        GC.CallByName(TestManager->GetDebugName(), "SetAssignMode", Args1);
                     }
                     
 
                     std::vector<qmeta::Variant> Args2;
                     Args2.emplace_back(bUseVector);
-                    for (auto& Tester : Testers)
+                    //for (auto& Tester : Testers)
                     {
-                        GC.CallByName(Tester->GetDebugName(), "SetUseVector", Args2);
+                        GC.CallByName(TestManager->GetDebugName(), "SetUseVector", Args2);
                     }
                 }
                 catch (const std::exception& e)
@@ -261,10 +283,10 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     return true;
                 }
 
-                for (auto& Tester : Testers)
+                //for (auto& Tester : Testers)
                 {
                     std::cout << "[gctest] config applied on "
-                             << (Tester->GetDebugName().empty() ? "(Unnamed)" : Tester->GetDebugName())
+                             << (TestManager->GetDebugName().empty() ? "(Unnamed)" : TestManager->GetDebugName())
                              << " : AssignMode=" << AssignMode
                              << ", bUseVector=" << (bUseVector ? "true" : "false") << std::endl;   
                 }
@@ -274,9 +296,9 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                         
             if (Tokens.size() == 2 && Tokens[1] == "clear")
             {
-                for (auto& Tester : Testers)
+                //for (auto& Tester : Testers)
                 {
-                    GC.Call(Tester, "ClearAll", {false});    
+                    GC.Call(TestManager, "ClearAll", {false});    
                 }
                 
                 return true;
@@ -294,9 +316,9 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 int Branch = std::stoi(Tokens[4]);
                 int Seed = (Tokens.size() >= 6) ? std::stoi(Tokens[5]) : 1337;
 
-                for (auto& Tester : Testers)
+                //for (auto& Tester : Testers)
                 {
-                    GC.Call(Tester, "Build", { qmeta::Variant(Roots), qmeta::Variant(Depth), qmeta::Variant(Branch), qmeta::Variant(Seed) });    
+                    GC.Call(TestManager, "Build", { qmeta::Variant(Roots), qmeta::Variant(Depth), qmeta::Variant(Branch), qmeta::Variant(Seed) });    
                 }
                 
                 return true;
@@ -316,9 +338,9 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     if (Tokens.size() < 4) { std::cout << "gctest pattern chain <length> [seed]\n"; return true; }
                     int length = std::stoi(Tokens[3]);
                     int seed = (Tokens.size() >= 5) ? std::stoi(Tokens[4]) : 1;
-                    for (auto& Tester : Testers)
+                    //for (auto& Tester : Testers)
                     {
-                        GC.Call(Tester, "PatternChain", { qmeta::Variant(length), qmeta::Variant(seed) });
+                        GC.Call(TestManager, "PatternChain", { qmeta::Variant(length), qmeta::Variant(seed) });
                     }
                     return true;
                 }
@@ -332,9 +354,9 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     int w = std::stoi(Tokens[3]);
                     int h = std::stoi(Tokens[4]);
                     int seed = (Tokens.size() >= 6) ? std::stoi(Tokens[5]) : 1;
-                    for (auto& Tester : Testers)
+                    //for (auto& Tester : Testers)
                     {
-                        GC.Call(Tester, "PatternGrid", { qmeta::Variant(w), qmeta::Variant(h), qmeta::Variant(seed) });
+                        GC.Call(TestManager, "PatternGrid", { qmeta::Variant(w), qmeta::Variant(h), qmeta::Variant(seed) });
                     }
                     return true;
                 }
@@ -344,9 +366,9 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     int Nodes = std::stoi(Tokens[3]);
                     int BranchCount = std::stoi(Tokens[4]);
                     int Seed = (Tokens.size() >= 6) ? std::stoi(Tokens[5]) : 1337;
-                    for (auto& Tester : Testers)
+                    //for (auto& Tester : Testers)
                     {
-                        GC.Call(Tester, "PatternRandom", { qmeta::Variant(Nodes), qmeta::Variant(BranchCount), qmeta::Variant(Seed) });
+                        GC.Call(TestManager, "PatternRandom", { qmeta::Variant(Nodes), qmeta::Variant(BranchCount), qmeta::Variant(Seed) });
                     }
                     return true;
                 }
@@ -356,9 +378,9 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     int rings = std::stoi(Tokens[3]);
                     int ringSize = std::stoi(Tokens[4]);
                     int seed = (Tokens.size() >= 6) ? std::stoi(Tokens[5]) : 7;
-                    for (auto& Tester : Testers)
+                    //for (auto& Tester : Testers)
                     {
-                        GC.Call(Tester, "PatternRings", { qmeta::Variant(rings), qmeta::Variant(ringSize), qmeta::Variant(seed) });
+                        GC.Call(TestManager, "PatternRings", { qmeta::Variant(rings), qmeta::Variant(ringSize), qmeta::Variant(seed) });
                     }
                     return true;
                 }
@@ -368,9 +390,9 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                     int layers = std::stoi(Tokens[3]);
                     int breadth = std::stoi(Tokens[4]);
                     int seed = (Tokens.size() >= 6) ? std::stoi(Tokens[5]) : 3;
-                    for (auto& Tester : Testers)
+                    //for (auto& Tester : Testers)
                     {
-                        GC.Call(Tester, "PatternDiamond", { qmeta::Variant(layers), qmeta::Variant(breadth), qmeta::Variant(seed) });
+                        GC.Call(TestManager, "PatternDiamond", { qmeta::Variant(layers), qmeta::Variant(breadth), qmeta::Variant(seed) });
                     }
                     return true;
                 }
@@ -390,9 +412,9 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 int depth = std::stoi(Tokens[2]);
                 int count = (Tokens[3] == "all") ? -1 : std::stoi(Tokens[3]);
                 int seed = (Tokens.size() >= 5) ? std::stoi(Tokens[4]) : 42;
-                for (auto& Tester : Testers)
+                //for (auto& Tester : Testers)
                 {
-                    GC.Call(Tester, "BreakAtDepth", { qmeta::Variant(depth), qmeta::Variant(count), qmeta::Variant(seed) });
+                    GC.Call(TestManager, "BreakAtDepth", { qmeta::Variant(depth), qmeta::Variant(count), qmeta::Variant(seed) });
                 }
                 return true;
             }
@@ -407,9 +429,9 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 double pct = std::stod(Tokens[2]);
                 int depth = (Tokens.size() >= 4) ? std::stoi(Tokens[3]) : -1;
                 int seed  = (Tokens.size() >= 5) ? std::stoi(Tokens[4]) : 24;
-                for (auto& Tester : Testers)
+                //for (auto& Tester : Testers)
                 {
-                    GC.Call(Tester, "BreakPercent", { qmeta::Variant(pct), qmeta::Variant(depth), qmeta::Variant(seed), qmeta::Variant(false) });
+                    GC.Call(TestManager, "BreakPercent", { qmeta::Variant(pct), qmeta::Variant(depth), qmeta::Variant(seed), qmeta::Variant(false) });
                 }
                 return true;
             }
@@ -419,9 +441,9 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 if (Tokens.size() < 3) { std::cout << "gctest breakedges <count> [seed]\n"; return true; }
                 int count = std::stoi(Tokens[2]);
                 int seed  = (Tokens.size() >= 4) ? std::stoi(Tokens[3]) : 99;
-                for (auto& Tester : Testers)
+                //for (auto& Tester : Testers)
                 {
-                    GC.Call(Tester, "BreakRandomEdges", { qmeta::Variant(count), qmeta::Variant(seed) });
+                    GC.Call(TestManager, "BreakRandomEdges", { qmeta::Variant(count), qmeta::Variant(seed) });
                 }
                 return true;
             }
@@ -431,9 +453,9 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 if (Tokens.size() < 3) { std::cout << "gctest detachroots <count> [ratio]\n"; return true; }
                 int Count = std::stoi(Tokens[2]);
                 double Ratio = (Tokens.size() >= 4) ? std::stod(Tokens[3]) : 0.0;
-                for (auto& Tester : Testers)
+                //for (auto& Tester : Testers)
                 {
-                    GC.Call(Tester, "DetachRoots", { qmeta::Variant(Count), qmeta::Variant(Ratio) });
+                    GC.Call(TestManager, "DetachRoots", { qmeta::Variant(Count), qmeta::Variant(Ratio) });
                 }
                 return true;
             }
@@ -442,9 +464,9 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 // gctest measure <repeats>
                 if (Tokens.size() < 3) { std::cout << "gctest measure <repeats>\n"; return true; }
                 int rep = std::stoi(Tokens[2]);
-                for (auto& Tester : Testers)
+                //for (auto& Tester : Testers)
                 {
-                    GC.Call(Tester, "MeasureGc", { qmeta::Variant(rep) });
+                    GC.Call(TestManager, "MeasureGc", { qmeta::Variant(rep) });
   
                 }
                 return true;
@@ -458,9 +480,9 @@ bool ConsoleManager::ExecuteCommand(const std::string& Line)
                 double breakPct = std::stod(Tokens[4]);
                 int gcEveryN = std::stoi(Tokens[5]);
                 int seed = (Tokens.size() >= 7) ? std::stoi(Tokens[6]) : 2025;
-                for (auto& Tester : Testers)
+                //for (auto& Tester : Testers)
                 {
-                    GC.Call(Tester, "Churn", { qmeta::Variant(steps), qmeta::Variant(allocPerStep),
+                    GC.Call(TestManager, "Churn", { qmeta::Variant(steps), qmeta::Variant(allocPerStep),
                                         qmeta::Variant(breakPct), qmeta::Variant(gcEveryN),
                                         qmeta::Variant(seed) });
                 }

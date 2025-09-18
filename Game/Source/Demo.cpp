@@ -8,8 +8,7 @@
 #include "GarbageCollector.h"
 #include "Classes/Monster.h"
 #include "Classes/Player.h"
-#include "Test/GcTester.h"
-#include "Test/TestObject.h"
+#include "Test/GcTestManager.h"
 
 void Demo::RunDemo()
 {
@@ -93,34 +92,10 @@ void Demo::RunTester()
         return;
     }
 
-    // Create the GC tester and make it reachable
-    QGcTester* Tester = NewObject<QGcTester>();
+    QGcTestManager* TestManager = NewObject<QGcTestManager>();
+    World->Objects.push_back(TestManager);
 
-    // for multithreaded gc testing 
-    GarbageCollector::Get().AddRoot(Tester);
-    
-    //World->Objects.push_back(Tester);
-    
-    // ---- Factory setup ----
-    // Clear previous registrations/pool if any
-    Tester->FactoryClear();
-
-    // 1) Register test types here (QObject-derived)
-    Tester->FactoryRegisterType<QTestObject>();
-    // Tester->FactoryRegisterType<QPlayer>();
-    
-    // 2) Choose which types the factory will actually use (the pool)
-    Tester->FactoryUseTypes(std::vector<std::string>{
-        "QTestObject",
-        // "QPlayer",
-    });
-
-    // Optional: default config for assignment strategy
-    Tester->SetAssignMode(2);     // 0: own-only, 1: parents-only, 2: random
-    Tester->SetUseVector(true);   // prefer std::vector<T*> slots
-
-    std::cout << "[GcTester] Ready. Instance name: " << Tester->GetDebugName()
-              << " (use commands: gctest ...  or  call " << Tester->GetDebugName() << " <Func> ...)" << std::endl;
+    TestManager->Initialize();
 }
 
 void Demo::RunReflectionTest()

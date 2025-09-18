@@ -89,14 +89,17 @@ private:
         uint64_t Id = 0;
         uint32_t MarkEpoch = 0;
 
-        // cached once when registered
+        // Cached layout pointer (stable heap address)
         const FPtrOffsetLayout* Layout = nullptr;
     };
 
-    mutable std::unordered_map<const qmeta::TypeInfo*, FPtrOffsetLayout> PtrCache;
+    // Layout cache: stable addresses via unique_ptr so node Layout pointers never invalidate on rehash
+    mutable std::unordered_map<const qmeta::TypeInfo*, std::unique_ptr<FPtrOffsetLayout>> PtrCache;
+    mutable std::mutex PtrCacheMutex;
+    
     uint32_t CurrentEpoch = 1;
 
-    const FPtrOffsetLayout& GetPtrLayout(const qmeta::TypeInfo& Ti);
+    const FPtrOffsetLayout* GetPtrLayout(const qmeta::TypeInfo& Ti);
     
     // Marks all objects from a root to kill by BFS 
     void Mark();

@@ -11,6 +11,7 @@ using namespace qmeta;
 
 #include "Classes/Monster.h"
 #include "Classes/Player.h"
+#include "Test/GcTestManager.h"
 #include "Test/GcTester.h"
 #include "Test/TestObject.h"
 #include "Test/TestObject_Parent.h"
@@ -196,6 +197,89 @@ static Variant _qmeta_invoke_QGcTester_FactoryUseTypes(void* Self, const Variant
     if (argc < 1) throw std::runtime_error("QGcTester::FactoryUseTypes requires 1 args");
     auto _a0 = args[0].as<std::vector<std::string>>();
     self->FactoryUseTypes(_a0);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QGcTestManager_Run(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTestManager*>(Self);
+    self->Run();
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QGcTestManager_PatternChain(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTestManager*>(Self);
+    if (argc < 2) throw std::runtime_error("QGcTestManager::PatternChain requires 2 args");
+    auto _a0 = args[0].as<int>();
+    auto _a1 = args[1].as<int>();
+    self->PatternChain(_a0, _a1);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QGcTestManager_PatternGrid(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTestManager*>(Self);
+    if (argc < 3) throw std::runtime_error("QGcTestManager::PatternGrid requires 3 args");
+    auto _a0 = args[0].as<int>();
+    auto _a1 = args[1].as<int>();
+    auto _a2 = args[2].as<int>();
+    self->PatternGrid(_a0, _a1, _a2);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QGcTestManager_PatternRandom(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTestManager*>(Self);
+    if (argc < 3) throw std::runtime_error("QGcTestManager::PatternRandom requires 3 args");
+    auto _a0 = args[0].as<int>();
+    auto _a1 = args[1].as<int>();
+    auto _a2 = args[2].as<int>();
+    self->PatternRandom(_a0, _a1, _a2);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QGcTestManager_PatternRings(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTestManager*>(Self);
+    if (argc < 3) throw std::runtime_error("QGcTestManager::PatternRings requires 3 args");
+    auto _a0 = args[0].as<int>();
+    auto _a1 = args[1].as<int>();
+    auto _a2 = args[2].as<int>();
+    self->PatternRings(_a0, _a1, _a2);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QGcTestManager_BreakRandomEdges(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTestManager*>(Self);
+    if (argc < 2) throw std::runtime_error("QGcTestManager::BreakRandomEdges requires 2 args");
+    auto _a0 = args[0].as<int>();
+    auto _a1 = args[1].as<int>();
+    self->BreakRandomEdges(_a0, _a1);
+    return Variant();
+}
+
+static Variant _qmeta_invoke_QGcTestManager_BreakAtDepth(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTestManager*>(Self);
+    if (argc < 3) throw std::runtime_error("QGcTestManager::BreakAtDepth requires 3 args");
+    auto _a0 = args[0].as<int>();
+    auto _a1 = args[1].as<int>();
+    auto _a2 = args[2].as<int>();
+    auto _ret = self->BreakAtDepth(_a0, _a1, _a2);
+    return Variant(_ret);
+}
+
+static Variant _qmeta_invoke_QGcTestManager_BreakPercent(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTestManager*>(Self);
+    if (argc < 4) throw std::runtime_error("QGcTestManager::BreakPercent requires 4 args");
+    auto _a0 = args[0].as<double>();
+    auto _a1 = args[1].as<int>();
+    auto _a2 = args[2].as<int>();
+    auto _a3 = args[3].as<bool>();
+    auto _ret = self->BreakPercent(_a0, _a1, _a2, _a3);
+    return Variant(_ret);
+}
+
+static Variant _qmeta_invoke_QGcTestManager_ClearAll(void* Self, const Variant* args, size_t argc) {
+    (void)argc; auto* self = static_cast<QGcTestManager*>(Self);
+    if (argc < 1) throw std::runtime_error("QGcTestManager::ClearAll requires 1 args");
+    auto _a0 = args[0].as<bool>();
+    self->ClearAll(_a0);
     return Variant();
 }
 
@@ -438,6 +522,90 @@ inline void QHT_Register_Game(Registry& R) {
         F.meta = MetaMap{};
         T_QGcTester.functions.push_back(std::move(F));
     }
+    TypeInfo& T_QGcTestManager = R.add_type("QGcTestManager", sizeof(QGcTestManager));
+    T_QGcTestManager.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
+    T_QGcTestManager.base_name = "QObject";
+    {
+        MetaFunction F;
+        F.name = "Run";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTestManager_Run;
+        F.params = std::vector<MetaParam>{  };
+        F.meta = MetaMap{};
+        T_QGcTestManager.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "PatternChain";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTestManager_PatternChain;
+        F.params = std::vector<MetaParam>{ MetaParam{"Length", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcTestManager.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "PatternGrid";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTestManager_PatternGrid;
+        F.params = std::vector<MetaParam>{ MetaParam{"W", "int"}, MetaParam{"H", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcTestManager.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "PatternRandom";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTestManager_PatternRandom;
+        F.params = std::vector<MetaParam>{ MetaParam{"Nodes", "int"}, MetaParam{"AvgOut", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcTestManager.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "PatternRings";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTestManager_PatternRings;
+        F.params = std::vector<MetaParam>{ MetaParam{"Rings", "int"}, MetaParam{"RingSize", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcTestManager.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "BreakRandomEdges";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTestManager_BreakRandomEdges;
+        F.params = std::vector<MetaParam>{ MetaParam{"Count", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcTestManager.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "BreakAtDepth";
+        F.return_type = "int";
+        F.invoker = &_qmeta_invoke_QGcTestManager_BreakAtDepth;
+        F.params = std::vector<MetaParam>{ MetaParam{"TargetDepth", "int"}, MetaParam{"Count", "int"}, MetaParam{"Seed", "int"} };
+        F.meta = MetaMap{};
+        T_QGcTestManager.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "BreakPercent";
+        F.return_type = "int";
+        F.invoker = &_qmeta_invoke_QGcTestManager_BreakPercent;
+        F.params = std::vector<MetaParam>{ MetaParam{"Percent", "double"}, MetaParam{"Depth", "int"}, MetaParam{"Seed", "int"}, MetaParam{"bOnlyRoots", "bool"} };
+        F.meta = MetaMap{};
+        T_QGcTestManager.functions.push_back(std::move(F));
+    }
+    {
+        MetaFunction F;
+        F.name = "ClearAll";
+        F.return_type = "void";
+        F.invoker = &_qmeta_invoke_QGcTestManager_ClearAll;
+        F.params = std::vector<MetaParam>{ MetaParam{"bSilent", "bool"} };
+        F.meta = MetaMap{};
+        T_QGcTestManager.functions.push_back(std::move(F));
+    }
     TypeInfo& T_QTestObject = R.add_type("QTestObject", sizeof(QTestObject));
     T_QTestObject.meta = MetaMap{ std::make_pair(std::string("Module"), std::string("Game")) };
     T_QTestObject.base_name = "QTestObject_Parent";
@@ -485,6 +653,7 @@ inline void QHT_Register_Game(Registry& R) {
 #include "Classes/Monster.h"
 #include "Classes/Player.h"
 #include "Test/GcTester.h"
+#include "Test/GcTestManager.h"
 #include "Test/TestObject.h"
 #include "Test/TestObject_Parent.h"
 #include "EngineGlobals.h"
@@ -495,6 +664,7 @@ namespace qht_factories_gen_Game {
         qht_factories::RegisterIfCreatable<QMonster>("QMonster");
         qht_factories::RegisterIfCreatable<QPlayer>("QPlayer");
         qht_factories::RegisterIfCreatable<QGcTester>("QGcTester");
+        qht_factories::RegisterIfCreatable<QGcTestManager>("QGcTestManager");
         qht_factories::RegisterIfCreatable<QTestObject>("QTestObject");
         qht_factories::RegisterIfCreatable<QTestObject_Parent>("QTestObject_Parent");
     }
