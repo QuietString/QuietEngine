@@ -1,0 +1,25 @@
+----Debug-----
+
+[GcTestManager] Created 19 testers = 19*500 = 9500
+gctest pattern random 500 3
+[GC] Collected 551 objects, alive=8970. Total 27.6078 ms.
+[GC] Phase timings (ms) - clear=0.0002, mark=11.1206, buildDead=0.7599, fixup=14.8016, sweep=0.9236
+
+[GcTestManager] Created 19 testers
+gctest pattern random 5000 3
+[GC] Collected 6023 objects, alive=88998. Total 326.439 ms.
+[GC] Phase timings (ms) - clear=0.0002, mark=144.167, buildDead=9.3496, fixup=161.643, sweep=11.2761
+
+----Release----
+
+[GcTestManager] Created 19 testers
+gctest pattern random 500 3
+
+[GC] Collected 551 objects, alive=8970. Total 2.7069 ms.
+[GC] Phase timings (ms) - clear=0.0002, mark=1.5949, buildDead=0.2703, fixup=0.7291, sweep=0.1118
+
+
+[GcTestManager] Created 19 testers
+gctest pattern random 5000 3 = 95000
+[GC] Collected 6023 objects, alive=88998. Total 30.5397 ms.
+[GC] Phase timings (ms) - clear=0.0001, mark=4.8165, buildDead=5.3678, fixup=17.5141, sweep=2.8409

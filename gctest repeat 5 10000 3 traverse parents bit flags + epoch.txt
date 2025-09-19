@@ -1,0 +1,59 @@
+[GcTester] AssignMode: OwnedOnly
+
+gctest repeat 5 10000 3
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 633 objects, alive=9369. Total 32.8467 ms.
+[GC] Phase timings (ms) - clear=0.0001, mark=17.2441, buildDead=0.1818, fixup=14.5563, sweep=0.8629
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 564 objects, alive=9438. Total 36.8701 ms.
+[GC] Phase timings (ms) - clear=0, mark=19.5055, buildDead=0.2481, fixup=16.2563, sweep=0.858
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 642 objects, alive=9360. Total 35.5943 ms.
+[GC] Phase timings (ms) - clear=0.0001, mark=19.1942, buildDead=0.2107, fixup=15.2179, sweep=0.9694
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 604 objects, alive=9398. Total 34.3414 ms.
+[GC] Phase timings (ms) - clear=0.0001, mark=18.3903, buildDead=0.2055, fixup=14.8527, sweep=0.8914
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 568 objects, alive=9434. Total 33.3005 ms.
+[GC] Phase timings (ms) - clear=0.0001, mark=17.509, buildDead=0.1823, fixup=14.7488, sweep=0.859
+[GcTester] RepeatRandomAndCollect done: steps=5
+
+[GcTester] AssignMode: ParentsOnly
+
+gctest repeat 5 10000 3
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 633 objects, alive=9369. Total 33.3922 ms.
+[GC] Phase timings (ms) - clear=0, mark=17.4681, buildDead=0.2031, fixup=14.7726, sweep=0.9463
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 564 objects, alive=9438. Total 33.8978 ms.
+[GC] Phase timings (ms) - clear=0.0001, mark=17.4875, buildDead=0.2058, fixup=15.173, sweep=1.0297
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 642 objects, alive=9360. Total 34.3767 ms.
+[GC] Phase timings (ms) - clear=0.0001, mark=17.9422, buildDead=0.194, fixup=15.2646, sweep=0.9741
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 604 objects, alive=9398. Total 36.3358 ms.
+[GC] Phase timings (ms) - clear=0, mark=18.8762, buildDead=0.2217, fixup=16.3051, sweep=0.9303
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 568 objects, alive=9434. Total 33.3634 ms.
+[GC] Phase timings (ms) - clear=0, mark=17.2311, buildDead=0.1936, fixup=15.0455, sweep=0.8917
+[GcTester] RepeatRandomAndCollect done: steps=5
+
+[GcTester] AssignMode: Random
+
+gctest repeat 5 10000 3
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 603 objects, alive=9399. Total 34.2343 ms.
+[GC] Phase timings (ms) - clear=0.0001, mark=17.6183, buildDead=0.1598, fixup=15.5264, sweep=0.9283
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 561 objects, alive=9441. Total 32.6425 ms.
+[GC] Phase timings (ms) - clear=0.0001, mark=17.1069, buildDead=0.2383, fixup=14.4535, sweep=0.8421
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 603 objects, alive=9399. Total 33.0912 ms.
+[GC] Phase timings (ms) - clear=0.0001, mark=17.3149, buildDead=0.1832, fixup=14.63, sweep=0.9602
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 576 objects, alive=9426. Total 32.8034 ms.
+[GC] Phase timings (ms) - clear=0.0001, mark=17.2611, buildDead=0.1547, fixup=14.555, sweep=0.8307
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 564 objects, alive=9438. Total 33.5633 ms.
+[GC] Phase timings (ms) - clear=0, mark=18.0611, buildDead=0.1816, fixup=14.4914, sweep=0.8274
+[GcTester] RepeatRandomAndCollect done: steps=5
