@@ -1,0 +1,55 @@
+gctest repeat 5 10000 3
+
+[GcTester] AssignMode: OwnedOnly
+
+[GcTester] Random graph: nodes=10000 branchCount=3 total=10000
+[GC] Collected 616 objects, alive=9386. Total 96.8299 ms.
+[GC] Phase timings (ms) - clear=0.4283, mark=57.9418, buildDead=0.2994, fixup=37.2355, sweep=0.9246
+[GcTester] Random graph: nodes=10000 branchCount=3 total=10000
+[GC] Collected 616 objects, alive=9386. Total 92.8515 ms.
+[GC] Phase timings (ms) - clear=0.4131, mark=55.8284, buildDead=0.221, fixup=35.4686, sweep=0.92
+[GcTester] Random graph: nodes=10000 branchCount=3 total=10000
+[GC] Collected 616 objects, alive=9386. Total 92.5065 ms.
+[GC] Phase timings (ms) - clear=0.4173, mark=56.1205, buildDead=0.2581, fixup=34.8189, sweep=0.8914
+[GcTester] Random graph: nodes=10000 branchCount=3 total=10000
+[GC] Collected 616 objects, alive=9386. Total 92.5037 ms.
+[GC] Phase timings (ms) - clear=0.441, mark=57.1594, buildDead=0.261, fixup=33.7308, sweep=0.911
+[GcTester] Random graph: nodes=10000 branchCount=3 total=10000
+[GC] Collected 616 objects, alive=9386. Total 95.01 ms.
+[GC] Phase timings (ms) - clear=0.4315, mark=57.8205, buildDead=0.2931, fixup=35.538, sweep=0.9265
+
+[GcTester] AssignMode: ParentsOnly
+
+[GcTester] Random graph: nodes=10000 branchCount=3 total=10000
+[GC] Collected 616 objects, alive=9386. Total 93.0777 ms.
+[GC] Phase timings (ms) - clear=0.4194, mark=57.3039, buildDead=0.2169, fixup=34.2155, sweep=0.9217
+[GcTester] Random graph: nodes=10000 branchCount=3 total=10000
+[GC] Collected 616 objects, alive=9386. Total 94.2068 ms.
+[GC] Phase timings (ms) - clear=0.4091, mark=57.3749, buildDead=0.2512, fixup=35.2269, sweep=0.9446
+[GcTester] Random graph: nodes=10000 branchCount=3 total=10000
+[GC] Collected 616 objects, alive=9386. Total 93.4525 ms.
+[GC] Phase timings (ms) - clear=0.4129, mark=56.4739, buildDead=0.2286, fixup=35.4373, sweep=0.8994
+[GcTester] Random graph: nodes=10000 branchCount=3 total=10000
+[GC] Collected 616 objects, alive=9386. Total 91.5634 ms.
+[GC] Phase timings (ms) - clear=0.4015, mark=55.433, buildDead=0.1988, fixup=34.6081, sweep=0.9215
+[GcTester] Random graph: nodes=10000 branchCount=3 total=10000
+[GC] Collected 616 objects, alive=9386. Total 92.188 ms.
+[GC] Phase timings (ms) - clear=0.3942, mark=56.1832, buildDead=0.2581, fixup=34.4078, sweep=0.9443
+
+[GcTester] AssignMode: Random
+
+[GcTester] Random graph: nodes=10000 branchCount=3 total=10000
+[GC] Collected 591 objects, alive=9411. Total 94.5734 ms.
+[GC] Phase timings (ms) - clear=0.3996, mark=57.1901, buildDead=0.2261, fixup=35.8116, sweep=0.9457
+[GcTester] Random graph: nodes=10000 branchCount=3 total=10000
+[GC] Collected 591 objects, alive=9411. Total 98.5066 ms.
+[GC] Phase timings (ms) - clear=0.4072, mark=59.7317, buildDead=0.3951, fixup=37.0389, sweep=0.9331
+[GcTester] Random graph: nodes=10000 branchCount=3 total=10000
+[GC] Collected 591 objects, alive=9411. Total 96.1331 ms.
+[GC] Phase timings (ms) - clear=0.4259, mark=59.6128, buildDead=0.2752, fixup=34.9528, sweep=0.8661
+[GcTester] Random graph: nodes=10000 branchCount=3 total=10000
+[GC] Collected 591 objects, alive=9411. Total 95.3877 ms.
+[GC] Phase timings (ms) - clear=0.399, mark=57.8637, buildDead=0.2608, fixup=35.7317, sweep=1.1321
+[GcTester] Random graph: nodes=10000 branchCount=3 total=10000
+[GC] Collected 591 objects, alive=9411. Total 100.944 ms.
+[GC] Phase timings (ms) - clear=0.4493, mark=60.8024, buildDead=0.3027, fixup=38.4075, sweep=0.9813

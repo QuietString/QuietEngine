@@ -1,0 +1,12 @@
+[gc] threads = auto(20)
+gctest pattern random 10000 3
+
+[GC] Collected 11820 objects, alive=188201. Total 746.276 ms. Threads: 20
+[GC] Phase timings (ms) - clear=0.0002, mark=364.442, buildDead=19.8285, fixup=339.905, sweep=22.099
+
+
+[gc] threads = 1
+gctest pattern random 10000 3
+
+[GC] Collected 11820 objects, alive=188201. Total 881.06 ms. Threads: 1
+[GC] Phase timings (ms) - clear=0.0001, mark=448.991, buildDead=22.0347, fixup=383.003, sweep=27.0289

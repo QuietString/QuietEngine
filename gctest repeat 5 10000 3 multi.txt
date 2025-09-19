@@ -1,0 +1,40 @@
+AssignMode: Random.
+
+[gc] Threads: 20
+
+gctest repeat 5 10000 3
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 603 objects, alive=9399. Total 37.1957 ms. Threads: 20
+[GC] Phase timings (ms) - clear=0.0002, mark=19.6978, buildDead=0.7911, fixup=15.6893, sweep=1.0155
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 561 objects, alive=9441. Total 35.5702 ms. Threads: 20
+[GC] Phase timings (ms) - clear=0.0002, mark=19.3151, buildDead=0.5418, fixup=14.7626, sweep=0.9487
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 603 objects, alive=9399. Total 36.8062 ms. Threads: 20
+[GC] Phase timings (ms) - clear=0.0001, mark=19.3599, buildDead=0.9112, fixup=15.3682, sweep=1.1647
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 576 objects, alive=9426. Total 35.5897 ms. Threads: 20
+[GC] Phase timings (ms) - clear=0.0001, mark=19.2314, buildDead=0.6265, fixup=14.7384, sweep=0.9914
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 564 objects, alive=9438. Total 35.2463 ms. Threads: 20
+[GC] Phase timings (ms) - clear=0.0001, mark=18.447, buildDead=0.6723, fixup=15.1737, sweep=0.9516
+[GcTester] RepeatRandomAndCollect done: steps=5
+
+[gc] threads = 1
+gctest repeat 5 10000 3
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 603 objects, alive=9399. Total 34.5438 ms. Threads: 1
+[GC] Phase timings (ms) - clear=0.0001, mark=17.5934, buildDead=0.6654, fixup=15.3135, sweep=0.9629
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 561 objects, alive=9441. Total 37.3605 ms. Threads: 1
+[GC] Phase timings (ms) - clear=0.0001, mark=18.6884, buildDead=0.5132, fixup=16.8299, sweep=1.3264
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 603 objects, alive=9399. Total 31.7716 ms. Threads: 1
+[GC] Phase timings (ms) - clear=0.0002, mark=16.4756, buildDead=0.4978, fixup=13.8485, sweep=0.9478
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 576 objects, alive=9426. Total 34.8145 ms. Threads: 1
+[GC] Phase timings (ms) - clear=0.0001, mark=18.3934, buildDead=0.5225, fixup=14.9324, sweep=0.964
+[GcTester] Random graph: nodes=10000 avgOut=3 total=10000
+[GC] Collected 564 objects, alive=9438. Total 32.9264 ms. Threads: 1
+[GC] Phase timings (ms) - clear=0.0002, mark=16.6811, buildDead=0.6044, fixup=14.7108, sweep=0.9279
+[GcTester] RepeatRandomAndCollect done: steps=5
